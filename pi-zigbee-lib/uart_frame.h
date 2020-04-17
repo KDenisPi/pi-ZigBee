@@ -14,156 +14,9 @@
 #include <assert.h>
 
 #include "logger.h"
+#include "crc16.h"
 
 namespace zb_uart {
-
-/**
- * CRC16 (CRC-CCIT)
- *
- * From linux/crc-ccitt.h
- *
- */
-class CRC16 {
-public:
-
-/*
- * This mysterious table is just the CRC of each possible byte. It can be
- * computed using the standard bit-at-a-time methods. The polynomial can
- * be seen in entry 128, 0x8408. This corresponds to x^0 + x^5 + x^12.
- * Add the implicit x^16, and you have the standard CRC-CCITT.
- */
-    static uint16_t const crc_ccitt_table[256];
-/*
- * Similar table to calculate CRC16 variant known as CRC-CCITT-FALSE
- * Reflected bits order, does not augment final value.
- */
-    static uint16_t const crc_ccitt_false_table[256];
-
-    static inline uint16_t crc_ccitt_byte(uint16_t crc, const uint8_t c)
-    {
-        return (crc >> 8) ^ crc_ccitt_table[(crc ^ c) & 0xff];
-    }
-
-    static inline uint16_t crc_ccitt_false_byte(uint16_t crc, const uint8_t c)
-    {
-        return (crc << 8) ^ crc_ccitt_false_table[(crc >> 8) ^ c];
-    }
-
-    /**
-     *	crc_ccitt - recompute the CRC (CRC-CCITT variant) for the data
-    *	buffer
-    *	@crc: previous CRC value
-    *	@buffer: data pointer
-    *	@len: number of bytes in the buffer
-    */
-    static inline uint16_t crc_ccitt(uint16_t crc, uint8_t const *buffer, size_t len)
-    {
-        while (len--)
-            crc = crc_ccitt_byte(crc, *buffer++);
-        return crc;
-    }
-
-    static inline uint16_t crc_ccitt(uint8_t const *buffer, size_t len){
-        return crc_ccitt(0xFFFF, buffer, len);
-    }
-
-
-    /**
-     *	crc_ccitt_false - recompute the CRC (CRC-CCITT-FALSE variant)
-    *	for the data buffer
-    *	@crc: previous CRC value
-    *	@buffer: data pointer
-    *	@len: number of bytes in the buffer
-    */
-    static inline uint16_t crc_ccitt_false(uint16_t crc, uint8_t const *buffer, size_t len)
-    {
-        while (len--)
-            crc = crc_ccitt_false_byte(crc, *buffer++);
-        return crc;
-    }
-    };
-
-/*
- * This mysterious table is just the CRC of each possible byte. It can be
- * computed using the standard bit-at-a-time methods. The polynomial can
- * be seen in entry 128, 0x8408. This corresponds to x^0 + x^5 + x^12.
- * Add the implicit x^16, and you have the standard CRC-CCITT.
- */
-    uint16_t const CRC16::crc_ccitt_table[256] = {
-        0x0000, 0x1189, 0x2312, 0x329b, 0x4624, 0x57ad, 0x6536, 0x74bf,
-        0x8c48, 0x9dc1, 0xaf5a, 0xbed3, 0xca6c, 0xdbe5, 0xe97e, 0xf8f7,
-        0x1081, 0x0108, 0x3393, 0x221a, 0x56a5, 0x472c, 0x75b7, 0x643e,
-        0x9cc9, 0x8d40, 0xbfdb, 0xae52, 0xdaed, 0xcb64, 0xf9ff, 0xe876,
-        0x2102, 0x308b, 0x0210, 0x1399, 0x6726, 0x76af, 0x4434, 0x55bd,
-        0xad4a, 0xbcc3, 0x8e58, 0x9fd1, 0xeb6e, 0xfae7, 0xc87c, 0xd9f5,
-        0x3183, 0x200a, 0x1291, 0x0318, 0x77a7, 0x662e, 0x54b5, 0x453c,
-        0xbdcb, 0xac42, 0x9ed9, 0x8f50, 0xfbef, 0xea66, 0xd8fd, 0xc974,
-        0x4204, 0x538d, 0x6116, 0x709f, 0x0420, 0x15a9, 0x2732, 0x36bb,
-        0xce4c, 0xdfc5, 0xed5e, 0xfcd7, 0x8868, 0x99e1, 0xab7a, 0xbaf3,
-        0x5285, 0x430c, 0x7197, 0x601e, 0x14a1, 0x0528, 0x37b3, 0x263a,
-        0xdecd, 0xcf44, 0xfddf, 0xec56, 0x98e9, 0x8960, 0xbbfb, 0xaa72,
-        0x6306, 0x728f, 0x4014, 0x519d, 0x2522, 0x34ab, 0x0630, 0x17b9,
-        0xef4e, 0xfec7, 0xcc5c, 0xddd5, 0xa96a, 0xb8e3, 0x8a78, 0x9bf1,
-        0x7387, 0x620e, 0x5095, 0x411c, 0x35a3, 0x242a, 0x16b1, 0x0738,
-        0xffcf, 0xee46, 0xdcdd, 0xcd54, 0xb9eb, 0xa862, 0x9af9, 0x8b70,
-        0x8408, 0x9581, 0xa71a, 0xb693, 0xc22c, 0xd3a5, 0xe13e, 0xf0b7,
-        0x0840, 0x19c9, 0x2b52, 0x3adb, 0x4e64, 0x5fed, 0x6d76, 0x7cff,
-        0x9489, 0x8500, 0xb79b, 0xa612, 0xd2ad, 0xc324, 0xf1bf, 0xe036,
-        0x18c1, 0x0948, 0x3bd3, 0x2a5a, 0x5ee5, 0x4f6c, 0x7df7, 0x6c7e,
-        0xa50a, 0xb483, 0x8618, 0x9791, 0xe32e, 0xf2a7, 0xc03c, 0xd1b5,
-        0x2942, 0x38cb, 0x0a50, 0x1bd9, 0x6f66, 0x7eef, 0x4c74, 0x5dfd,
-        0xb58b, 0xa402, 0x9699, 0x8710, 0xf3af, 0xe226, 0xd0bd, 0xc134,
-        0x39c3, 0x284a, 0x1ad1, 0x0b58, 0x7fe7, 0x6e6e, 0x5cf5, 0x4d7c,
-        0xc60c, 0xd785, 0xe51e, 0xf497, 0x8028, 0x91a1, 0xa33a, 0xb2b3,
-        0x4a44, 0x5bcd, 0x6956, 0x78df, 0x0c60, 0x1de9, 0x2f72, 0x3efb,
-        0xd68d, 0xc704, 0xf59f, 0xe416, 0x90a9, 0x8120, 0xb3bb, 0xa232,
-        0x5ac5, 0x4b4c, 0x79d7, 0x685e, 0x1ce1, 0x0d68, 0x3ff3, 0x2e7a,
-        0xe70e, 0xf687, 0xc41c, 0xd595, 0xa12a, 0xb0a3, 0x8238, 0x93b1,
-        0x6b46, 0x7acf, 0x4854, 0x59dd, 0x2d62, 0x3ceb, 0x0e70, 0x1ff9,
-        0xf78f, 0xe606, 0xd49d, 0xc514, 0xb1ab, 0xa022, 0x92b9, 0x8330,
-        0x7bc7, 0x6a4e, 0x58d5, 0x495c, 0x3de3, 0x2c6a, 0x1ef1, 0x0f78
-    };
-
-
-/*
- * Similar table to calculate CRC16 variant known as CRC-CCITT-FALSE
- * Reflected bits order, does not augment final value.
- */
-uint16_t const CRC16::crc_ccitt_false_table[256] = {
-    0x0000, 0x1021, 0x2042, 0x3063, 0x4084, 0x50A5, 0x60C6, 0x70E7,
-    0x8108, 0x9129, 0xA14A, 0xB16B, 0xC18C, 0xD1AD, 0xE1CE, 0xF1EF,
-    0x1231, 0x0210, 0x3273, 0x2252, 0x52B5, 0x4294, 0x72F7, 0x62D6,
-    0x9339, 0x8318, 0xB37B, 0xA35A, 0xD3BD, 0xC39C, 0xF3FF, 0xE3DE,
-    0x2462, 0x3443, 0x0420, 0x1401, 0x64E6, 0x74C7, 0x44A4, 0x5485,
-    0xA56A, 0xB54B, 0x8528, 0x9509, 0xE5EE, 0xF5CF, 0xC5AC, 0xD58D,
-    0x3653, 0x2672, 0x1611, 0x0630, 0x76D7, 0x66F6, 0x5695, 0x46B4,
-    0xB75B, 0xA77A, 0x9719, 0x8738, 0xF7DF, 0xE7FE, 0xD79D, 0xC7BC,
-    0x48C4, 0x58E5, 0x6886, 0x78A7, 0x0840, 0x1861, 0x2802, 0x3823,
-    0xC9CC, 0xD9ED, 0xE98E, 0xF9AF, 0x8948, 0x9969, 0xA90A, 0xB92B,
-    0x5AF5, 0x4AD4, 0x7AB7, 0x6A96, 0x1A71, 0x0A50, 0x3A33, 0x2A12,
-    0xDBFD, 0xCBDC, 0xFBBF, 0xEB9E, 0x9B79, 0x8B58, 0xBB3B, 0xAB1A,
-    0x6CA6, 0x7C87, 0x4CE4, 0x5CC5, 0x2C22, 0x3C03, 0x0C60, 0x1C41,
-    0xEDAE, 0xFD8F, 0xCDEC, 0xDDCD, 0xAD2A, 0xBD0B, 0x8D68, 0x9D49,
-    0x7E97, 0x6EB6, 0x5ED5, 0x4EF4, 0x3E13, 0x2E32, 0x1E51, 0x0E70,
-    0xFF9F, 0xEFBE, 0xDFDD, 0xCFFC, 0xBF1B, 0xAF3A, 0x9F59, 0x8F78,
-    0x9188, 0x81A9, 0xB1CA, 0xA1EB, 0xD10C, 0xC12D, 0xF14E, 0xE16F,
-    0x1080, 0x00A1, 0x30C2, 0x20E3, 0x5004, 0x4025, 0x7046, 0x6067,
-    0x83B9, 0x9398, 0xA3FB, 0xB3DA, 0xC33D, 0xD31C, 0xE37F, 0xF35E,
-    0x02B1, 0x1290, 0x22F3, 0x32D2, 0x4235, 0x5214, 0x6277, 0x7256,
-    0xB5EA, 0xA5CB, 0x95A8, 0x8589, 0xF56E, 0xE54F, 0xD52C, 0xC50D,
-    0x34E2, 0x24C3, 0x14A0, 0x0481, 0x7466, 0x6447, 0x5424, 0x4405,
-    0xA7DB, 0xB7FA, 0x8799, 0x97B8, 0xE75F, 0xF77E, 0xC71D, 0xD73C,
-    0x26D3, 0x36F2, 0x0691, 0x16B0, 0x6657, 0x7676, 0x4615, 0x5634,
-    0xD94C, 0xC96D, 0xF90E, 0xE92F, 0x99C8, 0x89E9, 0xB98A, 0xA9AB,
-    0x5844, 0x4865, 0x7806, 0x6827, 0x18C0, 0x08E1, 0x3882, 0x28A3,
-    0xCB7D, 0xDB5C, 0xEB3F, 0xFB1E, 0x8BF9, 0x9BD8, 0xABBB, 0xBB9A,
-    0x4A75, 0x5A54, 0x6A37, 0x7A16, 0x0AF1, 0x1AD0, 0x2AB3, 0x3A92,
-    0xFD2E, 0xED0F, 0xDD6C, 0xCD4D, 0xBDAA, 0xAD8B, 0x9DE8, 0x8DC9,
-    0x7C26, 0x6C07, 0x5C64, 0x4C45, 0x3CA2, 0x2C83, 0x1CE0, 0x0CC1,
-    0xEF1F, 0xFF3E, 0xCF5D, 0xDF7C, 0xAF9B, 0xBFBA, 0x8FD9, 0x9FF8,
-    0x6E17, 0x7E36, 0x4E55, 0x5E74, 0x2E93, 0x3EB2, 0x0ED1, 0x1EF0
-};
-
 
 /**
  * UART Frame implementation
@@ -174,136 +27,224 @@ uint16_t const CRC16::crc_ccitt_false_table[256] = {
 *
  */
 
-using ftype = enum FrameType : uint8_t { DATA = 0x00, NO_DATA = 0x80, ACK = 0x80, NAK = 0xA0, RST = 0xC0, RSTACK = 0xC1, ERROR = 0xC2};
+using ftype = enum FrameType : uint8_t {
+    DATA = 0x00,    //Purpose: Carries all EZSP frames
+    NO_DATA = 0x80,
+    ACK = 0x80,     //Purpose: Acknowledges receipt of a valid DATA frame
+    NAK = 0xA0,     //Purpose: Indicates receipt of a DATA frame with an error or that was discarded due to lack of memory
+    RST = 0xC0,     //Purpose: Requests the NCP to perform a software reset (valid even if the NCP is in the FAILED state)
+    RSTACK = 0xC1,  //Purpose: Informs the Host that the NCP has reset and the reason for the reset
+    ERROR = 0xC2};  //Purpose: Informs the Host that the NCP detected a fatal error and is in the FAILED state
+
+/**
+ * 0x7E Flag Byte: Marks the end of a frame.
+ *   When a Flag Byte is received, the data received since the last Flag Byte or Cancel Byte is tested to see whether it is a valid frame.
+ * 0x7D Escape Byte: Indicates that the following byte is escaped.
+    If the byte after the Escape Byte is not a reserved byte, bit 5 of the byte is complemented to restore its original value. If the
+    byte after the Escape Byte is a reserved value, the Escape Byte has no effect.
+* 0x11 XON: Resume transmission Used in XON/XOFF flow control. Always ignored if received by the NCP.
+* 0x13 XOFF: Stop transmission Used in XON/XOFF flow control. Always ignored if received by the NCP.
+* 0x18 Substitute Byte: Replaces a byte received with a low-level communication error (e.g., framing error) from the UART.
+        When a Substitute Byte is processed, the data between the previous and the next Flag Bytes is ignored.
+* 0x1A Cancel Byte: Terminates a frame in progress.
+    A Cancel Byte causes all data received since the previous Flag Byte to be ignored. Note that as a special case, RST and
+    RSTACK frames are preceded by Cancel Bytes to ignore any link startup noise
+*/
+using ashrvd = enum ASH_Reserved : uint8_t {FlagByte = 0x7E, EscapeByte = 0x7D, XON = 0x11, XOFF = 0x13, SubstByte = 0x18, CancelByte = 0x1A};
+
+/**
+ * Reset and error codes
+ *
+0x00 Reset: Unknown reason
+0x01 Reset: External
+0x02 Reset: Power-on
+0x03 Reset: Watchdog
+0x06 Reset: Assert
+0x09 Reset: Boot loader
+0x0B Reset: Software
+0x51 Error: Exceeded maximum ACK timeout count
+0x80 Chip-specific error reset code
+*/
+using codes = enum ASH_ResetErrorCodes : uint8_t {RST_Unknown = 0x00, RST_External = 0x01, RST_PowerOn = 0x02, RST_Watchdog = 0x03, RST_Assert = 0x06, RST_BootLoader = 0x09, RST_Software = 0x0B,
+                                                    ERR_Max_ACK_Timeout = 0x51, ERR_Reset = 0x80};
+
+class ZBUart;
 
 class UFrame {
 public:
-    /**
-     * Compose DATA type frame
-     */
-    static std::shared_ptr<UFrame> compose_data(const ftype ft, const uint8_t frmNum, const uint8_t* data, size_t len){
-        assert(ft==ftype::DATA);
+    friend ZBUart;
 
-        logger::log(logger::LLOG::DEBUG, "uframe", std::string(__func__) + " Type: " + std::to_string(ft));
+    static const uint8_t BEscape = 0x7D;
 
-        std::shared_ptr<UFrame> frame = std::shared_ptr<UFrame>(new UFrame(ft));
-        //set sequence number
-        frame->set_frmNum(frmNum);
-        //copy data
-        frame->set_data(data, len);
+    //save CRC
+    void crc(const uint16_t crc) {
+        this->_crc = crc;
+    }
 
-        return frame;
+    //Get CRC value
+    const uint16_t get_crc() const {
+        return _crc;
+    }
+
+    //Return Flag Byte
+    const u_int8_t get_flag_byte() const {
+        return _fb;
+    }
+
+    void set_flag_byte(const uint8_t fb){
+        _fb = fb;
     }
 
     /**
-     * Compose ACK, NAK, RST type frame
+     * Set control byte
      */
-    static std::shared_ptr<UFrame> compose(const ftype ft, const bool nRdy = false, const uint8_t ackNum = 0){
-        assert(ft!=ftype::DATA);
-        assert(ft!=ftype::RSTACK);
-        assert(ft!=ftype::ERROR);
-
-        logger::log(logger::LLOG::DEBUG, "uframe", std::string(__func__) + " Type: " + std::to_string(ft));
-
-        std::shared_ptr<UFrame> frame = std::shared_ptr<UFrame>(new UFrame(ft));
-        if(nRdy)
-            frame->set_nRdy();
-        frame->set_ackNum(ackNum);
-
-        return frame;
+    void set_control_byte(const uint8_t cbyte){
+        _cb = cbyte;
     }
 
+    uint8_t control_byte() const {
+        return _cb;
+    }
 
     //Check id this frate has DATA type
     bool inline is_DATA() const {
-        return ((_frame[0] & ftype::NO_DATA) == 0);
+        return ((_cb & ftype::NO_DATA) == 0);
     }
 
     //Check if this frame has ACK type
     bool inline is_ACK() const {
-        return ((_frame[0] & 0xE0) == ftype::ACK);
+        return ((_cb & 0xE0) == ftype::ACK);
     }
 
     //Check if this frame has NAK type
     bool inline is_NAK() const {
-        return ((_frame[0] & 0xE0) == ftype::NAK);
+        return ((_cb & 0xE0) == ftype::NAK);
     }
 
     //Check if this frame has RST type
     bool inline is_RST() const {
-        return (_frame[0] == ftype::RST);
+        return (_cb == ftype::RST);
     }
 
     //Check if this frame has RSTACK type
     bool inline is_RSTACK() const {
-        return (_frame[0] == ftype::RSTACK);
+        return (_cb == ftype::RSTACK);
     }
 
     //Check if this frame has ERROR type
     bool inline is_ERROR() const {
-        return (_frame[0] == ftype::ERROR);
+        return (_cb == ftype::ERROR);
     }
 
-    const size_t len() const {
+    const size_t inline data_len() const {
         return _len;
+    }
+
+    //return frame length
+    // 1- control byte
+    // n - data (0-128)
+    // 2 - CRC
+    // 1 - Flag Byte
+    const inline size_t flen() const{
+        return (4+data_len());
     }
 
     //Get DATA frame sequence number
     uint8_t inline frmNum() const {
         assert(is_DATA());
-        return ((_frame[0] >> 4) & 0x07);
+
+        return ((_cb >> 4) & 0x07);
     }
 
     //Set DATA frame sequence number (0-7)
     void inline set_frmNum(const uint8_t seq_num){
         assert(seq_num<=7);
         assert(is_DATA());
-        _frame[0] |= (seq_num << 4);
+
+        _cb |= (seq_num << 4);
     }
 
     //Return pointer to frame data payload (nullptr for frames without data: ACK, NAk, RST)
     const uint8_t* data() const {
-        return (is_ACK() || is_NAK() || is_RST() ? nullptr : &_frame[1]);
+        return (is_ACK() || is_NAK() || is_RST() ? nullptr : _data);
     }
 
     //ackNum - acknowledges receipt of DATA frames up to, but not including, ackNum
     uint8_t ackNum() const {
         assert(is_DATA() || is_ACK() || is_NAK());
-        return (_frame[0] & 0x07);
+
+        return (_cb & 0x07);
     }
 
     void set_ackNum(const uint8_t ackNum){
         assert(ackNum<=7);
         assert(is_DATA() || is_ACK() || is_NAK());
-        _frame[0] |= (ackNum & 0x07);
+
+        _cb |= (ackNum & 0x07);
     }
 
     //reTx - set to 1 in a retransmitted DATA frame; 0 otherwise
     bool inline reTx() const {
         assert(is_DATA());
-        return ((_frame[0] & 0x08) != 0);
+
+        return ((_cb & 0x08) != 0);
     }
 
     void inline set_reTx(){
         assert(is_DATA());
-        _frame[0] |= 0x08;
+
+        _cb |= 0x08;
     }
 
     //nRdy – host sets to 1 if to inhibit the NCP from sending callbacks frames to the host (always 0 in frames sent by the NCP)
     void inline set_nRdy() {
         assert(is_ACK() || is_NAK());
-        _frame[0] |= 0x08;
+
+        _cb |= 0x08;
+    }
+
+    //Return frame type name
+    const std::string ftype2str()const {
+        if(is_DATA()) return std::string("DATA");
+        if(is_ACK()) return std::string("ACK");
+        if(is_NAK()) return std::string("NAK");
+        if(is_RST()) return std::string("RST");
+        if(is_RSTACK()) return std::string("RSTACK");
+        if(is_ERROR()) return std::string("ERROR");
+
+        return std::string("UNKNOWN");
+    }
+
+    //Print frame information
+    const std::string to_string() {
+        char buffer[256];
+
+        sprintf(buffer, "CB:0x%02X Type:%s, Len Full:%lu Data:%lu CRC:0x%02X FB:0x%02X", this->control_byte(), this->ftype2str().c_str(), this->flen(), this->data_len(), this->get_crc(), this->get_flag_byte());
+        std::string result = buffer;
+        result += "\n";
+
+        for(int i=0; i<this->data_len(); i++){
+            sprintf(buffer, "0x%02X ", _data[i]);
+            result += buffer;
+        }
+
+        return result;
+    }
+
+    /**
+     * Destructor
+     */
+    ~UFrame(){
+        logger::log(logger::LLOG::DEBUG, "uframe", std::string(__func__) + " Control byte: " + std::to_string(_cb));
     }
 
 protected:
     //
-    UFrame() : _len(0) {
-        memset(_frame, 0x00, sizeof(_frame));
+    UFrame() : _len(0), _cb(0x00) {
     }
 
     //
-    UFrame(const ftype ft) : _len(0) {
-        memset(_frame, 0x00, sizeof(_frame));
+    UFrame(const ftype ft) : _len(0), _cb(0x00) {
         set_type(ft);
     }
 
@@ -312,28 +253,47 @@ protected:
      */
     void set_type(const ftype ft){
         if(ft == ftype::DATA){
-            _frame[0] |= ~(ftype::NO_DATA);
+            _cb |= ~(ftype::NO_DATA);
         }
         else{
-            _frame[0] |= ft;
+            _cb |= ft;
         }
     }
 
     /**
-     * Copy data to frame body
+     * Load data to frame body
      */
     void set_data(const uint8_t* data, size_t len){
-        assert(len >= 3);
         assert(len <= 128);
-        memcpy(&_frame[1], data, len);
+
+        if(len > 0)
+            memcpy(&_data[0], data, len);
         _len = len;
     }
 
+    //Set error information
+    void set_error(uint16_t err, const std::string& err_str){
+        _error = err;
+        _error_str = err_str;
+    }
+
+    uint16_t error() const {
+        return _error;
+    }
+
+    const std::string error_ste() const {
+        return _error_str;
+    }
+
 private:
-    //Frame body
-    uint8_t _frame[132];
-    //Data length
-    size_t _len;
+    uint8_t _cb;            //Control byte
+    uint8_t _data[129];     //Frame data
+    size_t _len;            //Frame data length
+    uint16_t _crc;          //CRC
+    uint8_t _fb;            //Flag byte
+
+    uint16_t _error; //last error code
+    std::string _error_str; //last error description
 };
 
 }//namespace zb_uart
