@@ -33,19 +33,29 @@ const bool compare_buffers(const uint8_t* buf_one, const size_t len_one, const u
     return true;
 }
 
+struct FrameInfo {
+    zb_uart::ftype ft;
+    size_t data_len;
+    uint8_t data[133];
+};
+
+FrameInfo frames[] = {
+    {zb_uart::ftype::RST, 0, {0xC0, 0x38, 0xBC, 0x7E}},
+    {zb_uart::ftype::RSTACK, 2, {0xC1, 0x02, 0x02, 0x9B, 0x7B, 0x7E}}
+};
+
+
+
 /**
 *
 */
 int main (int argc, char* argv[])
 {
     bool success = true;
-    //etalon frame contents
-    std::uint8_t rst[4] = {0xC0, 0x38, 0xBC, 0x7E};
-
-    std::uint8_t data_2[4] = {0xC0, 0x00, 0x00, 0x00};
     std::uint8_t buffer[256];
     size_t esc_len = 0;
     zb_uart::uCRC crc;
+
 
     logger::log_init("/var/log/logs/uart_test");
 
@@ -56,20 +66,29 @@ int main (int argc, char* argv[])
     //Create DATA frame
     std::shared_ptr<zb_uart::ZBUart> uart = std::make_shared<zb_uart::ZBUart>(true);
 
-    std::shared_ptr<zb_uart::UFrame> out_rst = uart->compose(zb_uart::ftype::RST);
-    std::cout << "RST: " << std::endl << out_rst->to_string() << std::endl;
+    for(int i=0; i<2; i++){
+        memset(buffer, 0x00, sizeof(buffer));
 
-    size_t fr_len = uart->encode(out_rst, buffer, sizeof(buffer), true);
-    std::cout << print_buff(buffer, fr_len) << std::endl;
+        std::cout << "Test Frame type: " << zb_uart::UFrame::ftype2str(frames[i].ft) << std::endl;
+        std::cout << "Original: " << print_buff(frames[i].data, frames[i].data_len+4) << std::endl;
 
-    success = compare_buffers(rst, 4, buffer, fr_len);
+        //decode frame from byte array
+        std::shared_ptr<zb_uart::UFrame> fr = uart->parse(frames[i].data, frames[i].data_len+4);
+        if(fr){
+            std::cout << fr->to_string() << std::endl;
+            //encode frame back to byte array
+            size_t fr_len = uart->encode(fr, buffer, sizeof(buffer), false);
+            success = compare_buffers(frames[i].data, frames[i].data_len+4, buffer, fr_len);
+            if(!success){
+                std::cout << "Encoded: " << print_buff(buffer, fr_len) << std::endl;
+            }
+        }
+        else{
+            std::cout << zb_uart::UFrame::ftype2str(frames[i].ft) << " Decode error" << std::endl;
+            success = false;
+        }
 
-    std::shared_ptr<zb_uart::UFrame> in_ufr = uart->parse(buffer, fr_len);
-    if(in_ufr)
-        std::cout << "RST: Decoded Frame " << std::endl << in_ufr->to_string() << std::endl;
-    else {
-        std::cout << "Decode error" << std::endl;
-        success = false;
+        fr.reset();
     }
 
     std::cout << "Finished " << success << std::endl;

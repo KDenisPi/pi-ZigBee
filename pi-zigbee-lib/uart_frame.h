@@ -203,23 +203,40 @@ public:
         _cb |= 0x08;
     }
 
+
     //Return frame type name
-    const std::string ftype2str()const {
-        if(is_DATA()) return std::string("DATA");
-        if(is_ACK()) return std::string("ACK");
-        if(is_NAK()) return std::string("NAK");
-        if(is_RST()) return std::string("RST");
-        if(is_RSTACK()) return std::string("RSTACK");
-        if(is_ERROR()) return std::string("ERROR");
+    const std::string get_type()const {
+        if(is_DATA()) return ftype2str(ftype::DATA);
+        if(is_ACK()) return ftype2str(ftype::ACK);
+        if(is_NAK()) return ftype2str(ftype::NAK);
+        if(is_RST()) return ftype2str(ftype::RST);
+        if(is_RSTACK()) return ftype2str(ftype::RSTACK);
+        if(is_ERROR()) return ftype2str(ftype::ERROR);
 
         return std::string("UNKNOWN");
     }
+
+
+    //Return frame type name
+    static const std::string ftype2str(const ftype ft){
+        switch(ft){
+            case ftype::ACK: return std::string("ACK");
+            case ftype::DATA: return std::string("DATA");
+            case ftype::ERROR: return std::string("ERROR");
+            case ftype::NAK: return std::string("NAK");
+            case ftype::RST: return std::string("RST");
+            case ftype::RSTACK: return std::string("RSTACK");
+        }
+
+        return std::string("UNKNOWN");
+    }
+
 
     //Print frame information
     const std::string to_string() {
         char buffer[256];
 
-        sprintf(buffer, "CB:0x%02X Type:%s, Len Full:%lu Data:%lu CRC:0x%02X FB:0x%02X", this->control_byte(), this->ftype2str().c_str(), this->flen(), this->data_len(), this->get_crc(), this->get_flag_byte());
+        sprintf(buffer, "CB:0x%02X Type:%s, Len Full:%lu Data:%lu CRC:0x%02X FB:0x%02X", this->control_byte(), this->get_type().c_str(), this->flen(), this->data_len(), this->get_crc(), this->get_flag_byte());
         std::string result = buffer;
         result += "\n";
 
