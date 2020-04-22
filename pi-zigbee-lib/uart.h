@@ -35,10 +35,24 @@ public:
     ZBUart_Info() : _frmNum(7), _ackNum(0), _fd(-1) {}
     ~ZBUart_Info() {}
 
-    uint8_t frmNum(){
+    /**
+     * 5.2 Acknowledgements and Frame Numbers
+    The ackNum field in DATA, ACK, and NAK frames acknowledges received DATA frames. Note that ackNum is the number of the next
+    frame the receiver expects and it is one greater than the last frame received.
+    The NCP discards any frames it receives that have an invalid ackNum value. A valid ackNum is a number between the last received
+    ackNum and the last transmitted frmNum plus one, where both limits are inclusive.
+    The maximum number of frames a sender can transmit without them being acknowledged is the window size, which is specified by the
+    parameter TX_K. When a sender has TX_K unacknowledged frames, it may not send any more, although it may retransmit frames if
+    needed.
+    */
+    uint8_t get_next_frmNum(){
         _frmNum++;
         if(_frmNum>7) _frmNum = 0;
 
+        return _frmNum;
+    }
+
+    uint8_t get_current_frmNum() const {
         return _frmNum;
     }
 
@@ -46,7 +60,14 @@ public:
         _ackNum = ackNum;
     }
 
-    uint8_t ackNum() const {
+    uint8_t get_current_ackNum() const {
+        return _ackNum;
+    }
+
+    uint8_t get_next_ackNum(){
+        _ackNum++;
+        if(_ackNum>7) _ackNum = 0;
+
         return _ackNum;
     }
 
@@ -200,7 +221,7 @@ public:
      * Parse received data.
      * If data is incorrect then return emty object
      */
-    std::shared_ptr<UFrame> parse(const uint8_t* buffer, const size_t len){
+    std::shared_ptr<UFrame> parse(const uint8_t* buffer, const size_t len, const bool randm = false){
         logger::log(logger::LLOG::DEBUG, "uart", std::string(__func__) + " Reived buffer with length: " + std::to_string(len));
 
         bool result = true;
@@ -254,7 +275,7 @@ public:
             logger::log(logger::LLOG::ERROR, "uart", std::string(__func__) + " Incorrect frame length (DATA)");
             result = false;
         }
-        else if((frame->is_ACK() || frame->is_NAK()) && len != 5){
+        else if((frame->is_ACK() || frame->is_NAK()) && len != 4){
             logger::log(logger::LLOG::ERROR, "uart", std::string(__func__) + " Incorrect frame length (ACK, NAK)");
             result = false;
         }
@@ -268,6 +289,11 @@ public:
                 logger::log(logger::LLOG::ERROR, "uart", std::string(__func__) + " CRC Error");
                 result = false;
             }
+        }
+
+        //Un-randomize
+        if(randm && frame->data_len() > 0){
+            randomize(frame->raw_data(), frame->data_len());
         }
 
         /**
@@ -319,8 +345,11 @@ public:
             If a DATA frame is retransmitted, the process is the same except for step 1. The frmNum field retains the same value as when the
             frame was first transmitted, and the reTx bit is set. The ackNum is the current value as in normal transmission.
             Other frame types omit step 2 and have differently formatted Control Bytes, but otherwise they use the same process.
+
+
+            Note: Skip Stuffing used for debug purposes only
      */
-    size_t encode(const std::shared_ptr<UFrame> frame, uint8_t* out_buff, const size_t len, const bool randm = false) const {
+    size_t encode(const std::shared_ptr<UFrame> frame, uint8_t* out_buff, const size_t len, const bool randm = false, const bool skip_stuffing = false) const {
         size_t out_len = 0, i = 0;
         uint8_t tmp_buff[133];
         memset(tmp_buff, 0x00, sizeof(tmp_buff));
@@ -328,9 +357,9 @@ public:
         /*
          4.1.0 for DATA
         */
-       if(frame->is_DATA()){
-           frame->set_frmNum(_info->frmNum());
-           frame->set_ackNum(_info->ackNum());
+       if(frame->is_DATA() && !_debug){
+           frame->set_frmNum(_info->get_next_frmNum());
+           frame->set_ackNum(_info->get_next_ackNum());
        }
 
         //4.1.1 Set Control byte
@@ -357,21 +386,27 @@ public:
         //
 
         //4.1.4 Byte Stuffing  TODO: Improve buffer size check
-        int out_len_mod = 0;
-        for(i=0; i<out_len &&out_len_mod<(len-2); i++){
-            for(const auto vl : spec){
-                if(vl == tmp_buff[i]){
-                    out_buff[out_len_mod++] = UFrame::BEscape;
-                    out_buff[out_len_mod++] = stuffing(vl);
-                    break;
-                }
-                if(ashrvd::CancelByte== vl){
-                    out_buff[out_len_mod++] = tmp_buff[i];
+        if(_debug && skip_stuffing){
+            memcpy(out_buff, tmp_buff, out_len);
+        }
+        else{
+            int out_len_mod = 0;
+            for(i=0; i<out_len &&out_len_mod<(len-2); i++){
+                for(const auto vl : spec){
+                    if(vl == tmp_buff[i]){
+                        out_buff[out_len_mod++] = UFrame::BEscape;
+                        out_buff[out_len_mod++] = stuffing(vl);
+                        break;
+                    }
+                    if(ashrvd::CancelByte== vl){
+                        out_buff[out_len_mod++] = tmp_buff[i];
+                    }
                 }
             }
+
+            out_len = out_len_mod;
         }
 
-        out_len = out_len_mod;
 
         //4.1.5 Flag Byte
         out_buff[out_len++] = ashrvd::FlagByte;
@@ -389,10 +424,11 @@ public:
      */
     static const uint8_t Rand0 = 0x42;
 
-    void randomize(uint8_t* buff, const size_t len) const {
+    static void randomize(uint8_t* buff, const size_t len){
         uint8_t rand = Rand0;
         for(int i = 0; i < len; i++){
-            buff[i] ^= rand;
+            uint8_t b = buff[i] ^ rand;
+            buff[i] = b;
             if((rand%2)==0)
                 rand = (rand >>1);
             else

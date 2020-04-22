@@ -203,6 +203,12 @@ public:
         _cb |= 0x08;
     }
 
+    const uint8_t nRdy() const {
+        assert(is_ACK() || is_NAK());
+
+        return ((_cb >> 3) & 0x01);
+    }
+
 
     //Return frame type name
     const std::string get_type()const {
@@ -238,7 +244,17 @@ public:
 
         sprintf(buffer, "CB:0x%02X Type:%s, Len Full:%lu Data:%lu CRC:0x%02X FB:0x%02X", this->control_byte(), this->get_type().c_str(), this->flen(), this->data_len(), this->get_crc(), this->get_flag_byte());
         std::string result = buffer;
-        result += "\n";
+        if(is_DATA()){
+            sprintf(buffer, " ftmNum:%02d reTx:%02d ackNum: %02d", this->frmNum(), this->reTx(), this->ackNum());
+            result += buffer;
+        }
+        else if(is_ACK() || is_NAK()){
+            sprintf(buffer, " nRdy:%02d ackNum: %02d", this->nRdy(), this->ackNum());
+            result += buffer;
+        }
+
+        if(this->data_len() > 0)
+            result += "\nDATA: ";
 
         for(int i=0; i<this->data_len(); i++){
             sprintf(buffer, "0x%02X ", _data[i]);
@@ -287,6 +303,12 @@ protected:
             memcpy(&_data[0], data, len);
         _len = len;
     }
+
+    //Return pointer to frame data payload (nullptr for frames without data: ACK, NAk, RST)
+    uint8_t* raw_data() {
+        return _data;
+    }
+
 
     //Set error information
     void set_error(uint16_t err, const std::string& err_str){
