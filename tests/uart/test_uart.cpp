@@ -12,16 +12,24 @@ using namespace std;
 */
 int main (int argc, char* argv[])
 {
-    bool success = true;
-    //logger::log_init("/var/log/logs/zigbee_log");
+    bool success = false;
+    logger::log_init("/var/log/logs/zigbee_log");
 
-    //std::shared_ptr<zb_uart::ZBUart> uart = std::make_shared<zb_uart::ZBUart>();
-    //uart->connect("/dev/ttyUSB1", 57600);
-    //uart.reset();
+    std::shared_ptr<zb_uart::ZBUart> uart = std::make_shared<zb_uart::ZBUart>(true);
+    if(uart->connect("/dev/ttyUSB1", 57600)){
+        if(uart->init_device(3)){
+            success = true;
+        }
+        else{
+            std::cout << "Device initialization failed" << std::endl;
+        }
+    }
+    else{
+        std::cout << "Connection failed" << std::endl;
+    }
 
-    std::cout << "Alina privet!!! " << std::endl;
+    uart.reset();
 
-
-    //std::cout << "Finished " << success << std::endl;
+    std::cout << "Finished " << success << std::endl;
     exit( (success ? EXIT_SUCCESS : EXIT_FAILURE));
 }

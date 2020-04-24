@@ -252,6 +252,11 @@ public:
             sprintf(buffer, " nRdy:%02d ackNum: %02d", this->nRdy(), this->ackNum());
             result += buffer;
         }
+        else if(is_RSTACK() && data_len()==2)
+        {
+            sprintf(buffer, " Version:%02X Reset code:%02X", _data[0], _data[1]);
+            result += buffer;
+        }
 
         if(this->data_len() > 0)
             result += "\nDATA: ";

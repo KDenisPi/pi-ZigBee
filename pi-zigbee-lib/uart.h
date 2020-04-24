@@ -96,6 +96,12 @@ protected:
      */
     bool _connected;    //Is connected state
 
+    int _stopBits = 1;
+    bool _rts_cts_flow_ctrl = false;
+    bool _ixon = true;
+    bool _ixoff = true;
+    uint8_t _read_min = 1;
+    uint8_t _read_timeout = 1;  //tenths of a second
 };
 
 /**
@@ -137,6 +143,7 @@ public:
             return false;
         }
 
+
         /**
          * Configure speed
          */
@@ -146,16 +153,73 @@ public:
             logger::log(logger::LLOG::ERROR, "uart", std::string(__func__) + " Could not get device attributes: " + std::to_string(errno));
         }
         else{
-            if (cfsetospeed(&tio, B57600)  < 0){
+            if (cfsetospeed(&tio, B57600)<0 || cfsetispeed(&tio, B57600)<0){
                 logger::log(logger::LLOG::ERROR, "uart", std::string(__func__) + " Could not set speed: " + std::to_string(errno));
             }
             else{
-                if (tcsetattr(_info->_fd, TCSAFLUSH, &tio) < 0){
+                tio.c_cflag |= CLOCAL;               // ignore modem inputs
+                tio.c_cflag |= CREAD;                // receive enable (a legacy flag)
+                tio.c_cflag &= ~CSIZE;               // 8 data bits
+                tio.c_cflag |= CS8;
+                tio.c_cflag &= ~PARENB;              // no parity
+
+                if (_info->_stopBits == 1) { //0 - 1-bit
+                    tio.c_cflag &= ~CSTOPB;
+                } else {
+                    tio.c_cflag |= CSTOPB; //1 - 2-bits
+                }
+
+                //Enable RTS/CTS (hardware) flow control
+                if (_info->_rts_cts_flow_ctrl) {
+                    tio.c_cflag |= CRTSCTS;
+                } else {
+                    tio.c_cflag &= ~CRTSCTS;
+                }
+
+                tio.c_iflag &= ~( BRKINT | INLCR | IGNCR | ICRNL | INPCK |
+                                            ISTRIP | IMAXBEL | IXON | IXOFF | IXANY );
+
+                //Enable start/stop output flow control
+                if (_info->_ixon) {
+                    tio.c_iflag |= IXON;
+                } else {
+                    tio.c_iflag &= ~IXON;
+                }
+
+                //Enable start/stop input flow control
+                if (_info->_ixoff) {
+                    tio.c_iflag |= IXOFF;          // SW flow control
+                } else {
+                    tio.c_iflag &= ~IXOFF;
+                }
+
+                tio.c_lflag &= ~(ICANON | ECHO | IEXTEN | ISIG ); // raw input
+                tio.c_oflag &= ~OPOST;               // raw output
+
+                memset(tio.c_cc, _POSIX_VDISABLE, NCCS);  // disable all control chars
+                tio.c_cc[VSTART] = CSTART;           // define XON and XOFF
+                tio.c_cc[VSTOP] = CSTOP;
+
+                /**
+                 * The TIME element (indexed using the constant VTIME ) specifies a timeout value in tenths of a second.
+                 * The MIN element (indexed using VMIN ) specifies the minimum number of bytes to be read.
+                 *
+                 * MIN == 0, TIME == 0 (polling read)
+                 * MIN > 0, TIME == 0 (blocking read)
+                 * MIN == 0, TIME > 0 (read with timeout)
+                 * MIN > 0, TIME > 0 (read with interbyte timeout)
+                 */
+                tio.c_cc[VMIN] = _info->_read_min;
+                tio.c_cc[VTIME] = _info->_read_timeout;
+
+                if (tcsetattr(_info->_fd, TCSAFLUSH, &tio)<0){
                     logger::log(logger::LLOG::ERROR, "uart", std::string(__func__) + " Could not set attribute: " + std::to_string(errno));
                 }
                 else{
                     result = true;
                     logger::log(logger::LLOG::DEBUG, "uart", std::string(__func__) + " UART configured");
+
+                    get_info();
                 }
             }
         }
@@ -163,8 +227,6 @@ public:
        if(!result){
            disconnect();
        }
-       else
-           get_info();
 
         return result;
     }
@@ -464,7 +526,7 @@ public:
      */
     static void worker(ZBUart* p_uart){
         uint8_t buff[255];
-        std::shared_ptr<ZBUart_Info> info = p_uart->get_info();
+        std::shared_ptr<ZBUart_Info> info = p_uart->get_session_info();
 
         logger::log(logger::LLOG::DEBUG, "uart", std::string(__func__) + "Worker started.");
 
@@ -500,18 +562,27 @@ public:
         bool result = false;
         int attempt_cnt = 0;
 
+        if(!_info->is_started()){
+            logger::log(logger::LLOG::ERROR, "uart", std::string(__func__) + " No connection to device");
+            return false;
+        }
+
         //create RST frame
         std::shared_ptr<UFrame> fr_rst = compose(ftype::RST);
         size_t wr_len = encode(fr_rst, buff, sizeof(buff), true);
 
+        if(_debug){
+            logger::log(logger::LLOG::DEBUG, "uart", std::string(__func__) + " RST: " + print_buff(buff, wr_len));
+        }
+
         while(1){
             attempt_cnt++;
-            if(attempt_cnt>=attempts){
+            if(attempt_cnt>attempts){
                 break;
             }
 
             res = write_data(buff, wr_len);
-            if(!res){
+            if(res != 0){
                 logger::log(logger::LLOG::DEBUG, "uart", std::string(__func__) + " Write failed");
                 break;
             }
@@ -520,6 +591,9 @@ public:
             res = read_data(buff, b_len);
             if(res!=0){ //error
                 if(res == ETIME){ //Timeout - resend RST frame
+                    if(_debug){
+                        logger::log(logger::LLOG::DEBUG, "uart", std::string(__func__) + " Timeout ");
+                    }
                     continue;
                 }
                 break;
@@ -528,13 +602,22 @@ public:
                 if(b_len==0){
                     continue;
                 }
+
+                if(_debug){
+                    logger::log(logger::LLOG::DEBUG, "uart", std::string(__func__) + " RSTACK: " + print_buff(buff, b_len));
+                }
+
                 std::shared_ptr<UFrame> fr_rsv = parse(buff, b_len);
                 if(fr_rsv){
                     logger::log(logger::LLOG::DEBUG, "uart", std::string(__func__) + " Received: " + fr_rsv->to_string());
 
-                    if(fr_rsv->is_RSTACK()){
-                        //success
+                    if(fr_rsv->is_RSTACK()){ //success
+                        result = true;
+                        break;
                     }
+                }
+                else{
+                    break;
                 }
 
             }
@@ -564,42 +647,26 @@ public:
                 logger::log(logger::LLOG::INFO, "uart", std::string(__func__) + " Wrote less Len: " + std::to_string(len) + " Real: " + std::to_string(res));
             }
         }
+
+        if(_debug){
+            logger::log(logger::LLOG::DEBUG, "uart", std::string(__func__) + " Wrote bytes: " + std::to_string(len) + " Res: " + std::to_string(res));
+        }
+
         return 0;
     }
 
     /**
      * Read data from device
      */
-    int read_data(uint8_t* buffer, size_t& len, int tmout = 4){
-        fd_set fd_read;
-        struct timeval timeout;
-        int fdnm = 1;
+    int read_data(uint8_t* buffer, size_t& len){
+        uint8_t r_buff[1];
+        volatile size_t read_bytes = 0;
 
-        size_t buff_len = len;
-        while(1){
-            FD_ZERO(&fd_read);
-            FD_SET(_info->_fd, &fd_read);
+        memset(buffer, 0x00, len);
 
-            timeout.tv_sec = tmout;
-            timeout.tv_usec = 0;
+        while(read_bytes<len){
 
-            int res = select(fdnm, &fd_read, NULL, NULL, &timeout);
-            if(res == -1){
-                int err = errno;
-                logger::log(logger::LLOG::ERROR, "uart", std::string(__func__) + " Select error: " + std::to_string(err));
-                if(err == EBADF){
-                    //close connection and try reconnect again
-                    disconnect();
-                }
-                return err;
-            }
-
-            //timeout. Generally speaking select does not return such code
-            if(res == 0){
-                return ETIME;
-            }
-
-            res = read(_info->_fd, buffer, buff_len);
+            int res = read(_info->_fd, r_buff, 1);
             if(res == -1){
                 int err = errno;
                 logger::log(logger::LLOG::ERROR, "uart", std::string(__func__) + " Read error: " + std::to_string(err));
@@ -610,32 +677,37 @@ public:
                 return err;
             }
 
+            if(res==0){ //timeout
+                len = read_bytes;
+                return 0;
+            }
+
             //check do we read end of frame already
             if(res > 0){
-                logger::log(logger::LLOG::DEBUG, "uart", std::string(__func__) +  " " + print_buff(buffer, res));
 
-                for(int i=0; i<res; i++){
-                    //if we received frame finished by Cancel or Subst byte - ignore it
-                    if(ashrvd::CancelByte == buffer[i] || ashrvd::SubstByte == buffer[i]){
-                        logger::log(logger::LLOG::INFO, "uart", std::string(__func__) + " Cancel or Subst detected Pos: " + std::to_string(i));
-                        //TODO: process not the end of chunk
-                        len = 0;
-                        break;
+                //if we received frame finished by Cancel or Subst byte - ignore it
+                if(ashrvd::CancelByte == r_buff[0] || ashrvd::SubstByte == r_buff[0]){
+                    logger::log(logger::LLOG::INFO, "uart", std::string(__func__) + " Cancel or Subst detected at Pos: " + std::to_string(read_bytes));
+                    //TODO: process not the end of chunk
+                    read_bytes = 0;
+                }
+                else if(ashrvd::FlagByte == r_buff[0]){ //frame end
+                    buffer[read_bytes] = r_buff[0];
+                    read_bytes++;
+                    len = read_bytes;
+                    if(_debug){
+                        logger::log(logger::LLOG::DEBUG, "uart", std::string(__func__) +  " " + print_buff(buffer, len));
+                        std::cout << "Byte " << read_bytes << " " << print_buff(buffer, len) << std::endl;
                     }
-                    else if(ashrvd::FlagByte == buffer[i]){
-                        len = (i+1);
-                        break;
-                    }
 
-                    //no frame end on this data chunk
-                    assert(false);
-
+                    return 0;
+                }
+                else{
+                    //save received byte
+                    buffer[read_bytes] = r_buff[0];
+                    read_bytes++;
                 }
             }
-            else
-                len = 0;
-
-            break;
         }
 
         return 0;
@@ -685,6 +757,12 @@ private:
         logger::log(logger::LLOG::INFO, "uart", std::string(__func__) + " TABDLY " + std::to_string(tio.c_oflag&TABDLY));
 
         logger::log(logger::LLOG::INFO, "uart", std::string(__func__) + " Control flags: " + std::to_string(tio.c_cflag));
+        logger::log(logger::LLOG::INFO, "uart", std::string(__func__) + " CRTSCTS " + std::to_string(tio.c_cflag&CRTSCTS));
+        logger::log(logger::LLOG::INFO, "uart", std::string(__func__) + " CSIZE   " + std::to_string(tio.c_cflag&CSIZE));
+        logger::log(logger::LLOG::INFO, "uart", std::string(__func__) + " CSTOPB  " + std::to_string(tio.c_cflag&CSTOPB));
+        logger::log(logger::LLOG::INFO, "uart", std::string(__func__) + " PARENB  " + std::to_string(tio.c_cflag&PARENB));
+
+
         logger::log(logger::LLOG::INFO, "uart", std::string(__func__) + " Local flags: " + std::to_string(tio.c_lflag));
 
         //Print speed
@@ -698,7 +776,7 @@ private:
     /**
      * Get session information
      */
-    std::shared_ptr<ZBUart_Info> get_info() {
+    std::shared_ptr<ZBUart_Info> get_session_info() {
         return _info;
     }
 
