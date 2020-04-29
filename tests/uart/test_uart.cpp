@@ -4,6 +4,7 @@
 
 #include "logger.h"
 #include "uart.h"
+#include "ezsp.h"
 
 using namespace std;
 
@@ -14,6 +15,9 @@ int main (int argc, char* argv[])
 {
     bool success = false;
     logger::log_init("/var/log/logs/zigbee_log");
+
+    zb_ezsp::ver_req ver;
+    zb_ezsp::EFrame<zb_ezsp::ver_req> ef_ver(ver);
 
     std::shared_ptr<zb_uart::ZBUart> uart = std::make_shared<zb_uart::ZBUart>(true);
     if(uart->connect("/dev/ttyUSB1", 57600)){
