@@ -8,20 +8,63 @@
 
 using namespace std;
 
+const std::string print_buff(const std::uint8_t* buff, size_t len) {
+    std::string result;
+    char dec[10];
+    for(int i=0; i<len; i++){
+        sprintf(dec, "0x%02X ", buff[i]);
+        result += dec;
+    }
+    return result;
+}
+
 /**
 *
 */
 int main (int argc, char* argv[])
 {
     bool success = false;
+    uint8_t w_buff[140], r_buff[140];
+    zb_ezsp::ver_req ver;
+    ver._ver = 8;
+
     logger::log_init("/var/log/logs/zigbee_log");
 
-    zb_ezsp::ver_req ver;
-    zb_ezsp::EFrame<zb_ezsp::ver_req> ef_ver(ver);
+    std::shared_ptr<zb_ezsp::EFrame<zb_ezsp::ver_req>> ef_ver = std::make_shared<zb_ezsp::EFrame<zb_ezsp::ver_req>>(zb_ezsp::EId::ID_version, ver);
+    std::cout << ef_ver->to_string() << std::endl;
 
     std::shared_ptr<zb_uart::ZBUart> uart = std::make_shared<zb_uart::ZBUart>(true);
     if(uart->connect("/dev/ttyUSB1", 57600)){
         if(uart->init_device(3)){
+
+            memset(w_buff, 0x00, sizeof(w_buff));
+            //w_buff[0] = 0x00;
+            //w_buff[1] = 0x00;
+            //w_buff[2] = 0x00;
+            //w_buff[3] = 0x02;
+            size_t wr_len = ef_ver->put(w_buff, 0);
+            std::cout << print_buff(w_buff, wr_len) << std::endl;
+
+            std::shared_ptr<zb_uart::UFrame> fr = uart->compose_data(w_buff, wr_len);
+            std::cout << fr->to_string() << std::endl;
+            memset(w_buff, 0x00, sizeof(w_buff));
+            wr_len = uart->encode(fr, w_buff, sizeof(w_buff), false);
+            std::cout << print_buff(w_buff, wr_len) << std::endl;
+
+            int res = uart->write_data(w_buff, wr_len);
+            std::cout << "Write: " << res << std::endl;
+
+            memset(r_buff, 0x00, sizeof(r_buff));
+            size_t rd_len = sizeof(r_buff);
+            res = uart->read_data(r_buff, rd_len);
+            std::cout << "Read: " << res << " Bytes: " << rd_len << std::endl;
+
+            std::cout << print_buff(r_buff, rd_len) << std::endl;
+            std::shared_ptr<zb_uart::UFrame> fr_rsv = uart->parse(r_buff, rd_len, false);
+            if(fr_rsv){
+                std::cout << fr_rsv->to_string() << std::endl;
+            }
+
             success = true;
         }
         else{

@@ -296,6 +296,10 @@ public:
         uint8_t tmp_buff[140];
         size_t r_len = decode(buffer, len, tmp_buff, sizeof(tmp_buff));
 
+        if(_debug){
+            logger::log(logger::LLOG::DEBUG, "uart", std::string(__func__) + " " + print_buff(tmp_buff, r_len));
+        }
+
         //incorrect length or error data decoding
         if(r_len<4 || r_len>133){
             logger::log(logger::LLOG::ERROR, "uart", std::string(__func__) + " Incorrect frame length or decoding error");
@@ -329,15 +333,15 @@ public:
             logger::log(logger::LLOG::ERROR, "uart", std::string(__func__) + " Incorrect frame type (RST)");
             result = false;
         }
-        else if((frame->is_RSTACK() || frame->is_ERROR()) && len != 6){
+        else if((frame->is_RSTACK() || frame->is_ERROR()) && r_len != 6){
             logger::log(logger::LLOG::ERROR, "uart", std::string(__func__) + " Incorrect frame length (RSTACK, ERROR)");
             result = false;
         }
-        else if(frame->is_DATA() && len < 7){
+        else if(frame->is_DATA() && r_len < 7){
             logger::log(logger::LLOG::ERROR, "uart", std::string(__func__) + " Incorrect frame length (DATA)");
             result = false;
         }
-        else if((frame->is_ACK() || frame->is_NAK()) && len != 4){
+        else if((frame->is_ACK() || frame->is_NAK()) && r_len != 4){
             logger::log(logger::LLOG::ERROR, "uart", std::string(__func__) + " Incorrect frame length (ACK, NAK)");
             result = false;
         }
@@ -557,7 +561,7 @@ public:
      * Initialize device
      */
     bool init_device(const int attempts = 3) {
-        uint8_t buff[255];
+        uint8_t wr_buff[255], rd_buff[255];
         int fdnm, res;
         bool result = false;
         int attempt_cnt = 0;
@@ -569,10 +573,16 @@ public:
 
         //create RST frame
         std::shared_ptr<UFrame> fr_rst = compose(ftype::RST);
-        size_t wr_len = encode(fr_rst, buff, sizeof(buff), true);
+        size_t wr_len = encode(fr_rst, wr_buff, sizeof(wr_buff), true);
 
         if(_debug){
-            logger::log(logger::LLOG::DEBUG, "uart", std::string(__func__) + " RST: " + print_buff(buff, wr_len));
+            logger::log(logger::LLOG::DEBUG, "uart", std::string(__func__) + " RST: " + print_buff(wr_buff, wr_len));
+        }
+
+        res = write_data(wr_buff, wr_len);
+        if(res != 0){
+            logger::log(logger::LLOG::DEBUG, "uart", std::string(__func__) + " Write failed");
+            return result;
         }
 
         while(1){
@@ -581,33 +591,37 @@ public:
                 break;
             }
 
-            res = write_data(buff, wr_len);
-            if(res != 0){
-                logger::log(logger::LLOG::DEBUG, "uart", std::string(__func__) + " Write failed");
-                break;
-            }
-
-            size_t b_len = sizeof(buff);
-            res = read_data(buff, b_len);
+            size_t b_len = sizeof(rd_buff);
+            res = read_data(rd_buff, b_len);
             if(res!=0){ //error
                 if(res == ETIME){ //Timeout - resend RST frame
                     if(_debug){
                         logger::log(logger::LLOG::DEBUG, "uart", std::string(__func__) + " Timeout ");
                     }
-                    continue;
+
+                    //resend RST
+                    res = write_data(wr_buff, wr_len);
+                    if(res != 0){
+                        logger::log(logger::LLOG::DEBUG, "uart", std::string(__func__) + " Write failed");
+                        break;
+                    }
+
+                    continue; //try to read respose again
                 }
-                break;
+
+                break; //if any other error - break processing
             }
-            else{ //read some data finished by FlagByte or other end frame byte
+            else{
+                //read some data finished by FlagByte or other end frame byte (Ignore this data)
                 if(b_len==0){
                     continue;
                 }
 
                 if(_debug){
-                    logger::log(logger::LLOG::DEBUG, "uart", std::string(__func__) + " RSTACK: " + print_buff(buff, b_len));
+                    logger::log(logger::LLOG::DEBUG, "uart", std::string(__func__) + " RSTACK: " + print_buff(rd_buff, b_len));
                 }
 
-                std::shared_ptr<UFrame> fr_rsv = parse(buff, b_len);
+                std::shared_ptr<UFrame> fr_rsv = parse(rd_buff, b_len);
                 if(fr_rsv){
                     logger::log(logger::LLOG::DEBUG, "uart", std::string(__func__) + " Received: " + fr_rsv->to_string());
 
@@ -616,10 +630,8 @@ public:
                         break;
                     }
                 }
-                else{
-                    break;
-                }
 
+                //we read something but there is not RSTACK - try again
             }
 
         }
@@ -684,6 +696,9 @@ public:
 
             //check do we read end of frame already
             if(res > 0){
+
+                std::cout << "Byte " << read_bytes << " Res: " << res << " " << std::hex << (uint16_t)r_buff[0] << std::endl;
+
 
                 //if we received frame finished by Cancel or Subst byte - ignore it
                 if(ashrvd::CancelByte == r_buff[0] || ashrvd::SubstByte == r_buff[0]){

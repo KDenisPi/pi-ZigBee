@@ -10,6 +10,9 @@
 #define PI_ZIGBEE_LIB_EZSP_FRAME_H_
 
 #include <cstdint>
+#include <string>
+
+#include "ezsp_defs.h"
 #include "ezsp_util.h"
 
 namespace zb_ezsp {
@@ -22,21 +25,7 @@ using ver_req = struct  __attribute__((packed, aligned(1))) ezsp_req_ver {
         return *this;
     }
 
-    size_t put(uint8_t* buff, size_t pos){
-        return Conv::put(buff, pos, _ver);
-    }
-
-    void get(const uint8_t* buff, size_t& pos){
-        _ver = Conv::get_byte(buff, pos);
-    }
 };
-
-#define VER_8 1
-#ifdef VER_8
-using id_type = uint16_t;
-#else
-using id_type = uint8_t;
-#endif
 
 using EType = enum EFrameType : uint16_t {
     Command = 0x0000,
@@ -82,6 +71,8 @@ using EFormat = enum EFrame_Format_Version : uint16_t {
 uint16_t EFrame_Padding_Enabled = (1 << 14);
 uint16_t EFrame_Security_Enabled = (1 << 15);
 
+uint16_t Mask = 0x0003;
+
 template <typename T>
 class EFrame {
 public:
@@ -91,12 +82,28 @@ public:
     struct  __attribute__((packed, aligned(1))) FrameData{
         uint8_t _seq;   //Sequence
         uint16_t _ctrl;  //Control byte
-        id_type _id;    //Frame ID
+        EId _id;    //Frame ID
         T _parm;        //Frame parameters payload
     } _data;
 
     constexpr const size_t length() const {
         return sizeof(FrameData);
+    }
+
+    const uint8_t seq() const{
+        return _data._seq;
+    }
+
+    void set_seq(const uint8_t seq){
+        _data._seq = seq;
+    }
+
+    const EId id() const {
+        return _data._id;
+    }
+
+    void set_id(const EId id){
+        _data._id = id;
     }
 
     void set_sleep_mode(const ESleepMode sm){
@@ -105,7 +112,7 @@ public:
 
     const ESleepMode sleep_mode() const {
         assert((_data._ctrl&EType::Response)==0);
-        return (_data._ctrl&0x0003);
+        return (ESleepMode)(_data._ctrl&Mask);
     }
 
     bool is_respose() const {
@@ -125,19 +132,20 @@ public:
     }
 
     ECallbackType callback_type() const {
-        return ((_data._ctrl >> 3) & 0x0003);
+        uint16_t res = (_data._ctrl >> 3);
+        return (ECallbackType)(res&Mask);
     }
 
     uint16_t network_index() const {
-        return ((_data._ctrl >> 5) & 0x0003);
+        return ((_data._ctrl >> 5) & Mask);
     }
 
     void set_network_index(const uint16_t nidx){
-        _data._ctrl |= ((nidx&0x0003) << 5);
+        _data._ctrl |= ((nidx&Mask) << 5);
     }
 
     EFormat frame_format_ver() const {
-        return (_data._ctrl & (0x0003<<8));
+        return (EFormat)(_data._ctrl & (Mask<<8));
     }
 
     bool is_padding_enabled() const {
@@ -154,8 +162,8 @@ public:
     size_t put(uint8_t* buff, size_t pos){
         pos = Conv::put(buff, pos, _data._seq);
         pos = Conv::put(buff, pos, _data._ctrl);
-        pos = Conv::put(buff, pos, _data._id);
-        pos = _data._parm.put(buff, pos);
+        pos = Conv::put(buff, pos, (id_type)_data._id);
+        pos = put(_data._parm, buff, pos);
         return pos;
     }
 
@@ -168,14 +176,23 @@ public:
         _data._seq = Conv::get_byte(buff, pos);
         _data._ctrl = Conv::get_short(buff, pos);
         _data._id = Conv::get_short(buff, pos);
-        _data._parm.get(buff, pos);
+        get(_data._parm, buff, pos);
+    }
+
+    size_t put(ver_req& param, uint8_t* buff, size_t pos){
+        return Conv::put(buff, pos, param._ver);
+    }
+
+    void get(ver_req& param, uint8_t* buff, size_t pos){
+        param._ver = Conv::get_byte(buff, pos);
     }
 
 public:
     /**
      * Default constructor for a new Frame creating
      */
-    EFrame(const T& params) {
+    EFrame(const EId id, const T& params) {
+        set_id(id);
         this->_data._parm = params;
     }
 
@@ -192,14 +209,18 @@ public:
 
     const std::string to_string() const {
         std::string result;
+        result += "Sequence: " + std::to_string(seq()) + " ID: " + std::to_string(id());
         if(is_respose()){
-            result = "Response Overflow: " + is_overflow() + " Truncated: " + is_truncated() + " Callback Pending: " + is_callback_pending() + " Type: " + callback_type() + " Net Index: " + network_index();
+            result += " [Response] Overflow: " + std::to_string(is_overflow()) + " Truncated: " +
+                std::to_string(is_truncated()) + " Callback Pending: " +
+                std::to_string(is_callback_pending()) + " Type: " +
+                std::to_string(callback_type()) + " Net Index: " + std::to_string(network_index());
         }
         else{
-            result = "Command Sleep Mode: " + sleep_mode() +  " Net Index: " + network_index();
+            result += " [Command] Sleep Mode: " + std::to_string(sleep_mode()) +  " Net Index: " + std::to_string(network_index());
         }
 
-        result += " Format ver: " + frame_format_ver() + " Padding: " + is_padding_enabled() + " Security: " + is_security_enabled();
+        result += " Format ver: " + std::to_string(frame_format_ver()) + " Padding: " + std::to_string(is_padding_enabled()) + " Security: " + std::to_string(is_security_enabled());
         return result;
     }
 
