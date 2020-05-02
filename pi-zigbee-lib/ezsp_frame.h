@@ -17,15 +17,36 @@
 
 namespace zb_ezsp {
 
-using ver_req = struct  __attribute__((packed, aligned(1))) ezsp_req_ver {
+/**
+ * Version command ID 0x02
+ * Request
+ */
+using ver_req = struct  __attribute__((packed, aligned(1))) ezsp_ver_req {
     uint8_t _ver;
 
-    ezsp_req_ver& operator=(const ezsp_req_ver& obj){
+    ezsp_ver_req& operator=(const ezsp_ver_req& obj){
         _ver = obj._ver;
         return *this;
     }
-
 };
+
+/**
+ * Version command ID 0x02
+ * Response
+ */
+using ver_resp = struct  __attribute__((packed, aligned(1))) ezsp_ver_resp {
+    uint8_t _ver;           //protocolVersion The EZSP version the NCP is using (4).
+    uint8_t _stackType;     //stackType The type of stack running on the NCP (2).
+    uint16_t _stackVersion;  //stackVersion The version number of the stack.
+
+    ezsp_ver_resp& operator=(const ezsp_ver_resp& obj){
+        _ver = obj._ver;
+        _stackType = obj._stackType;
+        _stackVersion = obj._stackVersion;
+        return *this;
+    }
+};
+
 
 using EType = enum EFrameType : uint16_t {
     Command = 0x0000,
@@ -82,9 +103,10 @@ public:
     struct  __attribute__((packed, aligned(1))) FrameData{
         uint8_t _seq;   //Sequence
         uint16_t _ctrl;  //Control byte
-        EId _id;    //Frame ID
         T _parm;        //Frame parameters payload
     } _data;
+
+    EId _id;    //Frame ID
 
     constexpr const size_t length() const {
         return sizeof(FrameData);
@@ -99,15 +121,19 @@ public:
     }
 
     const EId id() const {
-        return _data._id;
+        return _id;
     }
 
     void set_id(const EId id){
-        _data._id = id;
+        _id = id;
     }
 
     void set_sleep_mode(const ESleepMode sm){
         _data._ctrl |= sm;
+    }
+
+    const uint16_t ctrl() const {
+        return _data._ctrl;
     }
 
     const ESleepMode sleep_mode() const {
@@ -162,7 +188,7 @@ public:
     size_t put(uint8_t* buff, size_t pos){
         pos = Conv::put(buff, pos, _data._seq);
         pos = Conv::put(buff, pos, _data._ctrl);
-        pos = Conv::put(buff, pos, (id_type)_data._id);
+        pos = Conv::put(buff, pos, (id_type)_id);
         pos = put(_data._parm, buff, pos);
         return pos;
     }
@@ -175,17 +201,22 @@ public:
         size_t pos = 0;
         _data._seq = Conv::get_byte(buff, pos);
         _data._ctrl = Conv::get_short(buff, pos);
-        _data._id = Conv::get_short(buff, pos);
         get(_data._parm, buff, pos);
     }
 
+    /**
+     * Version
+     */
     size_t put(ver_req& param, uint8_t* buff, size_t pos){
         return Conv::put(buff, pos, param._ver);
     }
 
-    void get(ver_req& param, uint8_t* buff, size_t pos){
+    void get(ver_resp& param, const uint8_t* buff, size_t pos){
         param._ver = Conv::get_byte(buff, pos);
+        param._stackType = Conv::get_byte(buff, pos);
+        param._stackVersion = Conv::get_short(buff, pos);
     }
+
 
 public:
     /**
@@ -209,7 +240,11 @@ public:
 
     const std::string to_string() const {
         std::string result;
-        result += "Sequence: " + std::to_string(seq()) + " ID: " + std::to_string(id());
+        char buffer[32];
+
+        sprintf(buffer, "Control: 0x%X ", ctrl());
+        result = buffer;
+        result += "Sequence: " + std::to_string(seq());
         if(is_respose()){
             result += " [Response] Overflow: " + std::to_string(is_overflow()) + " Truncated: " +
                 std::to_string(is_truncated()) + " Callback Pending: " +
@@ -217,7 +252,7 @@ public:
                 std::to_string(callback_type()) + " Net Index: " + std::to_string(network_index());
         }
         else{
-            result += " [Command] Sleep Mode: " + std::to_string(sleep_mode()) +  " Net Index: " + std::to_string(network_index());
+            result += " [Command] ID: " + std::to_string(id()) + " Sleep Mode: " + std::to_string(sleep_mode()) +  " Net Index: " + std::to_string(network_index());
         }
 
         result += " Format ver: " + std::to_string(frame_format_ver()) + " Padding: " + std::to_string(is_padding_enabled()) + " Security: " + std::to_string(is_security_enabled());

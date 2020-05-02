@@ -57,17 +57,20 @@ public:
     }
 
     void set_ackNum(const uint8_t ackNum){
-        _ackNum = ackNum;
+        if(ackNum>7)
+            _ackNum = 0;
+        else
+            _ackNum = ackNum;
     }
 
     uint8_t get_current_ackNum() const {
         return _ackNum;
     }
 
+    /**
+     * TODO:
+     */
     uint8_t get_next_ackNum(){
-        _ackNum++;
-        if(_ackNum>7) _ackNum = 0;
-
         return _ackNum;
     }
 
@@ -423,7 +426,7 @@ public:
         /*
          4.1.0 for DATA
         */
-       if(frame->is_DATA() && !_debug){
+       if(frame->is_DATA()){
            frame->set_frmNum(_info->get_next_frmNum());
            frame->set_ackNum(_info->get_next_ackNum());
        }

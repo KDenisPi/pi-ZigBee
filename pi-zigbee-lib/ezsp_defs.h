@@ -13,7 +13,11 @@
 
 namespace zb_ezsp {
 
-#define VER_8 1
+/**
+ * There is a new EZSP frame format in Release 6.7. Frame IDs have been expanded from 1 byte (8 bits) to 2 bytes (16 bits). Frame ID
+ *   values are now shown with 4 hex digits to emphasize the larger Frame ID numbering space.
+ */
+//#define VER_8 1
 #ifdef VER_8
 using id_type = uint16_t;
 #else

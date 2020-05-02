@@ -161,7 +161,8 @@ public:
         assert(seq_num<=7);
         assert(is_DATA());
 
-        _cb |= (seq_num << 4);
+        _cb = (_cb & 0x70) | (seq_num << 4);
+        logger::log(logger::LLOG::DEBUG, "uframe", std::string(__func__) + " Control byte: " + std::to_string(_cb) + " seq_num: " + std::to_string(seq_num));
     }
 
     //Return pointer to frame data payload (nullptr for frames without data: ACK, NAk, RST)
@@ -180,7 +181,9 @@ public:
         assert(ackNum<=7);
         assert(is_DATA() || is_ACK() || is_NAK());
 
-        _cb |= (ackNum & 0x07);
+        _cb = (_cb & 0xF8) | (ackNum & 0x07);
+
+        logger::log(logger::LLOG::DEBUG, "uframe", std::string(__func__) + " Control byte: " + std::to_string(_cb) + " ackNum: " + std::to_string(ackNum));
     }
 
     //reTx - set to 1 in a retransmitted DATA frame; 0 otherwise
@@ -291,7 +294,7 @@ protected:
      */
     void set_type(const ftype ft){
         if(ft == ftype::DATA){
-            _cb |= ~(ftype::NO_DATA);
+            _cb &= ~(ftype::NO_DATA);
         }
         else{
             _cb |= ft;

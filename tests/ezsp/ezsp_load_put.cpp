@@ -26,10 +26,10 @@ int main (int argc, char* argv[])
 {
     bool success = false;
     //uint8_t src_buff[4] = {0x00, 0x00 ,0x00 ,0x02};
-    uint8_t src_buff[6] = {0x00, 0x00 ,0x00 ,0x02, 0x00, 0x08};
+    uint8_t src_buff[7] = {0x00, 0x80, 0x00, 0x04, 0x02, 0x10, 0x54};
     uint8_t buffer[128];
     zb_ezsp::ver_req ver;
-    ver._ver = 8;
+    ver._ver = 4;
 
     logger::log_init("/var/log/logs/zigbee_log");
 
@@ -48,6 +48,12 @@ int main (int argc, char* argv[])
     memset(buffer, 0x00, sizeof(buffer));
     size_t wr_len = uart->encode(fr, buffer, sizeof(buffer), true);
     std::cout << print_buff(buffer, wr_len) << std::endl;
+
+    std::shared_ptr<zb_ezsp::EFrame<zb_ezsp::ver_resp>> ef_ver_resp = std::make_shared<zb_ezsp::EFrame<zb_ezsp::ver_resp>>();
+    std::cout <<  "Length: " << ef_ver_resp->length() << std::endl;
+    ef_ver_resp->load(src_buff, sizeof(src_buff));
+
+    std::cout << ef_ver_resp->to_string() << std::endl;
 
     std::cout << "Finished " << success << std::endl;
     exit( (success ? EXIT_SUCCESS : EXIT_FAILURE));
