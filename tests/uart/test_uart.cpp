@@ -31,6 +31,7 @@ int main (int argc, char* argv[])
     logger::log_init("/var/log/logs/zigbee_log");
 
     std::shared_ptr<zb_ezsp::EFrame<zb_ezsp::ver_req>> ef_ver = std::make_shared<zb_ezsp::EFrame<zb_ezsp::ver_req>>(zb_ezsp::EId::ID_version, ver);
+    ef_ver->set_seq(1);
     std::cout << ef_ver->to_string() << std::endl;
 
     std::shared_ptr<zb_uart::ZBUart> uart = std::make_shared<zb_uart::ZBUart>(true);

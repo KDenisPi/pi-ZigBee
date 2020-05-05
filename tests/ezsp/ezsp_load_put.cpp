@@ -3,8 +3,8 @@
 #include <memory>
 
 #include "logger.h"
-#include "ezsp.h"
 #include "uart.h"
+#include "ezsp.h"
 
 using namespace std;
 
@@ -50,7 +50,7 @@ int main (int argc, char* argv[])
     std::cout << print_buff(buffer, wr_len) << std::endl;
 
     std::shared_ptr<zb_ezsp::EFrame<zb_ezsp::ver_resp>> ef_ver_resp = std::make_shared<zb_ezsp::EFrame<zb_ezsp::ver_resp>>();
-    std::cout <<  "Length: " << ef_ver_resp->length() << std::endl;
+    std::cout <<  "Response length: " << ef_ver_resp->resp_length() << std::endl;
     ef_ver_resp->load(src_buff, sizeof(src_buff));
 
     std::cout << ef_ver_resp->to_string() << std::endl;

@@ -8,3 +8,9 @@
  */
 
 #include "ezsp.h"
+
+namespace zb_ezsp {
+
+uint8_t EzspVersion::_ver = 4;
+
+}

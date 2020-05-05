@@ -24,6 +24,18 @@ using id_type = uint16_t;
 using id_type = uint8_t;
 #endif
 
+class EzspVersion {
+public:
+    EzspVersion() {}
+    ~EzspVersion() {}
+
+    static uint8_t _ver;
+    static uint8_t ver(){
+        return _ver;
+    }
+
+};
+
 using EZSP_Bool = uint8_t;
 using EZSP_EzspConfigId = uint8_t;
 
