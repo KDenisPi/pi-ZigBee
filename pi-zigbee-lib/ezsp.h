@@ -18,9 +18,28 @@ namespace zb_ezsp {
  */
 class Ezsp {
 public:
-    Ezsp() {}
+    Ezsp() : _seq(0) {}
     ~Ezsp() {}
 
+    Ezsp(Ezsp&&) = delete;
+    Ezsp& operator=(const Ezsp&) = delete;
+    Ezsp& operator=(Ezsp&&) = delete;
+
+
+    /**
+     * Sequence number
+     */
+    const uint8_t seq_next() {
+        if(_seq == 0xFF) _seq = 0;
+        return _seq++;
+    }
+
+    const uint8_t seq() const {
+        return _seq;
+    }
+
+private:
+    uint8_t _seq;
 };
 
 }

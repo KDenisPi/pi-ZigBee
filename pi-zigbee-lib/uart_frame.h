@@ -245,7 +245,7 @@ public:
     const std::string to_string() {
         char buffer[256];
 
-        sprintf(buffer, "CB:0x%02X Type:%s, Len Full:%lu Data:%lu CRC:0x%02X FB:0x%02X", this->control_byte(), this->get_type().c_str(), this->flen(), this->data_len(), this->get_crc(), this->get_flag_byte());
+        sprintf(buffer, " CB:0x%02X Type:%s, Len Full:%lu Data:%lu CRC:0x%02X FB:0x%02X", this->control_byte(), this->get_type().c_str(), this->flen(), this->data_len(), this->get_crc(), this->get_flag_byte());
         std::string result = buffer;
         if(is_DATA()){
             sprintf(buffer, " ftmNum:%02d reTx:%02d ackNum: %02d", this->frmNum(), this->reTx(), this->ackNum());

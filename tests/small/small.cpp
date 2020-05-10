@@ -17,6 +17,10 @@ const std::string print_buff(const std::uint8_t* buff, size_t len) {
     return result;
 }
 
+uint8_t test(uint8_t& ccnt){
+    return ccnt++;
+}
+
 /**
 *
 */
@@ -26,6 +30,10 @@ int main (int argc, char* argv[])
     uint16_t val16, val16_get = 0;
     uint32_t val32, val32_get = 0;
     uint8_t buff[132];
+
+    uint8_t st_cnt = 1;
+    uint8_t n_cnt = test(st_cnt);
+
 
     val16 = 1500;
     val32 = 0xA0B0C0D0;

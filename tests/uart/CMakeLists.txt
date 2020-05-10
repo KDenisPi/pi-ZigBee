@@ -12,11 +12,14 @@ include_directories(BEFORE
 
 add_executable(t_uart test_uart.cpp)
 add_executable(t_uart_frame_esc uart_frame_escape.cpp)
+add_executable(t_uart_svc test_uart_svc.cpp)
 
 set(TEST_UART_LIBS pi-zigbee-lib pi-utils pthread crypt rt)
 
 target_link_libraries(t_uart ${TEST_UART_LIBS})
 target_link_libraries(t_uart_frame_esc ${TEST_UART_LIBS})
+target_link_libraries(t_uart_svc ${TEST_UART_LIBS})
 
 #add_test(NAME UART COMMAND sudo t_uart)
+#add_test(NAME UART COMMAND sudo t_uart_svc)
 add_test(NAME UART_Frame_ESC COMMAND sudo t_uart_frame_esc)

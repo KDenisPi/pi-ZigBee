@@ -11,42 +11,13 @@
 
 #include <cstdint>
 #include <string>
+#include <memory>
 
 #include "ezsp_defs.h"
 #include "ezsp_util.h"
+#include "ezsp_frame_params.h"
 
 namespace zb_ezsp {
-
-/**
- * Version command ID 0x02
- * Request
- */
-using ver_req = struct  __attribute__((packed, aligned(1))) ezsp_ver_req {
-    uint8_t _ver;
-
-    ezsp_ver_req& operator=(const ezsp_ver_req& obj){
-        _ver = obj._ver;
-        return *this;
-    }
-};
-
-/**
- * Version command ID 0x02
- * Response
- */
-using ver_resp = struct  __attribute__((packed, aligned(1))) ezsp_ver_resp {
-    uint8_t _ver;           //protocolVersion The EZSP version the NCP is using (4).
-    uint8_t _stackType;     //stackType The type of stack running on the NCP (2).
-    uint16_t _stackVersion;  //stackVersion The version number of the stack.
-
-    ezsp_ver_resp& operator=(const ezsp_ver_resp& obj){
-        _ver = obj._ver;
-        _stackType = obj._stackType;
-        _stackVersion = obj._stackVersion;
-        return *this;
-    }
-};
-
 
 using EType = enum EFrameType : uint8_t {
     Command = 0x00,
@@ -101,28 +72,37 @@ public:
     /**
      * Frame data payload
      */
-    struct  __attribute__((packed, aligned(1))) FrameData{
+    using FData = struct  __attribute__((packed, aligned(1))) FrameData{
         uint8_t _seq;   //Sequence
         uint8_t _ctrl_low;  //Control byte (Low)
         uint8_t _ctrl_high; //Control byte (High)
         T _parm;        //Frame parameters payload
-    } _data;
+    };
 
-    EId _id;    //Frame ID
+    EId _id;        //Frame ID
+    std::shared_ptr<FData> _data;    //Frame data
 
     /**
      * Response length
      */
     constexpr const size_t resp_length() const {
-        return sizeof(FrameData);
+        return 3 + param_length(_data->_parm);
+    }
+
+    /**
+     * Size of parameters structure
+     *
+     */
+    constexpr const size_t param_length(const T& prm) const{
+        return sizeof(prm);
     }
 
     const uint8_t seq() const{
-        return _data._seq;
+        return _data->_seq;
     }
 
     void set_seq(const uint8_t seq){
-        _data._seq = seq;
+        _data->_seq = seq;
     }
 
     const EId id() const {
@@ -134,72 +114,72 @@ public:
     }
 
     void set_sleep_mode(const ESleepMode sm){
-        _data._ctrl_low |= sm;
+        _data->_ctrl_low |= sm;
     }
 
     const uint8_t ctrl_low() const {
-        return _data._ctrl_low;
+        return _data->_ctrl_low;
     }
 
     const uint8_t ctrl_high() const {
-        return _data._ctrl_high;
+        return _data->_ctrl_high;
     }
 
     const ESleepMode sleep_mode() const {
-        assert((_data._ctrl_low & EType::Response) == 0);
-        return (ESleepMode)(_data._ctrl_low & EEnable::Mask);
+        assert((_data->_ctrl_low & EType::Response) == 0);
+        return (ESleepMode)(_data->_ctrl_low & EEnable::Mask);
     }
 
     bool is_respose() const {
-        return ((_data._ctrl_low&EType::Response)>0 ? true : false);
+        return ((_data->_ctrl_low&EType::Response)>0 ? true : false);
     }
 
     bool is_overflow() const {
-        return ((_data._ctrl_low&EOverflow::OvFl_Yes)>0 ? true : false);
+        return ((_data->_ctrl_low&EOverflow::OvFl_Yes)>0 ? true : false);
     }
 
     bool is_truncated() const {
-        return ((_data._ctrl_low&ETruncated::Trun_Yes)>0 ? true : false);
+        return ((_data->_ctrl_low&ETruncated::Trun_Yes)>0 ? true : false);
     }
 
     bool is_callback_pending() const {
-        return ((_data._ctrl_low&ECallbackP::CBack_Yes)>0 ? true : false);
+        return ((_data->_ctrl_low&ECallbackP::CBack_Yes)>0 ? true : false);
     }
 
     ECallbackType callback_type() const {
-        uint16_t res = (_data._ctrl_low >> 3);
+        uint16_t res = (_data->_ctrl_low >> 3);
         return (ECallbackType)(res & EEnable::Mask);
     }
 
     uint16_t network_index() const {
-        return ((_data._ctrl_low >> 5) & EEnable::Mask);
+        return ((_data->_ctrl_low >> 5) & EEnable::Mask);
     }
 
     void set_network_index(const uint8_t nidx){
-        _data._ctrl_low |= ((nidx & EEnable::Mask) << 5);
+        _data->_ctrl_low |= ((nidx & EEnable::Mask) << 5);
     }
 
     EFormat frame_format_ver() const {
-        return (EFormat)(_data._ctrl_high & EEnable::Mask );
+        return (EFormat)(_data->_ctrl_high & EEnable::Mask );
     }
 
     bool is_padding_enabled() const {
-        return ((_data._ctrl_high & EEnable::EFrame_Padding_Enabled) > 0);
+        return ((_data->_ctrl_high & EEnable::EFrame_Padding_Enabled) > 0);
     }
 
     bool is_security_enabled() const {
-        return ((_data._ctrl_high & EEnable::EFrame_Security_Enabled) > 0);
+        return ((_data->_ctrl_high & EEnable::EFrame_Security_Enabled) > 0);
     }
 
     /**
      * Prepare data for sendig
      */
     size_t put(uint8_t* buff, size_t pos){
-        pos = Conv::put(buff, pos, _data._seq);
-        pos = Conv::put(buff, pos, _data._ctrl_low);
-        pos = Conv::put(buff, pos, _data._ctrl_high);   //TODO: Set extended byte for ver 5
+        pos = Conv::put(buff, pos, _data->_seq);
+        pos = Conv::put(buff, pos, _data->_ctrl_low);
+        pos = Conv::put(buff, pos, _data->_ctrl_high);   //TODO: Set extended byte for ver 5
         pos = Conv::put(buff, pos, (id_type)_id);
-        pos = put(_data._parm, buff, pos);
+        pos = put(_data->_parm, buff, pos);
         return pos;
     }
 
@@ -209,54 +189,67 @@ public:
         }
 
         size_t pos = 0;
-        _data._seq = Conv::get_byte(buff, pos);     //Sequence number
-        _data._ctrl_low = Conv::get_byte(buff, pos);    //Control low
-        _data._ctrl_high = Conv::get_byte(buff, pos);   //Control high
-        if(_data._ctrl_high == 0xFF && (EzspVersion::ver() >= 5 && EzspVersion::ver() < 8)){ //version 5
-            _data._ctrl_high = Conv::get_byte(buff, pos);   //Control high, extended
+        _data->_seq = Conv::get_byte(buff, pos);     //Sequence number
+        _data->_ctrl_low = Conv::get_byte(buff, pos);    //Control low
+        _data->_ctrl_high = Conv::get_byte(buff, pos);   //Control high
+        if(_data->_ctrl_high == 0xFF && (EzspVersion::ver() >= 5 && EzspVersion::ver() < 8)){ //version 5
+            _data->_ctrl_high = Conv::get_byte(buff, pos);   //Control high, extended
         }
-        get(_data._parm, buff, pos);
+        get(_data->_parm, buff, pos);
     }
 
     /**
      * Version
      */
-    size_t put(ver_req& param, uint8_t* buff, size_t pos){
-        return Conv::put(buff, pos, param._ver);
-    }
+    size_t put(ver_req& param, uint8_t* buff, size_t pos);
+    void get(ver_resp& param, const uint8_t* buff, size_t pos);
 
-    void get(ver_resp& param, const uint8_t* buff, size_t pos){
-        param._ver = Conv::get_byte(buff, pos);
-        param._stackType = Conv::get_byte(buff, pos);
-        param._stackVersion = Conv::get_short(buff, pos);
-    }
-
+    /**
+     * Echo
+     */
+    size_t put(echo& param, uint8_t* buff, size_t pos);
+    void get(echo& param, const uint8_t* buff, size_t pos);
 
 public:
     /**
      * Default constructor for a new Frame creating
      */
     EFrame(const EId id, const T& params) {
+        _data = std::make_shared<FData>();
         set_id(id);
-        this->_data._parm = params;
+        //TODO: Copy
+        _data->_parm = params;
     }
 
     /**
      * Constructor for loading data from the buffer
      */
     EFrame(){
-
+        _data = std::make_shared<FData>();
     }
 
-    EFrame(EFrame&&) = delete;
-    EFrame& operator=(const EFrame&) = delete;
-    EFrame& operator=(EFrame&&) = delete;
+    EFrame(EFrame&& other) {
+        this->_id = other->_id;
+        this->_data = std::move(other->_data);
+    }
 
+    EFrame& operator=(EFrame&& other){
+        this->_id = other->_id;
+        this->_data = std::move(other->_data);
+        return *this;
+    }
+
+    EFrame& operator=(const EFrame&) = delete;
+
+    /**
+     * Put frame data to string
+     * Debug purpose only
+     */
     const std::string to_string() const {
         std::string result;
         char buffer[32];
 
-        sprintf(buffer, "Control Low: 0x%X High: 0x%X ", ctrl_low(), ctrl_high());
+        sprintf(buffer, " Control Low: 0x%X High: 0x%X ", ctrl_low(), ctrl_high());
         result = buffer;
         result += "Sequence: " + std::to_string(seq());
         if(is_respose()){

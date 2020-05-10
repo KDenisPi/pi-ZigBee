@@ -49,6 +49,7 @@ public:
         _frmNum++;
         if(_frmNum>7) _frmNum = 0;
 
+        logger::log(logger::LLOG::DEBUG, "uart", std::string(__func__) + " Current: " + std::to_string(_frmNum));
         return _frmNum;
     }
 
@@ -57,6 +58,8 @@ public:
     }
 
     void set_ackNum(const uint8_t ackNum){
+        logger::log(logger::LLOG::DEBUG, "uart", std::string(__func__) + " Current: " + std::to_string(_ackNum) + " Received: " + std::to_string(ackNum));
+
         if(ackNum>7)
             _ackNum = 0;
         else
@@ -64,15 +67,21 @@ public:
     }
 
     uint8_t get_current_ackNum() const {
+        logger::log(logger::LLOG::DEBUG, "uart", std::string(__func__) + " Current: " + std::to_string(_ackNum));
         return _ackNum;
     }
 
     /**
      * TODO:
      */
-    uint8_t get_next_ackNum(){
+    uint8_t get_ackNum(){
+        logger::log(logger::LLOG::DEBUG, "uart", std::string(__func__) + " Next: " + std::to_string(_ackNum));
         return _ackNum;
     }
+
+    /**
+     * Device initialized and full ready to work
+     */
 
     const bool is_connected() const {
         return _connected;
@@ -82,8 +91,23 @@ public:
         _connected = connected;
     }
 
-    const bool is_started() const{
+    /**
+     * Set Access to device
+     */
+    const bool is_device_connected() const{
         return (_fd > 0);
+    }
+
+    /**
+     * Logical start/stop
+     */
+    const bool is_activated() const {
+        return _activated;
+    }
+
+    void set_activate(const bool activate) {
+        logger::log(logger::LLOG::DEBUG, "uart", std::string(__func__) + " Activated: " + std::to_string(activate));
+        _activated = activate;
     }
 
 protected:
@@ -99,12 +123,14 @@ protected:
      */
     bool _connected;    //Is connected state
 
+    volatile bool _activated;    //UART is ready for starting process input requests
+
     int _stopBits = 1;
     bool _rts_cts_flow_ctrl = false;
     bool _ixon = true;
     bool _ixoff = true;
-    uint8_t _read_min = 1;
-    uint8_t _read_timeout = 1;  //tenths of a second
+    uint8_t _read_min = 0;
+    uint8_t _read_timeout = 10;  //10 tenths of a second - 1 sec
 };
 
 /**
@@ -125,8 +151,33 @@ public:
     ~ZBUart(){
         logger::log(logger::LLOG::DEBUG, "uart", std::string(__func__));
 
+        //Stop working thread
+        stop();
+
+        //close device connection
         disconnect();
     }
+
+    inline void set_activate(const bool activate) {
+        std::lock_guard<std::mutex> lk(cv_m);
+        _info->set_activate(activate);
+        cv.notify_one();
+    }
+
+    /**
+     * Logical start/stop
+     */
+    const bool is_activated() const {
+        return _info->is_activated();
+    }
+
+    /**
+     *
+     */
+    bool start(){
+        return piutils::Threaded::start<ZBUart>(this);
+    }
+
 
     const std::vector<uint8_t> spec = {ashrvd::FlagByte, ashrvd::EscapeByte, ashrvd::XON, ashrvd::XOFF, ashrvd::SubstByte, ashrvd::CancelByte};
 
@@ -428,7 +479,10 @@ public:
         */
        if(frame->is_DATA()){
            frame->set_frmNum(_info->get_next_frmNum());
-           frame->set_ackNum(_info->get_next_ackNum());
+           frame->set_ackNum(_info->get_ackNum());
+       }
+       else if(frame->is_ACK() || frame->is_NAK()){
+           frame->set_ackNum(_info->get_ackNum());
        }
 
         //4.1.1 Set Control byte
@@ -518,47 +572,7 @@ public:
     }
 
 
-    /**
-     * UART worker function
-     *
-     * 1. Wait until UART not connected to device (is_started)
-     * 2. Initialize device
-     * 2.1 Send RST frame
-     * 2.2 Receive correct RSTACK frame
-     * 2.3 If RSTACK frame will not receive during T_RSTACK_MAX repeat from 2.1
-     * 2.4 Mark UART is on Connected state
-     * 2.5 Notify EZSP
-     * 3. Process wait for input data and process EZSP messages (send, receive answer)
-     *
-     */
-    static void worker(ZBUart* p_uart){
-        uint8_t buff[255];
-        std::shared_ptr<ZBUart_Info> info = p_uart->get_session_info();
-
-        logger::log(logger::LLOG::DEBUG, "uart", std::string(__func__) + "Worker started.");
-
-        auto fn = [p_uart, info]{return (p_uart->is_stop_signal() | info->is_started());};
-        while(!p_uart->is_stop_signal()){
-
-            {
-                std::unique_lock<std::mutex> lk(p_uart->cv_m);
-                p_uart->cv.wait(lk, fn);
-
-                logger::log(logger::LLOG::DEBUG, "PrvSmpl", std::string(__func__) + std::string(" Signal detected Conneted: ") + std::to_string(info->is_started()));
-            }
-
-            if(p_uart->is_stop_signal()){
-                logger::log(logger::LLOG::DEBUG, "uart", std::string(__func__) + "Worker. Stop signal detected");
-                break;
-            }
-
-
-
-        }
-
-        logger::log(logger::LLOG::DEBUG, "uart", std::string(__func__) + "Worker finished.");
-    }
-
+    static void worker(ZBUart* p_uart);
 
     /**
      * Initialize device
@@ -569,7 +583,7 @@ public:
         bool result = false;
         int attempt_cnt = 0;
 
-        if(!_info->is_started()){
+        if(!_info->is_device_connected()){
             logger::log(logger::LLOG::ERROR, "uart", std::string(__func__) + " No connection to device");
             return false;
         }
@@ -659,7 +673,7 @@ public:
         }
         else{
             if(res < len){
-                logger::log(logger::LLOG::INFO, "uart", std::string(__func__) + " Wrote less Len: " + std::to_string(len) + " Real: " + std::to_string(res));
+                logger::log(logger::LLOG::ERROR, "uart", std::string(__func__) + " Wrote less Len: " + std::to_string(len) + " Real: " + std::to_string(res));
             }
         }
 
@@ -693,15 +707,17 @@ public:
             }
 
             if(res==0){ //timeout
-                len = read_bytes;
+                len = 0;
+                if(_debug){
+                    logger::log(logger::LLOG::DEBUG, "uart", std::string(__func__) +  " Timeout! Read bytes: " + std::to_string(read_bytes) + " "  + print_buff(buffer, read_bytes));
+                    //std::cout << "Byte " << read_bytes << " " << print_buff(buffer, len) << std::endl;
+                }
                 return 0;
             }
 
             //check do we read end of frame already
             if(res > 0){
-
-                std::cout << "Byte " << read_bytes << " Res: " << res << " " << std::hex << (uint16_t)r_buff[0] << std::endl;
-
+                //std::cout << "Byte " << read_bytes << " Res: " << res << " " << std::hex << (uint16_t)r_buff[0] << std::endl;
 
                 //if we received frame finished by Cancel or Subst byte - ignore it
                 if(ashrvd::CancelByte == r_buff[0] || ashrvd::SubstByte == r_buff[0]){
@@ -714,8 +730,8 @@ public:
                     read_bytes++;
                     len = read_bytes;
                     if(_debug){
-                        logger::log(logger::LLOG::DEBUG, "uart", std::string(__func__) +  " " + print_buff(buffer, len));
-                        std::cout << "Byte " << read_bytes << " " << print_buff(buffer, len) << std::endl;
+                        logger::log(logger::LLOG::DEBUG, "uart", std::string(__func__) +  " Read bytes: " + std::to_string(len) + " "  + print_buff(buffer, len));
+                        //std::cout << "Byte " << read_bytes << " " << print_buff(buffer, len) << std::endl;
                     }
 
                     return 0;
@@ -729,6 +745,25 @@ public:
         }
 
         return 0;
+    }
+
+
+    /**
+     * Send UART Frame
+     */
+    int send_frame(const std::shared_ptr<zb_uart::UFrame>& fr){
+        uint8_t w_buff[140];
+        memset(w_buff, 0x00, sizeof(w_buff));
+
+        size_t wr_len = encode(fr, w_buff, sizeof(w_buff), true);
+
+        if(is_debug()){
+            logger::log(logger::LLOG::DEBUG, "uart", std::string(__func__) + " UART Frame: " + fr->to_string());
+            logger::log(logger::LLOG::DEBUG, "uart", std::string(__func__) + " UART Frame : " + print_buff(w_buff, wr_len));
+        }
+
+        int wr_res = write_data(w_buff, wr_len);
+        return wr_res;
     }
 
 private:
@@ -811,6 +846,9 @@ private:
         return result;
     }
 
+    const bool is_debug() const {
+        return _debug;
+    }
 
 private:
     std::shared_ptr<ZBUart_Info> _info = std::make_shared<ZBUart_Info>(); //session information
