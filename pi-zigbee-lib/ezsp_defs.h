@@ -41,7 +41,7 @@ using EZSP_EzspConfigId = uint8_t;
 
 
 using EId = enum EFrame_ID : id_type {
-    ID_version = 0x02,
+    ID_version = 0x00,
     ID_Echo = 0x81
 };
 

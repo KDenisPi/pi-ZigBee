@@ -177,7 +177,7 @@ public:
     size_t put(uint8_t* buff, size_t pos){
         pos = Conv::put(buff, pos, _data->_seq);
         pos = Conv::put(buff, pos, _data->_ctrl_low);
-        pos = Conv::put(buff, pos, _data->_ctrl_high);   //TODO: Set extended byte for ver 5
+        //pos = Conv::put(buff, pos, _data->_ctrl_high);   //TODO: Set extended byte for ver 5
         pos = Conv::put(buff, pos, (id_type)_id);
         pos = put(_data->_parm, buff, pos);
         return pos;
@@ -191,9 +191,10 @@ public:
         size_t pos = 0;
         _data->_seq = Conv::get_byte(buff, pos);     //Sequence number
         _data->_ctrl_low = Conv::get_byte(buff, pos);    //Control low
-        _data->_ctrl_high = Conv::get_byte(buff, pos);   //Control high
-        if(_data->_ctrl_high == 0xFF && (EzspVersion::ver() >= 5 && EzspVersion::ver() < 8)){ //version 5
-            _data->_ctrl_high = Conv::get_byte(buff, pos);   //Control high, extended
+        if((EzspVersion::ver() >= 5 && EzspVersion::ver() < 8)){ //version 5
+            _data->_ctrl_high = Conv::get_byte(buff, pos);   //Control high
+            if(_data->_ctrl_high == 0xFF)
+                _data->_ctrl_high = Conv::get_byte(buff, pos);   //Control high, extended
         }
         get(_data->_parm, buff, pos);
     }

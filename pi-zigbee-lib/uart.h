@@ -18,12 +18,18 @@
 #include <string>
 #include <poll.h>
 #include <sys/select.h>
+#include <functional>
 
 #include "Threaded.h"
 #include "logger.h"
+#include "CircularBuffer.h"
 #include "uart_frame.h"
 
 namespace zb_uart {
+
+class EFrame;
+using EFramePtr = std::shared_ptr<EFrame>;
+using EframeBuff = piutils::circbuff::CircularBuffer<EFramePtr>;
 
 /**
  * UART transmissionstructure
@@ -647,10 +653,8 @@ public:
                         break;
                     }
                 }
-
                 //we read something but there is not RSTACK - try again
             }
-
         }
 
         return result;
@@ -766,7 +770,28 @@ public:
         return wr_res;
     }
 
+    /**
+     * Add EZSP frame to sending queue
+     */
+    void put_ezsp_frame(EFramePtr& eframe){
+        logger::log(logger::LLOG::DEBUG, "uart", std::string(__func__) + " UART Frame: Add frame to queue");
+        _eframes->put(eframe);
+    }
+
+    const EFramePtr get_ezsp_frame(){
+        if(_eframes->is_empty()){
+            const EFramePtr eptr = EFramePtr();
+            return eptr;
+         }
+
+         return _eframes->get();
+    }
+
+    std::function<void(const EFramePtr&)> callback_eframe_received;
+
 private:
+
+    std::shared_ptr<EframeBuff> _eframes;
 
     /**
      * Print terminal configurationinformation

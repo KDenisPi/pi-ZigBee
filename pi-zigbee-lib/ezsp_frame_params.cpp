@@ -55,7 +55,7 @@ void EFrame<zb_ezsp::echo>::get(zb_ezsp::echo& param, const uint8_t* buff, size_
 
 template<>
 const size_t EFrame<zb_ezsp::echo>::param_length(const zb_ezsp::echo& param) const {
-    return (param.dataLength+1);
+    return sizeof(zb_ezsp::echo); //TEMP (param.dataLength+1);
 }
 
 

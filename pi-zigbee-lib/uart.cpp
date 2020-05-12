@@ -148,7 +148,30 @@ namespace zb_uart {
                 continue;
             }
 
+            zb_ezsp::echo e_cho;
+            e_cho.dataLength = 10;
+            for(int i=0; i<e_cho.dataLength; i++)
+                e_cho.data[i] = 'A'+i;
+            std::shared_ptr<zb_ezsp::EFrame<zb_ezsp::echo>> ef_ping = std::make_shared<zb_ezsp::EFrame<zb_ezsp::echo>>(zb_ezsp::EFrame_ID::ID_Echo, e_cho);
+            ef_ping->set_seq(1);
+
+            memset(w_buff, 0x00, sizeof(w_buff));
+            size_t wr_len = ef_ping->put(w_buff, 0);
+
+            if(p_uart->is_debug()){
+                logger::log(logger::LLOG::DEBUG, "uart", std::string(__func__) + " EZSP Echo frame " + p_uart->print_buff(w_buff, wr_len));
+                //std::cout << p_uart->print_buff(w_buff, wr_len) << std::endl;
+            }
+
+            std::shared_ptr<zb_uart::UFrame> fr = p_uart->compose_data(w_buff, wr_len);
+            wr_res = p_uart->send_frame(fr);
+
             while(!p_uart->is_stop_signal()){
+
+                /**
+                 * Check output queue
+                 */
+
                 /**
                  * Wait data from NCP side
                  */
@@ -167,6 +190,17 @@ namespace zb_uart {
                     if(fr_rsv){
                         if(p_uart->is_debug()){
                             logger::log(logger::LLOG::DEBUG, "uart", std::string(__func__) + " UART Frame : " + fr_rsv->to_string());
+                        }
+
+                        if(fr_rsv->is_DATA()){
+
+                            info->set_ackNum(fr_rsv->frmNum()+1);
+
+                            /**
+                             * Send ACK
+                             */
+                            std::shared_ptr<zb_uart::UFrame> fr_ack = p_uart->compose(zb_uart::ftype::ACK);
+                            wr_res = p_uart->send_frame(fr_ack);
                         }
                     }
                 }

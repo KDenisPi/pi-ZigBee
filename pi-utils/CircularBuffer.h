@@ -76,8 +76,13 @@ public:
     /*
     *
     */
-    const T& get(){
+    const T& get() noexcept(false) {
         //std::cout << "CircularBuffer " + std::string(__func__) + " Get started" << " Size: " << std::to_string(m_size)<< std::endl;
+
+        if(is_empty()){
+            throw std::runtime_error(std::string(" CircularBuffer is empty"));
+        }
+
         std::lock_guard<std::mutex> lk(cv_m);
 
         const int ptail = tail_;
