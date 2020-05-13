@@ -12,6 +12,8 @@
 #include <cstdint>
 #include <stddef.h>
 
+#include "ezsp_defs.h"
+
 namespace zb_ezsp {
 
 class Conv
@@ -35,6 +37,32 @@ public:
     static size_t put(uint8_t* buff, size_t pos, const uint8_t val){
         buff[pos++] = val;
         return pos;
+    }
+
+    static size_t get(const uint8_t* buff, size_t& pos, uint8_t& res){
+        res = buff[pos++];
+        return pos;
+    }
+
+    static size_t get(const uint8_t* buff, size_t& pos, uint16_t& res){
+        res = (buff[pos+1] << 8);
+        res |= buff[pos];
+        pos += sizeof(uint16_t);
+        return pos;
+    }
+
+    static size_t get(const uint8_t* buff, size_t& pos, uint32_t& res){
+        uint32_t low = get_short(buff, pos);
+        uint32_t high = (get_short(buff, pos) << 16);
+        res = (high|low);
+        return pos;
+    }
+
+    static EId get_id(const uint8_t* buff, size_t& pos){
+        if(sizeof(EId)==1)
+            return (EId)get_byte(buff, pos);
+
+        return (EId)get_word(buff, pos);
     }
 
     static uint8_t get_byte(const uint8_t* buff, size_t& pos){

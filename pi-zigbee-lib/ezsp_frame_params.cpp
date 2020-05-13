@@ -25,9 +25,9 @@ size_t EFrame<ver_req>::put(ver_req& param, uint8_t* buff, size_t pos){
 
 template<>
 void EFrame<ver_resp>::get(ver_resp& param, const uint8_t* buff, size_t pos){
-    param._ver = Conv::get_byte(buff, pos);
-    param._stackType = Conv::get_byte(buff, pos);
-    param._stackVersion = Conv::get_short(buff, pos);
+    pos = Conv::get(buff, pos, param._ver);
+    pos = Conv::get(buff, pos, param._stackType);
+    pos = Conv::get(buff, pos, param._stackVersion);
 }
 
 /**
@@ -46,11 +46,11 @@ size_t EFrame<zb_ezsp::echo>::put(zb_ezsp::echo& param, uint8_t* buff, size_t po
 
 template<>
 void EFrame<zb_ezsp::echo>::get(zb_ezsp::echo& param, const uint8_t* buff, size_t pos){
-    param.dataLength = Conv::get_byte(buff, pos);
+    pos = Conv::get(buff, pos, param.dataLength);
     assert(param.dataLength<=sizeof(param.data));
 
     for(int i=0; i<param.dataLength && i < sizeof(param.data); i++)
-        param.data[i] = Conv::get_byte(buff, pos);
+        pos = Conv::get(buff, pos, param.data[i]);
 }
 
 template<>

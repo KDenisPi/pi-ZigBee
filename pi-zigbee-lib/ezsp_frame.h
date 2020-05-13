@@ -72,14 +72,14 @@ public:
     /**
      * Frame data payload
      */
-    using FData = struct  __attribute__((packed, aligned(1))) FrameData{
+    using FData = struct  FrameData{ //__attribute__((packed, aligned(1)))
         uint8_t _seq;   //Sequence
         uint8_t _ctrl_low;  //Control byte (Low)
         uint8_t _ctrl_high; //Control byte (High)
+        EId _id;        //Frame ID
         T _parm;        //Frame parameters payload
     };
 
-    EId _id;        //Frame ID
     std::shared_ptr<FData> _data;    //Frame data
 
     /**
@@ -106,11 +106,11 @@ public:
     }
 
     const EId id() const {
-        return _id;
+        return _data->_id;
     }
 
     void set_id(const EId id){
-        _id = id;
+        _data->_id = id;
     }
 
     void set_sleep_mode(const ESleepMode sm){
@@ -178,7 +178,7 @@ public:
         pos = Conv::put(buff, pos, _data->_seq);
         pos = Conv::put(buff, pos, _data->_ctrl_low);
         //pos = Conv::put(buff, pos, _data->_ctrl_high);   //TODO: Set extended byte for ver 5
-        pos = Conv::put(buff, pos, (id_type)_id);
+        pos = Conv::put(buff, pos, (id_type)_data->_id);
         pos = put(_data->_parm, buff, pos);
         return pos;
     }
@@ -189,14 +189,20 @@ public:
         }
 
         size_t pos = 0;
-        _data->_seq = Conv::get_byte(buff, pos);     //Sequence number
-        _data->_ctrl_low = Conv::get_byte(buff, pos);    //Control low
+        pos = Conv::get(buff, pos, _data->_seq);     //Sequence number
+        pos = Conv::get(buff, pos, _data->_ctrl_low);    //Control low
         if((EzspVersion::ver() >= 5 && EzspVersion::ver() < 8)){ //version 5
-            _data->_ctrl_high = Conv::get_byte(buff, pos);   //Control high
+            pos = Conv::get(buff, pos, _data->_ctrl_high);   //Control high
             if(_data->_ctrl_high == 0xFF)
-                _data->_ctrl_high = Conv::get_byte(buff, pos);   //Control high, extended
+                pos = Conv::get(buff, pos, _data->_ctrl_high);   //Control high, extended
         }
+
+        //Get Frame ID (uint8 for versions before 8, uint16 8 and higher)
+        _data->_id = Conv::get_id(buff, pos);
+        //load parameters
         get(_data->_parm, buff, pos);
+
+        return true;
     }
 
     /**
@@ -230,12 +236,10 @@ public:
     }
 
     EFrame(EFrame&& other) {
-        this->_id = other->_id;
         this->_data = std::move(other->_data);
     }
 
     EFrame& operator=(EFrame&& other){
-        this->_id = other->_id;
         this->_data = std::move(other->_data);
         return *this;
     }
