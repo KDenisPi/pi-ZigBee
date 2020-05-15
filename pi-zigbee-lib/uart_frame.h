@@ -167,7 +167,8 @@ public:
 
     //Return pointer to frame data payload (nullptr for frames without data: ACK, NAk, RST)
     const uint8_t* data() const {
-        return (is_ACK() || is_NAK() || is_RST() ? nullptr : _data);
+        assert(is_DATA() || is_RSTACK() || is_ERROR());
+        return _data;
     }
 
     //ackNum - acknowledges receipt of DATA frames up to, but not including, ackNum
@@ -312,11 +313,9 @@ protected:
         _len = len;
     }
 
-    //Return pointer to frame data payload (nullptr for frames without data: ACK, NAk, RST)
     uint8_t* raw_data() {
         return _data;
     }
-
 
     //Set error information
     void set_error(uint16_t err, const std::string& err_str){

@@ -12,6 +12,7 @@
 #include <cstdint>
 #include <string>
 #include <memory>
+#include <assert.h>
 
 #include "ezsp_defs.h"
 #include "ezsp_util.h"
@@ -66,7 +67,6 @@ using EEnable = enum EFrame_Enable : uint8_t {
     Mask = 0x03
 };
 
-template <typename T>
 class EFrame {
 public:
     /**
@@ -77,25 +77,9 @@ public:
         uint8_t _ctrl_low;  //Control byte (Low)
         uint8_t _ctrl_high; //Control byte (High)
         EId _id;        //Frame ID
-        T _parm;        //Frame parameters payload
     };
 
     std::shared_ptr<FData> _data;    //Frame data
-
-    /**
-     * Response length
-     */
-    constexpr const size_t resp_length() const {
-        return 3 + param_length(_data->_parm);
-    }
-
-    /**
-     * Size of parameters structure
-     *
-     */
-    constexpr const size_t param_length(const T& prm) const{
-        return sizeof(prm);
-    }
 
     const uint8_t seq() const{
         return _data->_seq;
@@ -174,20 +158,18 @@ public:
     /**
      * Prepare data for sendig
      */
-    size_t put(uint8_t* buff, size_t pos){
+    template<typename T>
+    size_t put(uint8_t* buff, size_t pos, const T& params){
         pos = Conv::put(buff, pos, _data->_seq);
         pos = Conv::put(buff, pos, _data->_ctrl_low);
         //pos = Conv::put(buff, pos, _data->_ctrl_high);   //TODO: Set extended byte for ver 5
         pos = Conv::put(buff, pos, (id_type)_data->_id);
-        pos = put(_data->_parm, buff, pos);
+        pos = put_param(params, buff, pos);
         return pos;
     }
 
-    bool load(const uint8_t* buff, size_t len){
-        if(len<resp_length()){
-            return true;
-        }
-
+    template<typename T>
+    const T load(const uint8_t* buff, size_t len){
         size_t pos = 0;
         pos = Conv::get(buff, pos, _data->_seq);     //Sequence number
         pos = Conv::get(buff, pos, _data->_ctrl_low);    //Control low
@@ -199,33 +181,32 @@ public:
 
         //Get Frame ID (uint8 for versions before 8, uint16 8 and higher)
         _data->_id = Conv::get_id(buff, pos);
-        //load parameters
-        get(_data->_parm, buff, pos);
 
-        return true;
+        //load parameters
+        T params;
+        get_param(params, buff, pos);
+        return params;
     }
 
     /**
      * Version
      */
-    size_t put(ver_req& param, uint8_t* buff, size_t pos);
-    void get(ver_resp& param, const uint8_t* buff, size_t pos);
+    size_t put_param(const ver_req& param, uint8_t* buff, size_t pos);
+    void get_param(ver_resp& param, const uint8_t* buff, size_t pos);
 
     /**
      * Echo
      */
-    size_t put(echo& param, uint8_t* buff, size_t pos);
-    void get(echo& param, const uint8_t* buff, size_t pos);
+    size_t put_param(const echo& param, uint8_t* buff, size_t pos);
+    void get_param(echo& param, const uint8_t* buff, size_t pos);
 
 public:
     /**
      * Default constructor for a new Frame creating
      */
-    EFrame(const EId id, const T& params) {
+    EFrame(const EId id) {
         _data = std::make_shared<FData>();
         set_id(id);
-        //TODO: Copy
-        _data->_parm = params;
     }
 
     /**
@@ -236,11 +217,11 @@ public:
     }
 
     EFrame(EFrame&& other) {
-        this->_data = std::move(other->_data);
+        this->_data = std::move(other._data);
     }
 
     EFrame& operator=(EFrame&& other){
-        this->_data = std::move(other->_data);
+        this->_data = std::move(other._data);
         return *this;
     }
 

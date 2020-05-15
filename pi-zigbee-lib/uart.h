@@ -24,11 +24,11 @@
 #include "logger.h"
 #include "CircularBuffer.h"
 #include "uart_frame.h"
+#include "uart_efr_buff.h"
 
 namespace zb_uart {
 
-class EFrame;
-using EFramePtr = std::shared_ptr<EFrame>;
+using EFramePtr = std::shared_ptr<EFData>;
 using EframeBuff = piutils::circbuff::CircularBuffer<EFramePtr>;
 
 /**
@@ -142,13 +142,19 @@ protected:
 /**
  *
  */
+
+class Ezsp;
 class ZBUart : public piutils::Threaded {
 public:
+
+    friend Ezsp;
     /**
      *
      */
     ZBUart(const bool debug_mode = false) : _debug(debug_mode) {
         logger::log(logger::LLOG::DEBUG, "uart", std::string(__func__));
+
+        _eframes = std::make_shared<EframeBuff>(20);
     }
 
     /**
@@ -787,7 +793,18 @@ public:
          return _eframes->get();
     }
 
+
+    /**
+     * Callbacks
+     *
+     * callback_connected - Called when UART init_device successfully finished
+     * callback_eframe_received - Called when UART received DATA frame
+     *
+     */
+
+    std::function<void(const bool)> callback_connected;
     std::function<void(const EFramePtr&)> callback_eframe_received;
+
 
 private:
 

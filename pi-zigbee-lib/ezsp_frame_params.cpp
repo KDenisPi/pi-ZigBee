@@ -18,13 +18,11 @@ namespace zb_ezsp {
 /**
  * Version
  */
-template<>
-size_t EFrame<ver_req>::put(ver_req& param, uint8_t* buff, size_t pos){
+size_t EFrame::put_param(const ver_req& param, uint8_t* buff, size_t pos){
     return Conv::put(buff, pos, param._ver);
 }
 
-template<>
-void EFrame<ver_resp>::get(ver_resp& param, const uint8_t* buff, size_t pos){
+void EFrame::get_param(ver_resp& param, const uint8_t* buff, size_t pos){
     pos = Conv::get(buff, pos, param._ver);
     pos = Conv::get(buff, pos, param._stackType);
     pos = Conv::get(buff, pos, param._stackVersion);
@@ -33,10 +31,7 @@ void EFrame<ver_resp>::get(ver_resp& param, const uint8_t* buff, size_t pos){
 /**
  * Echo
  */
-template<>
-size_t EFrame<zb_ezsp::echo>::put(zb_ezsp::echo& param, uint8_t* buff, size_t pos){
-    assert(param.dataLength<=sizeof(param.data));
-
+size_t EFrame::put_param(const zb_ezsp::echo& param, uint8_t* buff, size_t pos){
     pos = Conv::put(buff, pos, param.dataLength);
     for(int i=0; i<param.dataLength; i++)
         pos = Conv::put(buff, pos, param.data[i]);
@@ -44,8 +39,7 @@ size_t EFrame<zb_ezsp::echo>::put(zb_ezsp::echo& param, uint8_t* buff, size_t po
     return pos;
 }
 
-template<>
-void EFrame<zb_ezsp::echo>::get(zb_ezsp::echo& param, const uint8_t* buff, size_t pos){
+void EFrame::get_param(zb_ezsp::echo& param, const uint8_t* buff, size_t pos){
     pos = Conv::get(buff, pos, param.dataLength);
     assert(param.dataLength<=sizeof(param.data));
 
@@ -53,10 +47,10 @@ void EFrame<zb_ezsp::echo>::get(zb_ezsp::echo& param, const uint8_t* buff, size_
         pos = Conv::get(buff, pos, param.data[i]);
 }
 
-template<>
-const size_t EFrame<zb_ezsp::echo>::param_length(const zb_ezsp::echo& param) const {
+/*
+const size_t EFrame::param_length(const zb_ezsp::echo& param) const {
     return sizeof(zb_ezsp::echo); //TEMP (param.dataLength+1);
 }
-
+*/
 
 }

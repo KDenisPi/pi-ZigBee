@@ -49,12 +49,11 @@ int main (int argc, char* argv[])
      */
 
     std::cout << "*** Version frame ***" << std::endl;
-
-    std::shared_ptr<zb_ezsp::EFrame<zb_ezsp::ver_req>> ef_ver = std::make_shared<zb_ezsp::EFrame<zb_ezsp::ver_req>>(zb_ezsp::EId::ID_version, ver);
+    std::shared_ptr<zb_ezsp::EFrame> ef_ver = std::make_shared<zb_ezsp::EFrame>(zb_ezsp::EId::ID_version);
     std::cout << ef_ver->to_string() << std::endl;
 
     memset(buffer, 0x00, sizeof(buffer));
-    size_t len = ef_ver->put(buffer, 0);
+    size_t len = ef_ver->put<zb_ezsp::ver_req>(buffer, 0, ver);
     std::cout << print_buff(buffer, len) << std::endl;
 
     std::shared_ptr<zb_uart::UFrame> fr = uart->compose_data(buffer, len);
@@ -67,9 +66,8 @@ int main (int argc, char* argv[])
     /**
      * Version response frame
      */
-    std::shared_ptr<zb_ezsp::EFrame<zb_ezsp::ver_resp>> ef_ver_resp = std::make_shared<zb_ezsp::EFrame<zb_ezsp::ver_resp>>();
-    std::cout <<  "Response length: " << ef_ver_resp->resp_length() << std::endl;
-    ef_ver_resp->load(src_buff, sizeof(src_buff));
+    std::shared_ptr<zb_ezsp::EFrame> ef_ver_resp = std::make_shared<zb_ezsp::EFrame>();
+    auto params = ef_ver_resp->load<zb_ezsp::ver_resp>(src_buff, sizeof(src_buff));
 
     std::cout << ef_ver_resp->to_string() << std::endl;
 
@@ -87,22 +85,12 @@ int main (int argc, char* argv[])
     echo_.data[i] = ch+i;
 
     uint8_t buffer_in[128], buffer_out[128];
-    std::shared_ptr<zb_ezsp::EFrame<zb_ezsp::echo>> ef_echo = std::make_shared<zb_ezsp::EFrame<zb_ezsp::echo>>(zb_ezsp::EId::ID_Echo, echo_);
+    std::shared_ptr<zb_ezsp::EFrame> ef_echo = std::make_shared<zb_ezsp::EFrame>(zb_ezsp::EId::ID_Echo);
 
     std::cout << ef_echo->to_string() << std::endl;
     memset(buffer_in, 0x00, sizeof(buffer));
-    size_t len_in = ef_echo->put(buffer_in, 0);
+    size_t len_in = ef_echo->put<zb_ezsp::echo>(buffer_in, 0, echo_);
     std::cout << print_buff(buffer_in, len_in) << std::endl;
-
-    std::shared_ptr<zb_ezsp::EFrame<zb_ezsp::echo>> ef_echo_cpy = std::make_shared<zb_ezsp::EFrame<zb_ezsp::echo>>();
-    ef_echo_cpy = ef_echo;
-
-    std::cout << ef_echo_cpy->to_string() << std::endl;
-    memset(buffer_out, 0x00, sizeof(buffer));
-    size_t len_out = ef_echo_cpy->put(buffer_out, 0);
-    std::cout << print_buff(buffer_out, len_out) << std::endl;
-
-    success = compare_buffers(buffer_in, len_in, buffer_out, len_out);
 
     std::cout << "Finished " << success << std::endl;
     exit( (success ? EXIT_SUCCESS : EXIT_FAILURE));

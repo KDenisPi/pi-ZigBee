@@ -30,7 +30,7 @@ int main (int argc, char* argv[])
 
     logger::log_init("/var/log/logs/zigbee_log");
 
-    std::shared_ptr<zb_ezsp::EFrame<zb_ezsp::ver_req>> ef_ver = std::make_shared<zb_ezsp::EFrame<zb_ezsp::ver_req>>(zb_ezsp::EId::ID_version, ver);
+    std::shared_ptr<zb_ezsp::EFrame> ef_ver = std::make_shared<zb_ezsp::EFrame>(zb_ezsp::EId::ID_version);
     ef_ver->set_seq(1);
     std::cout << ef_ver->to_string() << std::endl;
 
@@ -39,7 +39,7 @@ int main (int argc, char* argv[])
         if(uart->init_device(3)){
 
             memset(w_buff, 0x00, sizeof(w_buff));
-            size_t wr_len = ef_ver->put(w_buff, 0);
+            size_t wr_len = ef_ver->put<zb_ezsp::ver_req>(w_buff, 0, ver);
             std::cout << print_buff(w_buff, wr_len) << std::endl;
 
             std::shared_ptr<zb_uart::UFrame> fr = uart->compose_data(w_buff, wr_len);
@@ -60,8 +60,8 @@ int main (int argc, char* argv[])
             std::shared_ptr<zb_uart::UFrame> fr_rsv = uart->parse(r_buff, rd_len, true);
             if(fr_rsv){
                 std::cout << fr_rsv->to_string() << std::endl;
-                std::shared_ptr<zb_ezsp::EFrame<zb_ezsp::ver_resp>> ef_ver_resp = std::make_shared<zb_ezsp::EFrame<zb_ezsp::ver_resp>>();
-                ef_ver_resp->load(fr_rsv->data(), fr_rsv->data_len());
+                std::shared_ptr<zb_ezsp::EFrame> ef_ver_resp = std::make_shared<zb_ezsp::EFrame>();
+                auto param = ef_ver_resp->load<zb_ezsp::ver_resp>(fr_rsv->data(), fr_rsv->data_len());
                 std::cout << ef_ver_resp->to_string() << std::endl;
             }
 

@@ -63,76 +63,13 @@ namespace zb_uart {
                      * Initialize device
                      */
                     if(p_uart->init_device(3)){
-                        //Prepare and send Version request
-                        zb_ezsp::ver_req ver;
-                        ver._ver = zb_ezsp::EzspVersion::ver();
-                        std::shared_ptr<zb_ezsp::EFrame<zb_ezsp::ver_req>> ef_ver = std::make_shared<zb_ezsp::EFrame<zb_ezsp::ver_req>>(zb_ezsp::EId::ID_version, ver);
-
-                        if(p_uart->is_debug())
-                            logger::log(logger::LLOG::DEBUG, "uart", std::string(__func__) + ef_ver->to_string());
-
-                        memset(w_buff, 0x00, sizeof(w_buff));
-                        size_t wr_len = ef_ver->put(w_buff, 0);
-
-                        if(p_uart->is_debug()){
-                            logger::log(logger::LLOG::DEBUG, "uart", std::string(__func__) + " EZSP Version frame " + p_uart->print_buff(w_buff, wr_len));
-                            //std::cout << p_uart->print_buff(w_buff, wr_len) << std::endl;
-                        }
-
-                        std::shared_ptr<zb_uart::UFrame> fr = p_uart->compose_data(w_buff, wr_len);
-                        wr_res = p_uart->send_frame(fr);
-                        if(wr_res == 0){
-                            memset(r_buff, 0x00, sizeof(r_buff));
-                            size_t rd_len = sizeof(r_buff);
-                            r_res = p_uart->read_data(r_buff, rd_len);
-
-                            if(r_res == 0 && rd_len > 0){
-                                /**
-                                 * Create UART frame and load response data
-                                 */
-                                std::shared_ptr<zb_uart::UFrame> fr_rsv = p_uart->parse(r_buff, rd_len, true);
-
-                                //Check if received frame is correct
-                                if(fr_rsv){
-                                    if(p_uart->is_debug()){
-                                        logger::log(logger::LLOG::DEBUG, "uart", std::string(__func__) + " UART Frame : " + fr_rsv->to_string());
-                                    }
-
-                                    if(fr_rsv->is_DATA()){
-                                        /**
-                                         * Save Frame number +1 as ackNum
-                                         */
-                                        info->set_ackNum(fr_rsv->frmNum()+1);
-
-                                        /**
-                                         * Create EZSP frame and parse received data
-                                         */
-                                        std::shared_ptr<zb_ezsp::EFrame<zb_ezsp::ver_resp>> ef_ver_resp = std::make_shared<zb_ezsp::EFrame<zb_ezsp::ver_resp>>();
-                                        ef_ver_resp->load(fr_rsv->data(), fr_rsv->data_len());
-                                        if(ef_ver_resp){
-                                            if(p_uart->is_debug()){
-                                                logger::log(logger::LLOG::DEBUG, "uart", std::string(__func__) + " EZSP Version frame Response : " + ef_ver_resp->to_string());
-                                            }
-
-                                            /**
-                                             * Send received data to EZSP
-                                             */
-
-                                            result = true;
-                                        }
-
-                                        /**
-                                         * Send ACK
-                                         */
-                                        std::shared_ptr<zb_uart::UFrame> fr_ack = p_uart->compose(zb_uart::ftype::ACK);
-                                        wr_res = p_uart->send_frame(fr_ack);
-                                    }
-                                }
-
-                            }
-                        }
-
+                        result = true;
                     }//initilize device
+
+                    //Notify EZSP low level connected
+                    if(p_uart->callback_connected != nullptr)
+                        p_uart->callback_connected(result);
+
                 }//connect to device
                 else{
                     logger::log(logger::LLOG::ERROR, "uart", std::string(__func__) + " Could not connect to device");
@@ -142,35 +79,22 @@ namespace zb_uart {
             //Initialization failed. Posponse processing
             if(!result){
                 info->set_activate(false); //stop processing
-
-                //TODO: Callback to EZSP
-
                 continue;
             }
-
-            zb_ezsp::echo e_cho;
-            e_cho.dataLength = 10;
-            for(int i=0; i<e_cho.dataLength; i++)
-                e_cho.data[i] = 'A'+i;
-            std::shared_ptr<zb_ezsp::EFrame<zb_ezsp::echo>> ef_ping = std::make_shared<zb_ezsp::EFrame<zb_ezsp::echo>>(zb_ezsp::EFrame_ID::ID_Echo, e_cho);
-            ef_ping->set_seq(1);
-
-            memset(w_buff, 0x00, sizeof(w_buff));
-            size_t wr_len = ef_ping->put(w_buff, 0);
-
-            if(p_uart->is_debug()){
-                logger::log(logger::LLOG::DEBUG, "uart", std::string(__func__) + " EZSP Echo frame " + p_uart->print_buff(w_buff, wr_len));
-                //std::cout << p_uart->print_buff(w_buff, wr_len) << std::endl;
-            }
-
-            std::shared_ptr<zb_uart::UFrame> fr = p_uart->compose_data(w_buff, wr_len);
-            wr_res = p_uart->send_frame(fr);
 
             while(!p_uart->is_stop_signal()){
 
                 /**
                  * Check output queue
                  */
+                const EFramePtr e_fr = p_uart->get_ezsp_frame();
+                if(e_fr){
+                    std::shared_ptr<zb_uart::UFrame> fr = p_uart->compose_data(e_fr->data(), e_fr->len());
+                    wr_res = p_uart->send_frame(fr);
+                    if(wr_res == 0){
+                        logger::log(logger::LLOG::ERROR, "uart", std::string(__func__) + " Could not write to device");
+                    }
+                }
 
                 /**
                  * Wait data from NCP side
@@ -196,11 +120,17 @@ namespace zb_uart {
 
                             info->set_ackNum(fr_rsv->frmNum()+1);
 
+                            zb_uart::EFramePtr e_fr = std::make_shared<zb_uart::EFData>(fr_rsv->data_len(), fr_rsv->data());
+
                             /**
                              * Send ACK
                              */
                             std::shared_ptr<zb_uart::UFrame> fr_ack = p_uart->compose(zb_uart::ftype::ACK);
                             wr_res = p_uart->send_frame(fr_ack);
+
+                            if(p_uart->callback_eframe_received != nullptr)
+                                p_uart->callback_eframe_received(e_fr);
+
                         }
                     }
                 }
