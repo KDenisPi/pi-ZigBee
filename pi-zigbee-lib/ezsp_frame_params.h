@@ -10,6 +10,7 @@
 #define PI_ZIGBEE_LIB_EZSP_FRAME_PARAMS_H_
 
 #include <cstdint>
+#include <string>
 #include "ezsp_defs.h"
 
 namespace zb_ezsp {
@@ -30,6 +31,10 @@ using ver_resp = struct ezsp_ver_resp {
     uint8_t _stackType;     //stackType The type of stack running on the NCP (2).
     uint16_t _stackVersion;  //stackVersion The version number of the stack.
 
+    const std::string to_string() const {
+        std::string result = "Version: " + std::to_string((uint16_t)_ver) + " Stack Type: " + std::to_string((uint16_t)_stackType) + " Version: " + std::to_string(_stackVersion);
+        return result;
+    }
 };
 
 /**
@@ -40,6 +45,11 @@ using ver_resp = struct ezsp_ver_resp {
 using echo = struct ezsp_echo { //__attribute__((packed, aligned(1)))
     uint8_t dataLength;     // The length of the data parameter in bytes.
     uint8_t data[10];         // The data to be echoed back.
+
+    const std::string to_string() const {
+        std::string result = "Ping Length: " + std::to_string(dataLength);
+        return result;
+    }
 };
 
 }

@@ -7,6 +7,16 @@
 
 using namespace std;
 
+std::shared_ptr<zb_ezsp::Ezsp> ezsp;
+
+void ezsp_callback(const zb_ezsp::EId id, const std::string info){
+    std::cout << info << std::endl;
+
+    //Send Echo after Version
+    if(id == zb_ezsp::EId::ID_version){
+        ezsp->echo();
+    }
+}
 
 /**
 *
@@ -17,7 +27,8 @@ int main (int argc, char* argv[])
 
     logger::log_init("/var/log/logs/zigbee_log");
 
-    std::shared_ptr<zb_ezsp::Ezsp> ezsp = std::make_shared<zb_ezsp::Ezsp>(true);
+    ezsp = std::make_shared<zb_ezsp::Ezsp>(true);
+    ezsp->frame_received = std::bind(&ezsp_callback, std::placeholders::_1, std::placeholders::_2);
     sleep(2);
 
     std::cout << "Start worker" << std::endl;

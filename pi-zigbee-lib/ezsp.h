@@ -9,6 +9,8 @@
 #ifndef PI_ZIGBEE_LIB_EZSP_H_
 #define PI_ZIGBEE_LIB_EZSP_H_
 
+#include <functional>
+
 #include "ezsp_frame.h"
 #include "uart.h"
 #include "uart_efr_buff.h"
@@ -20,7 +22,7 @@ namespace zb_ezsp {
  */
 class Ezsp {
 public:
-    Ezsp(const bool debug_mode=true) : _seq(0), _debug(debug_mode) {
+    Ezsp(const bool debug_mode=true) : _seq(0), _debug(debug_mode), frame_received(nullptr) {
 
         _uart = std::make_shared<zb_uart::ZBUart>(debug_mode);
 
@@ -28,6 +30,9 @@ public:
         _uart->callback_eframe_received = std::bind(&Ezsp::callback_eframe_received, this, std::placeholders::_1);
     }
 
+    /**
+     *
+     */
     ~Ezsp() {
         stop();
     }
@@ -36,7 +41,6 @@ public:
     Ezsp(Ezsp&&) = delete;
     Ezsp& operator=(const Ezsp&) = delete;
     Ezsp& operator=(Ezsp&&) = delete;
-
 
     /**
      * Sequence number
@@ -50,7 +54,59 @@ public:
         return _seq;
     }
 
+    /**
+     * Callback for recived frames
+     * TODO: Implement subsribers
+     */
+    std::function<void(const EId id, const std::string)> frame_received;
+
+    void notify(const EId id, const std::string info) const {
+        if(frame_received != nullptr){
+            frame_received(id, info);
+        }
+    }
+
+
+    /**
+     * High level interface functions
+     *
+     */
+    void echo() {
+        zb_ezsp::echo ech;
+        ech.dataLength = 10;
+        for(int i=0; i<ech.dataLength; i++){
+            ech.data[i] = '0' + 1;
+        }
+
+        add2output<zb_ezsp::echo>(zb_ezsp::EId::ID_Echo, ech);
+    }
+
 protected:
+    /**
+     * Add frame to output queue
+     */
+    template<typename T>
+    void add2output(zb_ezsp::EId id, T& obj){
+        uint8_t w_buff[140];
+
+        std::shared_ptr<zb_ezsp::EFrame> efr = std::make_shared<zb_ezsp::EFrame>(id);
+        efr->set_seq(seq_next());
+
+        if(is_debug()){
+            logger::log(logger::LLOG::DEBUG, "uart", std::string(__func__) + efr->to_string());
+        }
+
+        //Convert EZSP frame to buffer
+        memset(w_buff, 0x00, sizeof(w_buff));
+        size_t wr_len = efr->put<T>(w_buff, 0, obj);
+
+        //Prepare object for UART sending as DATA frame
+        zb_uart::EFramePtr e_fr = std::make_shared<zb_uart::EFData>(wr_len, w_buff);
+
+        //Add to queue
+        _uart->put_ezsp_frame(e_fr);
+    }
+
     /**
      *
      */
@@ -61,28 +117,12 @@ protected:
         logger::log(logger::LLOG::DEBUG, "uart", std::string(__func__) + " Connected: " + std::to_string(conn));
 
         if(!conn){ //Low level error
-
             return;
         }
 
         //create EZSP Version frame
         ver._ver = zb_ezsp::EzspVersion::ver();
-        std::shared_ptr<zb_ezsp::EFrame> ef_ver = std::make_shared<zb_ezsp::EFrame>(zb_ezsp::EId::ID_version);
-        ef_ver->set_seq(seq_next());
-
-        if(is_debug()){
-            logger::log(logger::LLOG::DEBUG, "uart", std::string(__func__) + ef_ver->to_string());
-        }
-
-        //Convert EZSP frame to buffer
-        memset(w_buff, 0x00, sizeof(w_buff));
-        size_t wr_len = ef_ver->put<zb_ezsp::ver_req>(w_buff, 0, ver);
-
-        //Prepare object for UART sending as DATA frame
-        zb_uart::EFramePtr e_fr = std::make_shared<zb_uart::EFData>(wr_len, w_buff);
-
-        //Add to queue
-        _uart->put_ezsp_frame(e_fr);
+        add2output<zb_ezsp::ver_req>(zb_ezsp::EId::ID_version, ver);
     }
 
     /**
@@ -100,11 +140,13 @@ protected:
             case EId::ID_version:
                 {
                     auto p_ver = ef->load<zb_ezsp::ezsp_ver_resp>(efr_raw->data(), efr_raw->len());
+                    notify(EId::ID_version, p_ver.to_string());
                 }
                 break;
             case EId::ID_Echo:
                 {
                     auto p_echo = ef->load<zb_ezsp::echo>(efr_raw->data(), efr_raw->len());
+                    notify(EId::ID_Echo, p_echo.to_string());
                 }
                 break;
         }
@@ -160,8 +202,6 @@ private:
 
         return id;
     }
-
-
 };
 
 }
