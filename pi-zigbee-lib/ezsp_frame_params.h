@@ -52,5 +52,91 @@ using echo = struct ezsp_echo { //__attribute__((packed, aligned(1)))
     }
 };
 
+/**
+ * Command without any parameters
+ */
+using no_params = struct ezsp_no_params {
+
+};
+
+/**
+ * Response with Ember Status only
+ */
+using ember_status = struct ezsp_EmberStatus {
+    EmberStatus status;
+
+    const std::string to_string() const {
+        char buff[20];
+        std::sprintf(buff, "Status: 0x%02X", status);
+        return std::string(buff);
+    }
+};
+
+/**
+ * Start scan & related structures
+ */
+using start_scan = struct ezsp_StartScan {
+    EzspNetworkScanType scanType;
+    uint32_t channelMask;
+    uint8_t duration;
+};
+
+/**
+ * Reports the result of an energy scan for a single channel. The scan is not complete until the scanCompleteHandler callback is called.
+ */
+using energyScanResultHandler = struct ezsp_energyScanResultHandler {
+    uint8_t channel;        //The 802.15.4 channel number that was scanned.
+    int8_t maxRssiValue;    //The maximum RSSI value found on the channel.
+
+    const std::string to_string() const {
+        return std::string("Scan result Channel: ") + std::to_string((uint16_t)channel) + " Max RSSI: " + std::to_string((int16_t)maxRssiValue);
+    }
+};
+
+/**
+ * The parameters of a ZigBee network.
+ */
+using  EmberZigbeeNetwork = struct ezsp_EmberZigbeeNetwork {
+    uint8_t channel;            // The 802.15.4 channel associated with the network.
+    uint16_t panId;             // The network's PAN identifier.
+    uint8_t extendedPanId[8];   // The network's extended PAN identifier.
+    EZSP_Bool allowingJoin;     // Whether the network is allowing MAC associations.
+    uint8_t stackProfile;       // The Stack Profile associated with the network.
+    uint8_t nwkUpdateId;        // The instance of the Network.
+
+    const std::string to_string() const {
+        char buff[128];
+        std::sprintf(buff, "Zigbee Network: CH:%d PAN:%d  ExPan:%02X:%02X:%02X:%02X:%02X:%02X:%02X:%02X Allow Join:%d StProfile:%02X NetInstance:%02X",
+        channel,
+        panId,
+        extendedPanId[0],
+        extendedPanId[1],
+        extendedPanId[2],
+        extendedPanId[3],
+        extendedPanId[4],
+        extendedPanId[5],
+        extendedPanId[6],
+        extendedPanId[7],
+        allowingJoin,
+        stackProfile,
+        nwkUpdateId
+        );
+        return std::string(buff);
+    }
+};
+
+/**
+ * Reports that a network was found as a result of a prior call to startScan. Gives the network parameters useful for deciding which network to join.
+ */
+using networkFoundHandler = struct ezsp_networkFoundHandler {
+    EmberZigbeeNetwork networkFound;    // The parameters associated with the network found.
+    uint8_t lastHopLqi;                 // The link quality from the node that generated this beacon.
+    int8_t lastHopRssi;                 // The energy level (in units of dBm) observed during the reception.
+
+    const std::string to_string() const {
+        std::string result = " Net Found Handler: lastHopLqi:" + std::to_string((uint16_t)lastHopLqi) + " lastHopRssi:" + std::to_string((int16_t)lastHopRssi) + " \n" + networkFound.to_string();
+    }
+};
+
 }
 #endif

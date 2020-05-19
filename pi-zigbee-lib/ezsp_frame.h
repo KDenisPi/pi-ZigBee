@@ -192,13 +192,30 @@ public:
      * Version
      */
     size_t put_param(const ver_req& param, uint8_t* buff, size_t pos);
-    void get_param(ver_resp& param, const uint8_t* buff, size_t pos);
+    size_t get_param(ver_resp& param, const uint8_t* buff, size_t& pos);
 
     /**
      * Echo
      */
     size_t put_param(const echo& param, uint8_t* buff, size_t pos);
-    void get_param(echo& param, const uint8_t* buff, size_t pos);
+    size_t get_param(echo& param, const uint8_t* buff, size_t& pos);
+
+    /**
+     * Request without any parameters and response with Ember status only
+     */
+
+    size_t put_param(const zb_ezsp::ezsp_no_params& param, uint8_t* buff, size_t pos);
+    size_t get_param(zb_ezsp::ezsp_no_params& param, const uint8_t* buff, size_t& pos);
+    size_t get_param(zb_ezsp::ezsp_EmberStatus& param, const uint8_t* buff, size_t& pos);
+
+    /**
+     * Start scan and related calls
+     */
+    size_t put_param(const zb_ezsp::start_scan& param, uint8_t* buff, size_t pos);
+    size_t get_param(zb_ezsp::energyScanResultHandler& param, const uint8_t* buff, size_t& pos);
+    size_t get_param(zb_ezsp::EmberZigbeeNetwork& param, const uint8_t* buff, size_t& pos);
+    size_t get_param(zb_ezsp::networkFoundHandler& param, const uint8_t* buff, size_t& pos);
+
 
 public:
     /**

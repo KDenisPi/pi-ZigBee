@@ -44,6 +44,17 @@ public:
         return pos;
     }
 
+    static size_t get(const uint8_t* buff, size_t& pos, int8_t& res){
+        res = buff[pos++];
+        return pos;
+    }
+
+    static size_t get(const uint8_t* buff, size_t& pos, uint8_t* res, size_t len){
+        for(int i=0; i<len; i++)
+            res[i] = buff[pos++];
+        return pos;
+    }
+
     static size_t get(const uint8_t* buff, size_t& pos, uint16_t& res){
         res = (buff[pos+1] << 8);
         res |= buff[pos];

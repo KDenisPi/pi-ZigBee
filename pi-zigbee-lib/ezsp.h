@@ -69,7 +69,10 @@ public:
 
     /**
      * High level interface functions
-     *
+     */
+
+    /**
+     * Ping device
      */
     void echo() {
         zb_ezsp::echo ech;
@@ -79,6 +82,38 @@ public:
         }
 
         add2output<zb_ezsp::echo>(zb_ezsp::EId::ID_Echo, ech);
+    }
+
+    /**
+     * This function will start a scan
+     * ch2scan - number channels to scan (15 channels). OxFF - scan all
+     * channels - array of channels have to be scan. Not used if ch2scan = 0xFF
+     * duration - Sets the exponent of the number of scan periods, where a scan period is 960 symbols. The scan will occur for ((2^duration) + 1) scan periods.
+     */
+    void startScan(const zb_ezsp::EzspNetworkScanType scanType, const uint8_t ch2scan, const uint8_t* channels = nullptr, const uint8_t duration = 4) {
+        zb_ezsp::start_scan scan;
+
+        if(ch2scan == 0xFF){
+            scan.channelMask = 0x07FFF800;
+        }
+        else{
+            for(int i =0; i<ch2scan; i++){
+                scan.channelMask |= (1<<channels[i]);
+                scan.channelMask &= 0x07FFF800; //clear incorrect channels
+            }
+        }
+
+        scan.scanType = scanType;
+        scan.duration = duration;
+        add2output<zb_ezsp::start_scan>(zb_ezsp::EId::ID_startScan, scan);
+    }
+
+    /**
+     * Allows the NCP to respond with a pending callback
+     */
+    void allowCallback(){
+        zb_ezsp::no_params no_prm;
+        add2output<zb_ezsp::no_params>(zb_ezsp::EId::ID_callback, no_prm);
     }
 
 protected:
@@ -138,19 +173,49 @@ protected:
 
         switch(id){
             case EId::ID_version:
-                {
-                    auto p_ver = ef->load<zb_ezsp::ezsp_ver_resp>(efr_raw->data(), efr_raw->len());
-                    notify(EId::ID_version, p_ver.to_string());
-                }
-                break;
+            {
+                auto p_ver = ef->load<zb_ezsp::ezsp_ver_resp>(efr_raw->data(), efr_raw->len());
+                notify(EId::ID_version, p_ver.to_string());
+            }
+            break;
+            /**
+             * Group of EmberStatus only responses
+             */
+            case EId::ID_startScan:
+            case EId::ID_invalidCommand:
+            {
+                auto p_status = ef->load<zb_ezsp::ember_status>(efr_raw->data(), efr_raw->len());
+                notify((EId)id, p_status.to_string());
+            }
+            break;
+            /**
+             *Group no data responses
+             */
+            case EId::ID_noCallbacks:
+            {
+                notify((EId)id, std::string());
+            }
+            break;
+            //Reports that a network was found as a result of a prior call to startScan. Gives the network parameters useful for deciding which network to join.
+            case EId::ID_networkFoundHandler:
+            {
+                auto p_network = ef->load<zb_ezsp::networkFoundHandler>(efr_raw->data(), efr_raw->len());
+                notify((EId)id, p_network.to_string());
+            }
+            break;
+            case EId::ID_energyScanResultHandler:
+            {
+                auto p_channel = ef->load<zb_ezsp::energyScanResultHandler>(efr_raw->data(), efr_raw->len());
+                notify((EId)id, p_channel.to_string());
+            }
+            break;
             case EId::ID_Echo:
-                {
-                    auto p_echo = ef->load<zb_ezsp::echo>(efr_raw->data(), efr_raw->len());
-                    notify(EId::ID_Echo, p_echo.to_string());
-                }
-                break;
+            {
+                auto p_echo = ef->load<zb_ezsp::echo>(efr_raw->data(), efr_raw->len());
+                notify(EId::ID_Echo, p_echo.to_string());
+            }
+            break;
         }
-
     }
 
     const bool is_debug() const {
