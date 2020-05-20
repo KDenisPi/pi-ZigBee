@@ -11,6 +11,7 @@
 
 #include <cstdint>
 #include <stddef.h>
+#include <assert.h>
 
 #include "ezsp_defs.h"
 
@@ -39,6 +40,14 @@ public:
         return pos;
     }
 
+    static size_t put(uint8_t* buff, size_t& pos, const uint8_t* data, const size_t len, const size_t max_len){
+        assert(len<=max_len);
+        for(int i=0; i<len && i<max_len; i++)
+            buff[pos++] = data[i];
+        return pos;
+    }
+
+
     static size_t get(const uint8_t* buff, size_t& pos, uint8_t& res){
         res = buff[pos++];
         return pos;
@@ -49,8 +58,9 @@ public:
         return pos;
     }
 
-    static size_t get(const uint8_t* buff, size_t& pos, uint8_t* res, size_t len){
-        for(int i=0; i<len; i++)
+    static size_t get(const uint8_t* buff, size_t& pos, uint8_t* res, const size_t len, const size_t max_len){
+        assert(len<=max_len);
+        for(int i=0; i<len && i<max_len; i++)
             res[i] = buff[pos++];
         return pos;
     }
@@ -92,6 +102,28 @@ public:
         uint32_t high = (get_short(buff, pos) << 16);
         return (high|low);
     }
+
+    static size_t get(const uint8_t* buff, size_t& pos, zb_ezsp::EmberStatus& res){
+        uint8_t status;
+        pos = Conv::get(buff, pos, status);
+        res = (zb_ezsp::EmberStatus)status;
+        return pos;
+    }
+
+    static size_t get(const uint8_t* buff, size_t& pos, zb_ezsp::EzspStatus& res){
+        uint8_t status;
+        pos = Conv::get(buff, pos, status);
+        res = (zb_ezsp::EzspStatus)status;
+        return pos;
+    }
+
+    static size_t get(const uint8_t* buff, size_t& pos, zb_ezsp::EzspValueId& res){
+        uint8_t valueid;
+        pos = Conv::get(buff, pos, valueid);
+        res = (zb_ezsp::EzspValueId)valueid;
+        return pos;
+    }
+
 
     /**
      * little endian utils

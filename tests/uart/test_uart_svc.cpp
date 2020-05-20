@@ -10,7 +10,8 @@ using namespace std;
 std::shared_ptr<zb_ezsp::Ezsp> ezsp;
 
 void ezsp_callback(const zb_ezsp::EId id, const std::string info){
-    std::cout << info << std::endl;
+
+    std::cout << "ID:" << std::hex << (uint16_t)id << " " << info << std::endl;
 
     //Send Echo after Version
     if(id == zb_ezsp::EId::ID_version){
@@ -24,6 +25,7 @@ void ezsp_callback(const zb_ezsp::EId id, const std::string info){
 int main (int argc, char* argv[])
 {
     bool success = false;
+    std::string cmd;
 
     logger::log_init("/var/log/logs/zigbee_log");
 
@@ -37,7 +39,14 @@ int main (int argc, char* argv[])
 
     std::cout << "Activate processing" << std::endl;
     ezsp->activate();
-    sleep(15);
+
+    while(1){
+        std::cout << "Enter exit:" << std::endl;
+        std::cin >> cmd;
+
+        if(cmd == "exit")
+            break;
+    }
 
     std::cout << "Stop worker. Release object" << std::endl;
     ezsp.reset();

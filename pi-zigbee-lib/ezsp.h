@@ -108,12 +108,26 @@ public:
         add2output<zb_ezsp::start_scan>(zb_ezsp::EId::ID_startScan, scan);
     }
 
+    void stopScan(){
+        zb_ezsp::no_params no_prm;
+        add2output<zb_ezsp::no_params>(zb_ezsp::EId::ID_stopScan, no_prm);
+    }
+
     /**
      * Allows the NCP to respond with a pending callback
      */
     void allowCallback(){
         zb_ezsp::no_params no_prm;
         add2output<zb_ezsp::no_params>(zb_ezsp::EId::ID_callback, no_prm);
+    }
+
+    /**
+     * Value get/set
+     */
+    void getValue(const EzspValueId id){
+        zb_ezsp::value_get_req v_id;
+        v_id.valueId = id;
+        add2output<zb_ezsp::value_get_req>(zb_ezsp::EId::ID_getValue, v_id);
     }
 
 protected:
@@ -182,6 +196,7 @@ protected:
              * Group of EmberStatus only responses
              */
             case EId::ID_startScan:
+            case EId::ID_stopScan:
             case EId::ID_invalidCommand:
             {
                 auto p_status = ef->load<zb_ezsp::ember_status>(efr_raw->data(), efr_raw->len());
@@ -196,7 +211,9 @@ protected:
                 notify((EId)id, std::string());
             }
             break;
-            //Reports that a network was found as a result of a prior call to startScan. Gives the network parameters useful for deciding which network to join.
+            /**
+             * Reports that a network was found as a result of a prior call to startScan. Gives the network parameters useful for deciding which network to join.
+             */
             case EId::ID_networkFoundHandler:
             {
                 auto p_network = ef->load<zb_ezsp::networkFoundHandler>(efr_raw->data(), efr_raw->len());
@@ -215,6 +232,21 @@ protected:
                 notify(EId::ID_Echo, p_echo.to_string());
             }
             break;
+            case EId::ID_getValue:
+            {
+                auto p_status = ef->load<zb_ezsp::value_get_resp>(efr_raw->data(), efr_raw->len());
+                notify((EId)id, p_status.to_string());
+            }
+            break;
+            case EId::ID_setValue:
+            {
+                auto p_status = ef->load<zb_ezsp::ezsp_status>(efr_raw->data(), efr_raw->len());
+                notify((EId)id, p_status.to_string());
+            }
+            break;
+
+            default:
+                notify((EId)id, std::string("Not supported yet"));
         }
     }
 

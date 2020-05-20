@@ -72,6 +72,17 @@ using ember_status = struct ezsp_EmberStatus {
     }
 };
 
+using ezsp_status = struct ezsp_EzspStatus {
+    EzspStatus status;
+
+    const std::string to_string() const {
+        char buff[20];
+        std::sprintf(buff, "Status: 0x%02X", status);
+        return std::string(buff);
+    }
+};
+
+
 /**
  * Start scan & related structures
  */
@@ -137,6 +148,45 @@ using networkFoundHandler = struct ezsp_networkFoundHandler {
         std::string result = " Net Found Handler: lastHopLqi:" + std::to_string((uint16_t)lastHopLqi) + " lastHopRssi:" + std::to_string((int16_t)lastHopRssi) + " \n" + networkFound.to_string();
     }
 };
+
+using scanCompleteHandler = struct ezsp_scanCompleteHandler {
+    uint8_t channel;    // The channel on which the current error occurred. Undefined for the case of EMBER_SUCCESS.
+    EmberStatus status; // The error condition that occurred on the current channel. Value will be EMBER_SUCCESS when the scan has completed.
+
+    const std::string to_string() const {
+        char buff[40];
+        if(EmberStatus::EMBER_SUCCESS == status)
+            std::sprintf(buff, "Status: 0x%02X", status);
+        else
+        {
+            std::sprintf(buff, "Status: 0x%02X Channel: %d", status, channel);
+        }
+        return std::string(buff);
+    }
+};
+
+using value_set = struct ezsp_ncp_value_set {
+    EzspValueId valueId;    // EZSP_SUCCESS if the value was read successfully, EZSP_ERROR_INVALID_ID if the NCP does not recognize valueId.
+    uint8_t valueLength;    // The length of the value parameter in bytes.
+    uint8_t value[100];     // The value.
+};
+
+using value_get_req = struct ezsp_ncp_value_get_req {
+    EzspValueId valueId;
+};
+
+using value_get_resp = struct ezsp_ncp_value_get_resp {
+    EzspStatus status;      // EZSP_SUCCESS if the value was read successfully, EZSP_ERROR_INVALID_ID if the NCP does not recognize valueId.
+    uint8_t valueLength;    // The length of the value parameter in bytes.
+    uint8_t value[100];     // The value.
+
+    const std::string to_string() const {
+        char buff[40];
+        std::sprintf(buff, "Status: 0x%02X Length: %d", status, valueLength);
+        return std::string(buff);
+    }
+};
+
 
 }
 #endif

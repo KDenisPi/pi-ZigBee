@@ -46,9 +46,13 @@ using EId = enum EFrame_ID : id_type {
     ID_noCallbacks = 0x07,                  //Indicates that there are currently no pending callbacks.
     ID_startScan = 0x1A,
     ID_networkFoundHandler = 0x1B,
+    ID_scanCompleteHandler = 0x1C,
+    ID_stopScan = 0x1D,
     ID_energyScanResultHandler = 0x48,
     ID_invalidCommand = 0x58,
-    ID_Echo = 0x81
+    ID_Echo = 0x81,
+    ID_getValue = 0xAA,
+    ID_setValue = 0xAB
 };
 
 using EzspNetworkScanType = enum EFrame_EzspNetworkScanType : uint8_t {
@@ -57,7 +61,84 @@ using EzspNetworkScanType = enum EFrame_EzspNetworkScanType : uint8_t {
 };
 
 /**
- * List of Ember Status
+ * List of EZSP Statuses
+ */
+using EzspStatus = enum EFrame_EzspStatus : uint8_t{
+    EZSP_SUCCESS = 0x00,                        // Success.
+    EZSP_SPI_ERR_FATAL = 0x10,                  // Fatal error.
+    EZSP_SPI_ERR_NCP_RESET = 0x11,              // The Response frame of the current transaction indicates the NCP has reset.
+    EZSP_SPI_ERR_OVERSIZED_EZSP_FRAME = 0x12,   // The NCP is reporting that the Command frame of the current transaction is oversized (the length byte is too large).
+    EZSP_SPI_ERR_ABORTED_TRANSACTION = 0x13,    // The Response frame of the current transaction indicates the previous transaction was aborted (nSSEL deasserted too soon).
+    EZSP_SPI_ERR_MISSING_FRAME_TERMINATOR = 0x14, // The Response frame of the current transaction indicates the frame terminator is missing from the Command frame.
+    EZSP_SPI_ERR_WAIT_SECTION_TIMEOUT = 0x15,   // The NCP has not provided a Response within the time limit defined by WAIT_SECTION_TIMEOUT.
+    EZSP_SPI_ERR_NO_FRAME_TERMINATOR = 0x16,    // The Response frame from the NCP is missing the frame terminator.
+    EZSP_SPI_ERR_EZSP_COMMAND_OVERSIZED = 0x17, // The Host attempted to send an oversized Command (thelength byte is too large) and the AVR's spi-protocol.c blocked the transmission.
+    EZSP_SPI_ERR_EZSP_RESPONSE_OVERSIZED = 0x18,// The NCP attempted to send an oversized Response (the length byte is too large) and the AVR's spi-protocol.c blocked the reception.
+    EZSP_SPI_WAITING_FOR_RESPONSE = 0x19,       // The Host has sent the Command and is still waiting for the NCP to send a Response.
+    EZSP_SPI_ERR_HANDSHAKE_TIMEOUT = 0x1A,      // The NCP has not asserted nHOST_INT within the time limit defined by WAKE_HANDSHAKE_TIMEOUT.
+    EZSP_SPI_ERR_STARTUP_TIMEOUT = 0x1B,        // The NCP has not asserted nHOST_INT after an NCP reset within the time limit defined by STARTUP_TIMEOUT.
+    EZSP_SPI_ERR_STARTUP_FAIL = 0x1C,           // The Host attempted to verify the SPI Protocol activity and version number, and the verification failed.
+    EZSP_SPI_ERR_UNSUPPORTED_SPI_COMMAND = 0x1D, // The Host has sent a command with a SPI Byte that is unsupported by the current mode the NCP is operating in.
+    EZSP_ASH_IN_PROGRESS = 0x20,                // Operation not yet complete.
+    EZSP_HOST_FATAL_ERROR = 0x21,               // Fatal error detected by host.
+    EZSP_ASH_NCP_FATAL_ERROR = 0x22,            // Fatal error detected by NCP.
+    EZSP_DATA_FRAME_TOO_LONG = 0x23,            // Tried to send DATA frame too long.
+    EZSP_DATA_FRAME_TOO_SHORT = 0x24,           // Tried to send DATA frame too short.
+    EZSP_NO_TX_SPACE = 0x25,                    // No space for tx'ed DATA frame.
+    EZSP_NO_RX_SPACE = 0x26,                    // No space for rec'd DATA frame.
+    EZSP_NO_RX_DATA = 0x27,                     // No receive data available.
+    EZSP_NOT_CONNECTED = 0x28,                  // Not in Connected state.
+    EZSP_ERROR_VERSION_NOT_SET = 0x30,          // The NCP received a command before the EZSP version had been set.
+    EZSP_ERROR_INVALID_FRAME_ID = 0x31,         // The NCP received a command containing an unsupported frame ID.
+    EZSP_ERROR_WRONG_DIRECTION = 0x32,          // The direction flag in the frame control field was incorrect.
+    EZSP_ERROR_TRUNCATED = 0x33,                // The truncated flag in the frame control field was set, indicating there was not enough memory available to
+                                                //complete the response or that the response would have exceeded the maximum EZSP frame length.
+    EZSP_ERROR_OVERFLOW =0x34,                  // The overflow flag in the frame control field was set, indicating one or more callbacks occurred since
+                                                //the previous response and there was not enough memory available to report them to the Host.
+    EZSP_ERROR_OUT_OF_MEMORY = 0x35,            // Insufficient memory was available.
+    EZSP_ERROR_INVALID_VALUE = 0x36,            // The value was out of bounds.
+    EZSP_ERROR_INVALID_ID = 0x37,               // The configuration id was not recognized.
+    EZSP_ERROR_INVALID_CALL = 0x38,             // Configuration values can no longer be modified.
+    EZSP_ERROR_NO_RESPONSE = 0x39,              // The NCP failed to respond to a command.
+    EZSP_ERROR_COMMAND_TOO_LONG = 0x40,         // The length of the command exceeded the maximum EZSP frame length.
+    EZSP_ERROR_QUEUE_FULL = 0x41,               // The UART receive queue was full causing a callback response to be dropped.
+    EZSP_ERROR_COMMAND_FILTERED = 0x42,         // The command has been filtered out by NCP.
+    EZSP_ERROR_SECURITY_KEY_ALREADY_SET = 0x43, // EZSP Security Key is already set
+    EZSP_ERROR_SECURITY_TYPE_INVALID = 0x44,    // EZSP Security Type is invalid
+    EZSP_ERROR_SECURITY_PARAMETERS_INVALID = 0x45, // EZSP Security Parameters are invalid
+    EZSP_ERROR_SECURITY_PARAMETERS_ALREADY_SET = 0x46, // EZSP Security Parameters are already set
+    EZSP_ERROR_SECURITY_KEY_NOT_SET = 0x47,     // EZSP Security Key is not set
+    EZSP_ERROR_SECURITY_PARAMETERS_NOT_SET = 0x48, // EZSP Security Parameters are not set
+    EZSP_ERROR_UNSUPPORTED_CONTROL = 0x49,      // Received frame with unsupported control byte
+    EZSP_ERROR_UNSECURE_FRAME = 0x4A,           // Received frame is unsecure, when security is established
+    EZSP_ASH_ERROR_VERSION = 0x50,              // Incompatible ASH version
+    EZSP_ASH_ERROR_TIMEOUTS = 0x51,             // Exceeded max ACK timeouts
+    EZSP_ASH_ERROR_RESET_FAIL = 0x52,           // Timed out waiting for RSTACK
+    EZSP_ASH_ERROR_NCP_RESET = 0x53,            // Unexpected ncp reset
+    EZSP_ERROR_SERIAL_INIT = 0x54,              // Serial port initialization failed
+    EZSP_ASH_ERROR_NCP_TYPE = 0x55,             // Invalid ncp processor type
+    EZSP_ASH_ERROR_RESET_METHOD = 0x56,         // Invalid ncp reset method
+    EZSP_ASH_ERROR_XON_XOFF = 0x57,             // XON/XOFF not supported by host driver
+    EZSP_ASH_STARTED = 0x70,                    // ASH protocol started
+    EZSP_ASH_CONNECTED = 0x71,                  // ASH protocol connected
+    EZSP_ASH_DISCONNECTED = 0x72,               // ASH protocol disconnected
+    EZSP_ASH_ACK_TIMEOUT = 0x73,                // Timer expired waiting for ack
+    EZSP_ASH_CANCELLED = 0x74,                  // Frame in progress cancelled
+    EZSP_ASH_OUT_OF_SEQUENCE = 0x75,            // Received frame out of sequence
+    EZSP_ASH_BAD_CRC = 0x76,                    // Received frame with CRC error
+    EZSP_ASH_COMM_ERROR = 0x77,                 // Received frame with comm error
+    EZSP_ASH_BAD_ACKNUM = 0x78,                 // Received frame with bad ackNum
+    EZSP_ASH_TOO_SHORT = 0x79,                  // Received frame shorter than minimum
+    EZSP_ASH_TOO_LONG = 0x7A,                   // Received frame longer than maximum
+    EZSP_ASH_BAD_CONTROL = 0x7B,                // Received frame with illegal control byte
+    EZSP_ASH_BAD_LENGTH = 0x7C,                 // Received frame with illegal length for its type
+    EZSP_ASH_ACK_RECEIVED = 0x7D,               // Received ASH Ack
+    EZSP_ASH_ACK_SENT = 0x7E,                   // Sent ASH Ack
+    EZSP_NO_ERROR = 0xFF                        // No reset or error
+};
+
+/**
+ * List of Ember Statuses
  */
 using EmberStatus = enum EFrame_EmberStatus : uint8_t{
 EMBER_SUCCESS = 0x00,                       //The generic 'no error' message.
@@ -210,6 +291,63 @@ EMBER_APPLICATION_ERROR_13 = 0xFD,          // This error is reserved for custom
 EMBER_APPLICATION_ERROR_14 = 0xFE,          // This error is reserved for customer application use. This will never be returned from any portion of the network stack or HAL.
 EMBER_APPLICATION_ERROR_15 = 0xFF,          // This error is reserved for customer application use. This will never be returned from any portion of the network stack or HAL.
 };
+
+using EzspValueId = enum EFrame_EzspValueId : uint8_t {
+    EZSP_VALUE_TOKEN_STACK_NODE_DATA = 0x00,                // The contents of the node data stack token.
+    EZSP_VALUE_MAC_PASSTHROUGH_FLAGS = 0x01,                // The types of MAC passthrough messages that the host wishes to receive.
+    EZSP_VALUE_EMBERNET_PASSTHROUGH_SOURCE_ADDRESS = 0x02,  // The source address used to filter legacy EmberNet messages when the EMBER_MAC_PASSTHROUGH_EMBERNET_SOURCE
+                                                            //flag is set in EZSP_VALUE_MAC_PASSTHROUGH_FLAGS.
+    EZSP_VALUE_FREE_BUFFERS = 0x03,                         // The number of available message buffers.
+    EZSP_VALUE_UART_SYNCH_CALLBACKS = 0x04,                 // Selects sending synchronous callbacks in ezsp-uart.
+    EZSP_VALUE_MAXIMUM_INCOMING_TRANSFER_SIZE = 0x05,       // The maximum incoming transfer size for the local node.
+    EZSP_VALUE_MAXIMUM_OUTGOING_TRANSFER_SIZE = 0x06,       // The maximum outgoing transfer size for the local node.
+    EZSP_VALUE_STACK_TOKEN_WRITING = 0x07,                  // A boolean indicating whether stack tokens are written to persistent storage as they change.
+    EZSP_VALUE_STACK_IS_PERFORMING_REJOIN = 0x08,           // A read-only value indicating whether the stack is currently performing a rejoin.
+    EZSP_VALUE_MAC_FILTER_LIST = 0x09,                      // A list of EmberMacFilterMatchData values.
+    EZSP_VALUE_EXTENDED_SECURITY_BITMASK = 0x0A,            // The Ember Extended Security Bitmask.
+    EZSP_VALUE_NODE_SHORT_ID = 0x0B,                        // The node short ID.
+    EZSP_VALUE_DESCRIPTOR_CAPABILITY = 0x0C,                // The descriptor capability of the local node.
+    EZSP_VALUE_STACK_DEVICE_REQUEST_SEQUENCE_NUMBER = 0x0D, // The stack device request sequence number of the local node.
+    EZSP_VALUE_RADIO_HOLD_OFF = 0x0E,                       // Enable or disable radio hold-off.
+    EZSP_VALUE_ENDPOINT_FLAGS = 0x0F,                       // The flags field associated with the endpoint data.
+    EZSP_VALUE_MFG_SECURITY_CONFIG = 0x10,                  // Enable/disable the Mfg security config key settings.
+    EZSP_VALUE_VERSION_INFO = 0x11,                         //Retrieves the version information from the stack on the NCP.
+    EZSP_VALUE_NEXT_HOST_REJOIN_REASON = 0x12,              // This will get/set the rejoin reason noted by the host for a subsequent call to emberFindAndRejoinNetwork(). After a
+                                                            //call to emberFindAndRejoinNetwork() the host's rejoin reason will be set to EMBER_REJOIN_REASON_NONE.
+                                                            //The NCP will store the rejoin reason used by the call to emberFindAndRejoinNetwork()
+    EZSP_VALUE_LAST_REJOIN_REASON = 0x13,                   // This is the reason that the last rejoin took place. This value may only be retrieved, not set. The rejoin may have been
+                                                            //initiated by the stack (NCP) or the application (host). If a host initiated a rejoin
+                                                            //the reason will be set by default to EMBER_REJOIN_DUE_TO_APP_EVENT_1. If the
+                                                            //application wishes to denote its own rejoin reasons it can do so by calling
+                                                            //ezspSetValue(EMBER_VALUE_HOST_REJOIN_REASON,EMBER_REJOIN_DUE_TO_APP_EVENT_X). X is a number corresponding to one of the app events defined.
+                                                            //If the NCP initiated a rejoin it will record this value internallyfor retrieval by ezspGetValue(EZSP_VALUE_REAL_REJOIN_REASON).
+    EZSP_VALUE_NEXT_ZIGBEE_SEQUENCE_NUMBER = 0x14,          // The next ZigBee sequence number.
+    EZSP_VALUE_CCA_THRESHOLD = 0x15,                        // CCA energy detect threshold for radio.
+    EZSP_VALUE_SET_COUNTER_THRESHOLD = 0x17,                // The threshold value for a counter
+    EZSP_VALUE_RESET_COUNTER_THRESHOLDS = 0x18,             // Resets all counters thresholds to 0xFF
+    EZSP_VALUE_CLEAR_COUNTERS = 0x19,                       // Clears all the counters
+    EZSP_VALUE_RF4CE_BASE_CHANNEL = 0x1A,                   // The device RF4CE base channel
+    EZSP_VALUE_RF4CE_SUPPORTED_DEVICE_TYPES_LIST = 0x1B,    // The RF4CE device types supported by the node
+    EZSP_VALUE_RF4CE_SUPPORTED_PROFILES_LIST = 0x1C,        // The RF4CE profiles supported by the node
+    EZSP_VALUE_ENABLE_R21_BEHAVIOR = 0x29,                  // Setting this byte enables R21 behavior on the NCP.
+    EZSP_VALUE_ANTENNA_MODE = 0x30,                         // Configure the antenna mode(0-primary,1-secondary,2-toggle on tx ack fail).
+    EZSP_VALUE_ENABLE_PTA = 0x31,                           // Enable or disable packet traffic arbitration.
+    EZSP_VALUE_PTA_OPTIONS = 0x32,                          // Set packet traffic arbitration configuration options.
+    EZSP_VALUE_MFGLIB_OPTIONS = 0x33,                       // Configure manufacturing library options (0-non-CSMA transmits,1-CSMA transmits).
+    EZSP_VALUE_RF4CE_GDP_BINDING_RECIPIENT_PARAMETERS = 0x1D, // The GDP binding recipient parameters
+    EZSP_VALUE_RF4CE_GDP_PUSH_BUTTON_STIMULUS_RECEIVED_PENDING_FLAG = 0x1E, // The GDP binding push button stimulus received pending flag EZSP_VALUE_NEXT_HOST_REJOIN_REASON
+    EZSP_VALUE_RF4CE_GDP_BINDING_PROXY_FLAG = 0x1F,         // The GDP originator proxy flag in the advanced binding options
+    EZSP_VALUE_RF4CE_GDP_APPLICATION_SPECIFIC_USER_STRING = 0x20, // The GDP application specific user string
+    EZSP_VALUE_RF4CE_MSO_USER_STRING = 0x21,                // The MSO user string
+    EZSP_VALUE_RF4CE_MSO_BINDING_RECIPIENT_PARAMETERS = 0x22, // The MSO binding recipient parameters
+    EZSP_VALUE_NWK_FRAME_COUNTER = 0x23,                    // The NWK layer security frame counter value
+    EZSP_VALUE_APS_FRAME_COUNTER = 0x24,                    // The APS layer security frame counter value
+    EZSP_VALUE_RETRY_DEVICE_TYPE = 0x25,                    // Sets the device type to use on the next rejoin using device type
+    EZSP_VALUE_RF4CE_BASE_CHANNEL_ = 0x26,                   // The device RF4CE base channel
+    EZSP_VALUE_RF4CE_SUPPORTED_DEVICE_TYPES_LIST_ = 0x27,    // The RF4CE device types supported by the node
+    EZSP_VALUE_RF4CE_SUPPORTED_PROFILES_LIST_ = 0x28         // The RF4CE profiles supported by the node
+};
+
 
 }
 

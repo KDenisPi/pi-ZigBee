@@ -69,6 +69,12 @@ using EEnable = enum EFrame_Enable : uint8_t {
 
 class EFrame {
 public:
+
+    static const uint8_t max_buffer_len = 132;
+    const size_t free_len(const size_t pos) const {
+        return (max_buffer_len - pos);
+    }
+
     /**
      * Frame data payload
      */
@@ -201,12 +207,13 @@ public:
     size_t get_param(echo& param, const uint8_t* buff, size_t& pos);
 
     /**
-     * Request without any parameters and response with Ember status only
+     * Request without any parameters and response with Ember or Ezsp status only
      */
 
     size_t put_param(const zb_ezsp::ezsp_no_params& param, uint8_t* buff, size_t pos);
     size_t get_param(zb_ezsp::ezsp_no_params& param, const uint8_t* buff, size_t& pos);
     size_t get_param(zb_ezsp::ezsp_EmberStatus& param, const uint8_t* buff, size_t& pos);
+    size_t get_param(zb_ezsp::ezsp_EzspStatus& param, const uint8_t* buff, size_t& pos);
 
     /**
      * Start scan and related calls
@@ -215,7 +222,15 @@ public:
     size_t get_param(zb_ezsp::energyScanResultHandler& param, const uint8_t* buff, size_t& pos);
     size_t get_param(zb_ezsp::EmberZigbeeNetwork& param, const uint8_t* buff, size_t& pos);
     size_t get_param(zb_ezsp::networkFoundHandler& param, const uint8_t* buff, size_t& pos);
+    size_t get_param(zb_ezsp::scanCompleteHandler& param, const uint8_t* buff, size_t& pos);
 
+    /**
+     * NCP Value
+     */
+    size_t put_param(const zb_ezsp::value_set& param, uint8_t* buff, size_t pos);
+
+    size_t put_param(const zb_ezsp::value_get_req& param, uint8_t* buff, size_t pos);
+    size_t get_param(zb_ezsp::value_get_resp& param, const uint8_t* buff, size_t& pos);
 
 public:
     /**
