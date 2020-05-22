@@ -165,7 +165,7 @@ public:
         memcpy(netPrm.extendedPanId, extPAN, sizeof(extPAN));
         //PAN
         netPrm.panId = 0xAABB;
-        netPrm.radioTxPower = 85;  //dBm
+        netPrm.radioTxPower = 8;  //dBm
         netPrm.radioChannel = 15;
         netPrm.joinMethod = EmberJoinMethod::EMBER_USE_MAC_ASSOCIATION;
         netPrm.nwkManagerId = 0;
@@ -175,9 +175,41 @@ public:
         add2output<zb_ezsp::EmberNetworkParameters>(zb_ezsp::EId::ID_formNetwork, netPrm);
     }
 
+    /**
+     * Causes the stack to leave the current network. This generates a stackStatusHandler callback to indicate that the network
+     * is down. The radio will not be used until after sending a formNetwork or joinNetwork command.
+     */
+    void leaveNetwork(){
+        zb_ezsp::no_params no_prm;
+        add2output<zb_ezsp::no_params>(zb_ezsp::EId::ID_leaveNetwork, no_prm);
+    }
+
+    /**
+     * A value of 0x00 disables joining. A value of 0xFF enables joining. Any other value enables joining for that number of seconds.
+     */
+    void permitJoining(const uint8_t duration=0xFF){
+        zb_ezsp::permitJoining permit;
+        add2output<zb_ezsp::permitJoining>(zb_ezsp::EId::ID_permitJoining, permit);
+    }
+
     void getNetworkParameters(){
         zb_ezsp::no_params no_prm;
         add2output<zb_ezsp::no_params>(zb_ezsp::EId::ID_getNetworkParameters, no_prm);
+    }
+
+    /**
+     * Security
+     */
+    void setInitialSecurityState(EmberCurrentSecurityBitmask bitmask = EmberCurrentSecurityBitmask::EMBER_STANDARD_SECURITY_MODE){
+        EmberCurrentSecurityState secSt;
+        secSt.bitmask = bitmask;
+        memset(secSt.trustCenterLongAddress, 0x00, sizeof(secSt.trustCenterLongAddress));
+        add2output<zb_ezsp::EmberCurrentSecurityState>(zb_ezsp::EId::ID_setInitialSecurityState, secSt);
+    }
+
+    void getCurrentSecurityState(){
+        zb_ezsp::no_params no_prm;
+        add2output<zb_ezsp::no_params>(zb_ezsp::EId::ID_getCurrentSecurityState, no_prm);
     }
 
 protected:
@@ -255,6 +287,9 @@ protected:
             case EId::ID_networkInitExtended:
             case EId::ID_formNetwork:
             case EId::ID_stackStatusHandler:
+            case EId::ID_permitJoining:
+            case EId::ID_setInitialSecurityState:
+            case EId::ID_leaveNetwork:
             {
                 auto p_status = ef->load<zb_ezsp::ember_status>(efr_raw->data(), efr_raw->len());
                 notify((EId)id, p_status.to_string());
@@ -308,6 +343,12 @@ protected:
             case EId::ID_getConfigurationValue:
             {
                 auto p_conf = ef->load<zb_ezsp::configid_get_resp>(efr_raw->data(), efr_raw->len());
+                notify((EId)id, p_conf.to_string());
+            }
+            break;
+            case EId::ID_getCurrentSecurityState:
+            {
+                auto p_conf = ef->load<zb_ezsp::getCurrentSecurityState>(efr_raw->data(), efr_raw->len());
                 notify((EId)id, p_conf.to_string());
             }
             break;

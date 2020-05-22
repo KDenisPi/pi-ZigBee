@@ -227,6 +227,7 @@ public:
 
     size_t put_param(const zb_ezsp::EmberNetworkInitStruct& param, uint8_t* buff, size_t pos);
     size_t put_param(const zb_ezsp::EmberNetworkParameters& param, uint8_t* buff, size_t pos);
+    size_t put_param(const zb_ezsp::permitJoining& param, uint8_t* buff, size_t pos);
 
     size_t get_param(zb_ezsp::EmberNetworkParameters& param, const uint8_t* buff, size_t pos);
     size_t get_param(zb_ezsp::getNetworkParameters_resp& param, const uint8_t* buff, size_t pos);
@@ -248,6 +249,12 @@ public:
 
     size_t get_param(zb_ezsp::ezsp_configid_get_resp& param, const uint8_t* buff, size_t& pos);
 
+    /**
+     * Security
+     */
+    size_t put_param(const zb_ezsp::EmberCurrentSecurityState& param, uint8_t* buff, size_t pos);
+    size_t get_param(zb_ezsp::EmberCurrentSecurityState& param, const uint8_t* buff, size_t& pos);
+    size_t get_param(zb_ezsp::getCurrentSecurityState& param, const uint8_t* buff, size_t& pos);
 
 
 public:

@@ -158,6 +158,12 @@ size_t EFrame::put_param(const zb_ezsp::EmberNetworkParameters& param, uint8_t* 
     return pos;
 }
 
+size_t EFrame::put_param(const zb_ezsp::permitJoining& param, uint8_t* buff, size_t pos){
+    pos = Conv::put(buff, pos, param.duration);
+    return pos;
+}
+
+
 size_t EFrame::get_param(zb_ezsp::EmberNetworkParameters& param, const uint8_t* buff, size_t pos){
     pos = Conv::get(buff, pos, param.extendedPanId, sizeof(param.extendedPanId), sizeof(param.extendedPanId));
     pos = Conv::get(buff, pos, param.panId);
@@ -196,6 +202,27 @@ size_t EFrame::put_param(const zb_ezsp::ezsp_configid_get_req& param, uint8_t* b
 size_t EFrame::get_param(zb_ezsp::ezsp_configid_get_resp& param, const uint8_t* buff, size_t& pos){
     pos = Conv::get_byte<EzspStatus>(buff, pos, param.status);
     pos = Conv::get(buff, pos, param.value);
+    return pos;
+}
+
+/**
+ * Security
+ */
+size_t EFrame::put_param(const zb_ezsp::EmberCurrentSecurityState& param, uint8_t* buff, size_t pos){
+    pos = Conv::put(buff, pos, (uint16_t)param.bitmask);
+    pos = Conv::put(buff, pos, param.trustCenterLongAddress, sizeof(param.trustCenterLongAddress), sizeof(param.trustCenterLongAddress));
+    return pos;
+}
+
+size_t EFrame::get_param(zb_ezsp::EmberCurrentSecurityState& param, const uint8_t* buff, size_t& pos){
+    pos = Conv::get_word<EmberCurrentSecurityBitmask>(buff, pos, param.bitmask);
+    pos = Conv::get(buff, pos, param.trustCenterLongAddress, sizeof(param.trustCenterLongAddress), sizeof(param.trustCenterLongAddress));
+    return pos;
+}
+
+size_t EFrame::get_param(zb_ezsp::getCurrentSecurityState& param, const uint8_t* buff, size_t& pos){
+    pos = Conv::get_byte<EmberStatus>(buff, pos, param.status);
+    pos = get_param(param.state, buff, pos);
     return pos;
 }
 

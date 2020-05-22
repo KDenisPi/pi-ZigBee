@@ -39,6 +39,8 @@ public:
 using EZSP_Bool = uint8_t;
 using EZSP_EzspConfigId = uint8_t;
 using EmberNodeId = uint16_t;           // 16-bit ZigBee network address.
+using EmberEUI64 = uint8_t[8];  // EUI 64-bit ID (an IEEE address)
+
 
 using EId = enum EFrame_ID : id_type {
     ID_version = 0x00,
@@ -57,12 +59,15 @@ using EId = enum EFrame_ID : id_type {
     ID_leaveNetwork = 0x20,                 //Causes the stack to leave the current network. This generates a stackStatusHandler callback to indicate that the network
                                             //is down. The radio will not be used until after sending a formNetwork or joinNetwork command.
 
+    ID_permitJoining = 0x22,                //Tells the stack to allow other nodes to join the network with this node as their parent. Joining is initially disabled by default.
     ID_getNetworkParameters = 0x28,         //Returns the current network parameters.
     ID_energyScanResultHandler = 0x48,
     ID_getConfigurationValue = 0x52,
     ID_setConfigurationValue = 0x53,
     ID_invalidCommand = 0x58,
-    ID_networkInitExtended  = 0x70,    //Similar to ezspNetworkInit(). Resume network operation after a reboot. This command is different in that it accepts options to control the network initialization.
+    ID_setInitialSecurityState = 0x68,
+    ID_getCurrentSecurityState = 0x69,
+    ID_networkInitExtended  = 0x70,         //Similar to ezspNetworkInit(). Resume network operation after a reboot. This command is different in that it accepts options to control the network initialization.
     ID_Echo = 0x81,
     ID_getValue = 0xAA,
     ID_setValue = 0xAB
@@ -430,6 +435,14 @@ enum EmberNodeType : uint8_t {
     EMBER_END_DEVICE = 0x03,        // Communicates only with its parent and will not relay messages.
     EMBER_SLEEPY_END_DEVICE = 0x04, // An end device whose radio can be turned off to save power. The application must poll to receive messages.
     EMBER_MOBILE_END_DEVICE = 0x05  // A sleepy end device that can move through the network.
+};
+
+enum EmberCurrentSecurityBitmask : uint16_t {
+    EMBER_STANDARD_SECURITY_MODE = 0x0000,              // This denotes that the device is running in a network with ZigBee Standard Security.
+    EMBER_DISTRIBUTED_TRUST_CENTER_MODE = 0x0002,       //  This denotes that the device is running in a network without a centralized Trust Center.
+    EMBER_GLOBAL_LINK_KEY = 0x0004,                     //  This denotes that the device has a Global Link Key. The Trust Center Link Key is the same across multiple nodes.
+    EMBER_HAVE_TRUST_CENTER_LINK_KEY = 0x0010,          //  This denotes that the node has a Trust Center Link Key.
+    EMBER_TRUST_CENTER_USES_HASHED_LINK_KEY = 0x0084    //  This denotes that the Trust Center is using a Hashed Link Key.
 };
 
 }

@@ -273,5 +273,43 @@ using getNetworkParameters_resp = struct ezsp_getNetworkParameters {
     }
 };
 
+struct permitJoining {
+    uint8_t duration;   //A value of 0x00 disables joining. A value of 0xFF enables joining. Any other value enables joining for that number of seconds.
+};
+
+
+struct EmberCurrentSecurityState {
+    EmberCurrentSecurityBitmask bitmask;    //A bitmask indicating the security options currently in use by a device joined in the network.
+    EmberEUI64 trustCenterLongAddress;      // The IEEE Address of the Trust Center device.
+
+    const std::string to_string() const {
+        char buff[128];
+        std::sprintf(buff, "Security state: Bitmask:%04X Trust center:%02X:%02X:%02X:%02X:%02X:%02X:%02X:%02X",
+        bitmask,
+        trustCenterLongAddress[0],
+        trustCenterLongAddress[1],
+        trustCenterLongAddress[2],
+        trustCenterLongAddress[3],
+        trustCenterLongAddress[4],
+        trustCenterLongAddress[5],
+        trustCenterLongAddress[6],
+        trustCenterLongAddress[7]
+        );
+        return std::string(buff);
+    }
+
+};
+
+struct getCurrentSecurityState {
+    EmberStatus status;                 // An EmberStatus value indicating success or the reason for failure.
+    EmberCurrentSecurityState state;
+
+    const std::string to_string() const {
+        char buff[40];
+        std::sprintf(buff, "Status: 0x%02X", status);
+        return std::string(buff) + " " + state.to_string();
+    }
+};
+
 }
 #endif

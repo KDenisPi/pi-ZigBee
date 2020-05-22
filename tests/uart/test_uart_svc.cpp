@@ -60,6 +60,27 @@ int main (int argc, char* argv[])
         else if(cmd =="echo"){
             ezsp->echo();
         }
+        else if(cmd == "formnetwork"){
+            ezsp->formNetwork();
+        }
+        else if(cmd == "permitjoin"){
+            ezsp->permitJoining();
+        }
+        else if(cmd == "leavenetwork"){
+            ezsp->leaveNetwork();
+        }
+        else if(cmd == "getnetparams"){
+            ezsp->getNetworkParameters();
+        }
+        else if(cmd == "initsecstate"){
+            ezsp->setInitialSecurityState();
+        }
+        else if(cmd == "getsecstate"){
+            ezsp->getCurrentSecurityState();
+        }
+        else if(cmd == "help"){
+            std::cout << "Commands: exit, getvalue, getcfg, startscana, startscane, stopscan, echo, formnetwork, permitjoin, leavenetwork, getnetparams, initsecstate, getsecstate" << std::endl;
+        }
     }
 
     std::cout << "Stop worker. Release object" << std::endl;
