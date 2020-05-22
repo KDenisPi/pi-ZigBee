@@ -146,6 +146,7 @@ using networkFoundHandler = struct ezsp_networkFoundHandler {
 
     const std::string to_string() const {
         std::string result = " Net Found Handler: lastHopLqi:" + std::to_string((uint16_t)lastHopLqi) + " lastHopRssi:" + std::to_string((int16_t)lastHopRssi) + " \n" + networkFound.to_string();
+        return result;
     }
 };
 
@@ -187,6 +188,90 @@ using value_get_resp = struct ezsp_ncp_value_get_resp {
     }
 };
 
+/**
+ * Config id
+ */
+using configid_get_req = struct ezsp_configid_get_req {
+    EzspConfigId configId;
+};
+
+using configid_get_resp = struct ezsp_configid_get_resp {
+    EzspStatus status;      // EZSP_SUCCESS if the value was read successfully, EZSP_ERROR_INVALID_ID if the NCP does not recognize valueId.
+    uint16_t value;
+
+    const std::string to_string() const {
+        char buff[40];
+        std::sprintf(buff, "Status: 0x%02X Value: %d", status, value);
+        return std::string(buff);
+    }
+};
+
+using configid_set_req = struct ezsp_configid_set_req {
+    EzspConfigId configId;
+    uint16_t value;
+};
+
+using networkState = struct ezsp_networkState {
+    EmberNetworkStatus status;
+
+    const std::string to_string() const {
+        char buff[40];
+        std::sprintf(buff, "Status: 0x%02X", status);
+        return std::string(buff);
+    }
+};
+
+struct EmberNetworkInitStruct {
+    EmberNetworkInitBitmask bitmask;
+};
+
+struct EmberNetworkParameters {
+    uint8_t extendedPanId[8];   // The network's extended PAN identifier.
+    uint16_t panId;             //The network's PAN identifier.
+    uint8_t radioTxPower;       // A power setting, in dBm.
+    uint8_t radioChannel;       // A radio channel.
+    EmberJoinMethod joinMethod; // The method used to initially join the network.
+    EmberNodeId nwkManagerId;   // NWK Manager ID. The ID of the network manager in the current network. This may only be set at joining when using EMBER_USE_NWK_COMMISSIONING as the join method.
+    uint8_t nwkUpdateId;        // NWK Update ID. The value of the ZigBee nwkUpdateId known by the stack. This is used to determine the newest instance of the network after a
+                                //PAN ID or channel change. This may only be set at joining when using EMBER_USE_NWK_COMMISSIONING as the join method.
+    uint32_t channels;          // NWK channel mask. The list of preferred channels that the NWK manager has told this device to use when searching for the network. This may only be
+                                //set at joining when using EMBER_USE_NWK_COMMISSIONING as the join method
+
+    const std::string to_string() const {
+        char buff[128];
+        std::sprintf(buff, "Network parameters: PAN:%d ExPan:%02X:%02X:%02X:%02X:%02X:%02X:%02X:%02X Pwr:%02X CH:%02X Join Method:%02x MgrID:%02X UpdID:%02X Chs:%08X",
+        panId,
+        extendedPanId[0],
+        extendedPanId[1],
+        extendedPanId[2],
+        extendedPanId[3],
+        extendedPanId[4],
+        extendedPanId[5],
+        extendedPanId[6],
+        extendedPanId[7],
+        radioTxPower,
+        radioChannel,
+        joinMethod,
+        nwkManagerId,
+        nwkUpdateId,
+        channels
+        );
+        return std::string(buff);
+    }
+
+};
+
+using getNetworkParameters_resp = struct ezsp_getNetworkParameters {
+    EmberStatus status;                 // An EmberStatus value indicating success or the reason for failure.
+    EmberNodeType nodeType;             // An EmberNodeType value indicating the current node type.
+    EmberNetworkParameters parameters;  // The current network parameters.
+
+    const std::string to_string() const {
+        char buff[40];
+        std::sprintf(buff, "Status: 0x%02X Node Type: %d", status, nodeType);
+        return std::string(buff) + "\n" + parameters.to_string();
+    }
+};
 
 }
 #endif

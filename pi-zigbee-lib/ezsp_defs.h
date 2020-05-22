@@ -38,18 +38,31 @@ public:
 
 using EZSP_Bool = uint8_t;
 using EZSP_EzspConfigId = uint8_t;
-
+using EmberNodeId = uint16_t;           // 16-bit ZigBee network address.
 
 using EId = enum EFrame_ID : id_type {
     ID_version = 0x00,
     ID_callback = 0x06,                     //Allows the NCP to respond with a pending callback.
     ID_noCallbacks = 0x07,                  //Indicates that there are currently no pending callbacks.
+    ID_networkInit = 0x17,                  //Resume network operation after a reboot. The node retains its original type. This should be called on startup whether or
+                                            //not the node was previously part of a network. EMBER_NOT_JOINED is returned if the node is not part of a network.
+    ID_networkState = 0x18,                 //Returns a value indicating whether the node is joining, joined to, or leaving a network.
+    ID_stackStatusHandler = 0x19,           //A callback invoked when the status of the stack changes. If the status parameter equals EMBER_NETWORK_UP, then the getNetworkParameters command
+                                            //can be called to obtain the new network parameters. If any of the parameters are being stored in nonvolatile memory by the Host, the stored values should be updated.
     ID_startScan = 0x1A,
     ID_networkFoundHandler = 0x1B,
     ID_scanCompleteHandler = 0x1C,
     ID_stopScan = 0x1D,
+    ID_formNetwork = 0x1E,                  //Forms a new network by becoming the coordinator.
+    ID_leaveNetwork = 0x20,                 //Causes the stack to leave the current network. This generates a stackStatusHandler callback to indicate that the network
+                                            //is down. The radio will not be used until after sending a formNetwork or joinNetwork command.
+
+    ID_getNetworkParameters = 0x28,         //Returns the current network parameters.
     ID_energyScanResultHandler = 0x48,
+    ID_getConfigurationValue = 0x52,
+    ID_setConfigurationValue = 0x53,
     ID_invalidCommand = 0x58,
+    ID_networkInitExtended  = 0x70,    //Similar to ezspNetworkInit(). Resume network operation after a reboot. This command is different in that it accepts options to control the network initialization.
     ID_Echo = 0x81,
     ID_getValue = 0xAA,
     ID_setValue = 0xAB
@@ -348,6 +361,76 @@ using EzspValueId = enum EFrame_EzspValueId : uint8_t {
     EZSP_VALUE_RF4CE_SUPPORTED_PROFILES_LIST_ = 0x28         // The RF4CE profiles supported by the node
 };
 
+/**
+ *
+ */
+using EzspConfigId = enum EFrame_EzspConfigId : uint8_t {
+    EZSP_CONFIG_PACKET_BUFFER_COUNT = 0x01,     // The number of packet buffers available to the stack. When set to the special value 0xFF, the NCP will allocate all remaining configuration RAM towards
+                                                //packet buffers, such that the resulting count will be the largest whole number of packet buffers that can fit into the available memory.
+    EZSP_CONFIG_NEIGHBOR_TABLE_SIZE = 0x02,     // The maximum number of router neighbors the stack can keep track of. A neighbor is a node within radio range.
+    EZSP_CONFIG_APS_UNICAST_MESSAGE_COUNT = 0x03, // The maximum number of APS retried messages the stack can be transmitting at any time.
+    EZSP_CONFIG_BINDING_TABLE_SIZE = 0x04,      // The maximum number of non-volatile bindings supported by the stack.
+    EZSP_CONFIG_ADDRESS_TABLE_SIZE = 0x05,      // The maximum number of EUI64 to network address associations that the stack can maintain for the application. (Note, the total number of such address
+                                                //associations maintained by the NCP is the sum of the value of this setting and the value of ::EZSP_CONFIG_TRUST_CENTER_ADDRESS_CACHE_SIZE.).
+    EZSP_CONFIG_MULTICAST_TABLE_SIZE = 0x06,    // The maximum number of multicast groups that the device may be a member of.
+    EZSP_CONFIG_ROUTE_TABLE_SIZE = 0x07,        // The maximum number of destinations to which a node can route messages. This includes both messages originating at this node and those relayed for others.
+    EZSP_CONFIG_DISCOVERY_TABLE_SIZE = 0x08,    // The number of simultaneous route discoveries that a node will support.
+    EZSP_CONFIG_STACK_PROFILE = 0x0C,           // Specifies the stack profile.
+    EZSP_CONFIG_SECURITY_LEVEL = 0x0D,          // The security level used for security at the MAC and network layers. The supported values are 0 (no security) and
+                                                //5 (payload is encrypted and a four-byte MIC is used for authentication).
+    EZSP_CONFIG_MAX_HOPS = 0x10,                // The maximum number of hops for a message.
+    EZSP_CONFIG_MAX_END_DEVICE_CHILDREN = 0x11, // The maximum number of end device children that a router will support.
+    EZSP_CONFIG_INDIRECT_TRANSMISSION_TIMEOUT = 0x12, // The maximum amount of time that the MAC will hold a message for indirect transmission to a child.
+    EZSP_CONFIG_END_DEVICE_POLL_TIMEOUT = 0x1,  // The maximum amount of time that an end device child can wait between polls. If no poll is heard within
+                                                //this timeout, then the parent removes the end device from its tables.
+    EZSP_CONFIG_MOBILE_NODE_POLL_TIMEOUT = 0x14 // The maximum amount of time that a mobile node can wait between polls. If no poll is heard within this
+                                                //timeout, then the parent removes the mobile node from its tables.
+};
+
+/**
+ *
+ */
+enum EmberNetworkInitBitmask : uint16_t {
+    EMBER_NETWORK_INIT_NO_OPTIONS  = 0x0000,            // No options for Network Init
+    EMBER_NETWORK_INIT_PARENT_INFO_IN_TOKEN = 0x0001,   // Save parent info (node ID and EUI64) in a token during joining/rejoin, and restore on reboot.
+    EMBER_NETWORK_INIT_END_DEVICE_REJOIN_ON_REBOOT = 0x0002  // Send a rejoin request as an end device on reboot if parent information is persisted. (ver 8)
+};
+
+enum EmberNetworkStatus : uint8_t {
+    EMBER_NO_NETWORK  = 0x00,       //The node is not associated with a network in any way.
+    EMBER_JOINING_NETWORK = 0x01,   //The node is currently attempting to join a network.
+    EMBER_JOINED_NETWORK = 0x02,    //The node is joined to a network.
+    EMBER_JOINED_NETWORK_NO_PARENT = 0x03,  //The node is an end device joined to a network but its parent is not responding.
+    EMBER_LEAVING_NETWORK = 0x04    //The node is in the process of leaving its current network.
+};
+
+enum EmberJoinMethod : uint8_t {        // The type of method used for joining.
+    EMBER_USE_MAC_ASSOCIATION = 0x00,   //Normally devices use MAC Association to join a network, which respects the "permit joining" flag in the MAC Beacon. For mobile
+                                        //nodes this value causes the device to use an Ember Mobile Node Join, which is functionally equivalent to a MAC association. This value should be used by default.
+
+    EMBER_USE_NWK_REJOIN = 0x01,        //For those networks where the "permit joining" flag is never turned on, they will need to use a ZigBee NWK Rejoin. This value
+                                        //causes the rejoin to be sent without NWK security and the Trust Center will be asked to send the NWK key to the device. The
+                                        //NWK key sent to the device can be encrypted with the device's corresponding Trust Center link key. That is determined by the
+                                        //::EmberJoinDecision on the Trust Center returned by the ::emberTrustCenterJoinHandler(). For a mobile node this value
+                                        //will cause it to use an Ember Mobile node rejoin, which is functionally equivalent.
+
+    EMBER_USE_NWK_REJOIN_HAVE_NWK_KEY = 0x02,   //For those networks where the "permit joining" flag is never turned on, they will need to use a NWK Rejoin. If those devices have
+                                        //been preconfigured with the NWK key (including sequence number) they can use a secured rejoin. This is only necessary for
+                                        //end devices since they need a parent. Routers can simply use the ::EMBER_USE_NWK_COMMISSIONING join method below.
+
+    EMBER_USE_NWK_COMMISSIONING = 0x03  //For those networks where all network and security information is known ahead of time, a router device may be commissioned such
+                                        //that it does not need to send any messages to begin communicating on the network.
+};
+
+
+enum EmberNodeType : uint8_t {
+    EMBER_UNKNOWN_DEVICE = 0x00,    // Device is not joined.
+    EMBER_COORDINATOR = 0x01,       // Will relay messages and can act as a parent to other nodes.
+    EMBER_ROUTER = 0x02,            // Will relay messages and can act as a parent to other nodes.
+    EMBER_END_DEVICE = 0x03,        // Communicates only with its parent and will not relay messages.
+    EMBER_SLEEPY_END_DEVICE = 0x04, // An end device whose radio can be turned off to save power. The application must poll to receive messages.
+    EMBER_MOBILE_END_DEVICE = 0x05  // A sleepy end device that can move through the network.
+};
 
 }
 

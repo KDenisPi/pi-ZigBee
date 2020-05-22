@@ -23,6 +23,12 @@ public:
     /**
      *
      */
+    static const size_t put(uint8_t* buff, size_t pos, const uint64_t val){
+        pos = put(buff, pos, Low(val));
+        pos = put(buff, pos, High(val));
+        return pos;
+    }
+
     static const size_t put(uint8_t* buff, size_t pos, const uint32_t val){
         pos = put(buff, pos, Low(val));
         pos = put(buff, pos, High(val));
@@ -79,6 +85,13 @@ public:
         return pos;
     }
 
+    static size_t get(const uint8_t* buff, size_t& pos, uint64_t& res){
+        uint64_t low = get_word(buff, pos);
+        uint64_t high = ((uint64_t)get_word(buff, pos) << 32);
+        res = (high|low);
+        return pos;
+    }
+
     static EId get_id(const uint8_t* buff, size_t& pos){
         if(sizeof(EId)==1)
             return (EId)get_byte(buff, pos);
@@ -103,24 +116,25 @@ public:
         return (high|low);
     }
 
-    static size_t get(const uint8_t* buff, size_t& pos, zb_ezsp::EmberStatus& res){
-        uint8_t status;
-        pos = Conv::get(buff, pos, status);
-        res = (zb_ezsp::EmberStatus)status;
+    static uint64_t get_dword(const uint8_t* buff, size_t& pos){
+        uint64_t low = get_word(buff, pos);
+        uint64_t high = ((uint64_t)get_word(buff, pos) << 32);
+        return (high|low);
+    }
+
+    template<typename T>
+    static size_t get_byte(const uint8_t* buff, size_t& pos, T& res){
+        uint8_t value;
+        pos = Conv::get(buff, pos, value);
+        res = (T)value;
         return pos;
     }
 
-    static size_t get(const uint8_t* buff, size_t& pos, zb_ezsp::EzspStatus& res){
-        uint8_t status;
-        pos = Conv::get(buff, pos, status);
-        res = (zb_ezsp::EzspStatus)status;
-        return pos;
-    }
-
-    static size_t get(const uint8_t* buff, size_t& pos, zb_ezsp::EzspValueId& res){
-        uint8_t valueid;
-        pos = Conv::get(buff, pos, valueid);
-        res = (zb_ezsp::EzspValueId)valueid;
+    template<typename T>
+    static size_t get_word(const uint8_t* buff, size_t& pos, T& res){
+        uint16_t value;
+        pos = Conv::get(buff, pos, value);
+        res = (T)value;
         return pos;
     }
 
@@ -143,6 +157,28 @@ public:
     constexpr static const uint16_t High(uint32_t val){
         return (val>>16);
     }
+
+    constexpr static const uint16_t Low(uint64_t val){
+        return (val&0xFFFFFFFF);
+    }
+
+    constexpr static const uint16_t High(uint64_t val){
+        return (val>>32);
+    }
+
+    /**
+     * Print buffer. Debug purposes only
+     */
+    static const std::string print_buff(const std::uint8_t* buff, const size_t len) {
+        std::string result;
+        char dec[10];
+        for(int i=0; i<len; i++){
+            sprintf(dec, "0x%02X ", buff[i]);
+            result += dec;
+        }
+        return result;
+    }
+
 };
 
 }

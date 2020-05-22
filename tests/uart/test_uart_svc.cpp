@@ -10,13 +10,7 @@ using namespace std;
 std::shared_ptr<zb_ezsp::Ezsp> ezsp;
 
 void ezsp_callback(const zb_ezsp::EId id, const std::string info){
-
     std::cout << "ID:" << std::hex << (uint16_t)id << " " << info << std::endl;
-
-    //Send Echo after Version
-    if(id == zb_ezsp::EId::ID_version){
-        ezsp->echo();
-    }
 }
 
 /**
@@ -41,11 +35,31 @@ int main (int argc, char* argv[])
     ezsp->activate();
 
     while(1){
-        std::cout << "Enter exit:" << std::endl;
+        std::cout << "command> " << std::endl;
         std::cin >> cmd;
 
         if(cmd == "exit")
             break;
+        if(cmd == "getvalue"){
+            ezsp->getValue(zb_ezsp::EzspValueId::EZSP_VALUE_NODE_SHORT_ID);
+        }
+        else if(cmd == "getcfg"){
+            ezsp->getCinfigurationValue(zb_ezsp::EzspConfigId::EZSP_CONFIG_PACKET_BUFFER_COUNT);
+        }
+        else if(cmd == "startscana"){
+            uint8_t channels[1] = {11};
+            ezsp->startScan(zb_ezsp::EzspNetworkScanType::EZSP_ACTIVE_SCAN, 0xFF, channels);
+        }
+        else if(cmd == "startscane"){
+            uint8_t channels[1] = {11};
+            ezsp->startScan(zb_ezsp::EzspNetworkScanType::EZSP_ENERGY_SCAN, 0xFF, channels);
+        }
+        else if(cmd == "stopscan"){
+            ezsp->stopScan();
+        }
+        else if(cmd =="echo"){
+            ezsp->echo();
+        }
     }
 
     std::cout << "Stop worker. Release object" << std::endl;

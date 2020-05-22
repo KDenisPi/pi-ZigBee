@@ -25,6 +25,7 @@
 #include "CircularBuffer.h"
 #include "uart_frame.h"
 #include "uart_efr_buff.h"
+#include "ezsp_util.h"
 
 namespace zb_uart {
 
@@ -356,14 +357,14 @@ public:
         std::shared_ptr<UFrame> frame = std::shared_ptr<UFrame>(new UFrame());
 
         if(_debug){
-            logger::log(logger::LLOG::DEBUG, "uart", std::string(__func__) + " " + print_buff(buffer, len));
+            logger::log(logger::LLOG::DEBUG, "uart", std::string(__func__) + " " + zb_ezsp::Conv::print_buff(buffer, len));
         }
 
         uint8_t tmp_buff[140];
         size_t r_len = decode(buffer, len, tmp_buff, sizeof(tmp_buff));
 
         if(_debug){
-            logger::log(logger::LLOG::DEBUG, "uart", std::string(__func__) + " " + print_buff(tmp_buff, r_len));
+            logger::log(logger::LLOG::DEBUG, "uart", std::string(__func__) + " " + zb_ezsp::Conv::print_buff(tmp_buff, r_len));
         }
 
         //incorrect length or error data decoding
@@ -605,7 +606,7 @@ public:
         size_t wr_len = encode(fr_rst, wr_buff, sizeof(wr_buff), true);
 
         if(_debug){
-            logger::log(logger::LLOG::DEBUG, "uart", std::string(__func__) + " RST: " + print_buff(wr_buff, wr_len));
+            logger::log(logger::LLOG::DEBUG, "uart", std::string(__func__) + " RST: " + zb_ezsp::Conv::print_buff(wr_buff, wr_len));
         }
 
         res = write_data(wr_buff, wr_len);
@@ -647,7 +648,7 @@ public:
                 }
 
                 if(_debug){
-                    logger::log(logger::LLOG::DEBUG, "uart", std::string(__func__) + " RSTACK: " + print_buff(rd_buff, b_len));
+                    logger::log(logger::LLOG::DEBUG, "uart", std::string(__func__) + " RSTACK: " + zb_ezsp::Conv::print_buff(rd_buff, b_len));
                 }
 
                 std::shared_ptr<UFrame> fr_rsv = parse(rd_buff, b_len);
@@ -719,8 +720,8 @@ public:
             if(res==0){ //timeout
                 len = 0;
                 if(_debug){
-                    logger::log(logger::LLOG::DEBUG, "uart", std::string(__func__) +  " Timeout! Read bytes: " + std::to_string(read_bytes) + " "  + print_buff(buffer, read_bytes));
-                    //std::cout << "Byte " << read_bytes << " " << print_buff(buffer, len) << std::endl;
+                    logger::log(logger::LLOG::DEBUG, "uart", std::string(__func__) +  " Timeout! Read bytes: " + std::to_string(read_bytes) + " "  + zb_ezsp::Conv::print_buff(buffer, read_bytes));
+                    //std::cout << "Byte " << read_bytes << " " << zb_ezsp::Conv::print_buff(buffer, len) << std::endl;
                 }
                 return 0;
             }
@@ -740,8 +741,8 @@ public:
                     read_bytes++;
                     len = read_bytes;
                     if(_debug){
-                        logger::log(logger::LLOG::DEBUG, "uart", std::string(__func__) +  " Read bytes: " + std::to_string(len) + " "  + print_buff(buffer, len));
-                        //std::cout << "Byte " << read_bytes << " " << print_buff(buffer, len) << std::endl;
+                        logger::log(logger::LLOG::DEBUG, "uart", std::string(__func__) +  " Read bytes: " + std::to_string(len) + " "  + zb_ezsp::Conv::print_buff(buffer, len));
+                        //std::cout << "Byte " << read_bytes << " " << zb_ezsp::Conv::print_buff(buffer, len) << std::endl;
                     }
 
                     return 0;
@@ -769,7 +770,7 @@ public:
 
         if(is_debug()){
             logger::log(logger::LLOG::DEBUG, "uart", std::string(__func__) + " UART Frame: " + fr->to_string());
-            logger::log(logger::LLOG::DEBUG, "uart", std::string(__func__) + " UART Frame : " + print_buff(w_buff, wr_len));
+            logger::log(logger::LLOG::DEBUG, "uart", std::string(__func__) + " UART Frame : " + zb_ezsp::Conv::print_buff(w_buff, wr_len));
         }
 
         int wr_res = write_data(w_buff, wr_len);
@@ -873,19 +874,6 @@ private:
      */
     std::shared_ptr<ZBUart_Info> get_session_info() {
         return _info;
-    }
-
-    /**
-     * Print buffer. Debug purposes only
-     */
-    const std::string print_buff(const std::uint8_t* buff, size_t len) {
-        std::string result;
-        char dec[10];
-        for(int i=0; i<len; i++){
-            sprintf(dec, "0x%02X ", buff[i]);
-            result += dec;
-        }
-        return result;
     }
 
     const bool is_debug() const {

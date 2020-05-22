@@ -59,7 +59,7 @@ size_t EFrame::get_param(zb_ezsp::ezsp_no_params& param, const uint8_t* buff, si
  * Ember status only
  */
 size_t EFrame::get_param(zb_ezsp::ezsp_EmberStatus& param, const uint8_t* buff, size_t& pos){
-    pos = Conv::get(buff, pos, param.status);
+    pos = Conv::get_byte<EmberStatus>(buff, pos, param.status);
     return pos;
 }
 
@@ -67,7 +67,7 @@ size_t EFrame::get_param(zb_ezsp::ezsp_EmberStatus& param, const uint8_t* buff, 
  * EZSP status only
  */
 size_t EFrame::get_param(zb_ezsp::ezsp_EzspStatus& param, const uint8_t* buff, size_t& pos){
-    pos = Conv::get(buff, pos, param.status);
+    pos = Conv::get_byte<EzspStatus>(buff, pos, param.status);
     return pos;
 }
 
@@ -106,9 +106,15 @@ size_t EFrame::get_param(zb_ezsp::networkFoundHandler& param, const uint8_t* buf
 
 size_t EFrame::get_param(zb_ezsp::scanCompleteHandler& param, const uint8_t* buff, size_t& pos){
     pos = Conv::get(buff, pos, param.channel);
-    pos = Conv::get(buff, pos, param.status);
+    pos = Conv::get_byte<EmberStatus>(buff, pos, param.status);
     return pos;
 }
+
+size_t EFrame::get_param(zb_ezsp::networkState& param, const uint8_t* buff, size_t& pos){
+    pos = Conv::get_byte<EmberNetworkStatus>(buff, pos, param.status);
+    return pos;
+}
+
 
 /**
  * Value
@@ -127,13 +133,70 @@ size_t EFrame::put_param(const zb_ezsp::value_get_req& param, uint8_t* buff, siz
 
 size_t EFrame::get_param(zb_ezsp::value_get_resp& param, const uint8_t* buff, size_t& pos){
     param.valueLength = 0;
-    pos = Conv::get(buff, pos, param.status);
+    pos = Conv::get_byte<EzspStatus>(buff, pos, param.status);
     if(param.status == EzspStatus::EZSP_SUCCESS){
         pos = Conv::get(buff, pos, param.valueLength);
         pos = Conv::get(buff, pos, param.value, param.valueLength, sizeof(param.value));
     }
     return pos;
+}
 
+size_t EFrame::put_param(const zb_ezsp::EmberNetworkInitStruct& param, uint8_t* buff, size_t pos){
+    pos = Conv::put(buff, pos, (uint16_t)param.bitmask);
+    return pos;
+}
+
+size_t EFrame::put_param(const zb_ezsp::EmberNetworkParameters& param, uint8_t* buff, size_t pos){
+    pos = Conv::put(buff, pos, param.extendedPanId, sizeof(param.extendedPanId), sizeof(param.extendedPanId));
+    pos = Conv::put(buff, pos, param.panId);
+    pos = Conv::put(buff, pos, param.radioTxPower);
+    pos = Conv::put(buff, pos, param.radioChannel);
+    pos = Conv::put(buff, pos, (uint8_t)param.joinMethod);
+    pos = Conv::put(buff, pos, param.nwkManagerId);
+    pos = Conv::put(buff, pos, param.nwkUpdateId);
+    pos = Conv::put(buff, pos, param.channels);
+    return pos;
+}
+
+size_t EFrame::get_param(zb_ezsp::EmberNetworkParameters& param, const uint8_t* buff, size_t pos){
+    pos = Conv::get(buff, pos, param.extendedPanId, sizeof(param.extendedPanId), sizeof(param.extendedPanId));
+    pos = Conv::get(buff, pos, param.panId);
+    pos = Conv::get(buff, pos, param.radioTxPower);
+    pos = Conv::get(buff, pos, param.radioChannel);
+    pos = Conv::get_byte<EmberJoinMethod>(buff, pos, param.joinMethod);
+    pos = Conv::get(buff, pos, param.nwkManagerId);
+    pos = Conv::get(buff, pos, param.nwkUpdateId);
+    pos = Conv::get(buff, pos, param.channels);
+    return pos;
+}
+
+size_t EFrame::get_param(zb_ezsp::getNetworkParameters_resp& param, const uint8_t* buff, size_t pos){
+    pos = Conv::get_byte<EmberStatus>(buff, pos, param.status);
+    pos = Conv::get_byte<EmberNodeType>(buff, pos, param.nodeType);
+    pos = get_param(param.parameters, buff, pos);
+    return pos;
+}
+
+
+
+/**
+ * Configuration parameters
+ */
+size_t EFrame::put_param(const zb_ezsp::configid_set_req& param, uint8_t* buff, size_t pos){
+    pos = Conv::put(buff, pos, (uint8_t)param.configId);
+    pos = Conv::put(buff, pos, param.value);
+    return pos;
+}
+
+size_t EFrame::put_param(const zb_ezsp::ezsp_configid_get_req& param, uint8_t* buff, size_t pos){
+    pos = Conv::put(buff, pos, (uint8_t)param.configId);
+    return pos;
+}
+
+size_t EFrame::get_param(zb_ezsp::ezsp_configid_get_resp& param, const uint8_t* buff, size_t& pos){
+    pos = Conv::get_byte<EzspStatus>(buff, pos, param.status);
+    pos = Conv::get(buff, pos, param.value);
+    return pos;
 }
 
 

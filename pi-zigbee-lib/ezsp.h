@@ -86,12 +86,13 @@ public:
 
     /**
      * This function will start a scan
-     * ch2scan - number channels to scan (15 channels). OxFF - scan all
+     * ch2scan - number channels to scan (15 channels, from 11 to 26). OxFF - scan all
      * channels - array of channels have to be scan. Not used if ch2scan = 0xFF
      * duration - Sets the exponent of the number of scan periods, where a scan period is 960 symbols. The scan will occur for ((2^duration) + 1) scan periods.
      */
     void startScan(const zb_ezsp::EzspNetworkScanType scanType, const uint8_t ch2scan, const uint8_t* channels = nullptr, const uint8_t duration = 4) {
         zb_ezsp::start_scan scan;
+        logger::log(logger::LLOG::DEBUG, "uart", std::string(__func__) + " Type: " + std::to_string((uint16_t)scanType) + " Channels: " + std::to_string((uint16_t)ch2scan) + " Duration: " + std::to_string((uint16_t)duration));
 
         if(ch2scan == 0xFF){
             scan.channelMask = 0x07FFF800;
@@ -102,6 +103,8 @@ public:
                 scan.channelMask &= 0x07FFF800; //clear incorrect channels
             }
         }
+
+        logger::log(logger::LLOG::DEBUG, "uart", std::string(__func__) + " Channel Mask: " + std::to_string(scan.channelMask));
 
         scan.scanType = scanType;
         scan.duration = duration;
@@ -130,6 +133,53 @@ public:
         add2output<zb_ezsp::value_get_req>(zb_ezsp::EId::ID_getValue, v_id);
     }
 
+
+    /**
+     * Configuration value get/set
+     */
+    void getCinfigurationValue(const EzspConfigId id){
+        zb_ezsp::configid_get_req v_cfg;
+        v_cfg.configId = id;
+        add2output<zb_ezsp::configid_get_req>(zb_ezsp::EId::ID_getConfigurationValue, v_cfg);
+    }
+
+    /**
+     * Init network
+     */
+    void networkInitExt(const EmberNetworkInitBitmask bitmask = EmberNetworkInitBitmask::EMBER_NETWORK_INIT_NO_OPTIONS) {
+        zb_ezsp::EmberNetworkInitStruct net;
+        net.bitmask = bitmask;
+        add2output<zb_ezsp::EmberNetworkInitStruct>(zb_ezsp::EId::ID_networkInitExtended, net);
+    }
+
+    void networkInit(){
+        zb_ezsp::no_params no_prm;
+        add2output<zb_ezsp::no_params>(zb_ezsp::EId::ID_networkInit, no_prm);
+    }
+
+    void formNetwork(){
+        EmberNetworkParameters netPrm;
+        uint8_t extPAN[8] = {0xAA, 0xBB, 0xCC, 0xDD, 0xAA, 0xBB, 0xCC, 0xDD};
+
+        //External PAN ID
+        memcpy(netPrm.extendedPanId, extPAN, sizeof(extPAN));
+        //PAN
+        netPrm.panId = 0xAABB;
+        netPrm.radioTxPower = 85;  //dBm
+        netPrm.radioChannel = 15;
+        netPrm.joinMethod = EmberJoinMethod::EMBER_USE_MAC_ASSOCIATION;
+        netPrm.nwkManagerId = 0;
+        netPrm.nwkUpdateId = 0;
+        netPrm.channels = 0;
+
+        add2output<zb_ezsp::EmberNetworkParameters>(zb_ezsp::EId::ID_formNetwork, netPrm);
+    }
+
+    void getNetworkParameters(){
+        zb_ezsp::no_params no_prm;
+        add2output<zb_ezsp::no_params>(zb_ezsp::EId::ID_getNetworkParameters, no_prm);
+    }
+
 protected:
     /**
      * Add frame to output queue
@@ -140,6 +190,9 @@ protected:
 
         std::shared_ptr<zb_ezsp::EFrame> efr = std::make_shared<zb_ezsp::EFrame>(id);
         efr->set_seq(seq_next());
+
+        logger::log(logger::LLOG::DEBUG, "uart", std::string(__func__) + " Create frame ID:" + std::to_string((uint16_t)id) + " SEQ: " +  std::to_string((uint16_t)efr->seq()));
+
 
         if(is_debug()){
             logger::log(logger::LLOG::DEBUG, "uart", std::string(__func__) + efr->to_string());
@@ -198,6 +251,10 @@ protected:
             case EId::ID_startScan:
             case EId::ID_stopScan:
             case EId::ID_invalidCommand:
+            case EId::ID_networkInit:
+            case EId::ID_networkInitExtended:
+            case EId::ID_formNetwork:
+            case EId::ID_stackStatusHandler:
             {
                 auto p_status = ef->load<zb_ezsp::ember_status>(efr_raw->data(), efr_raw->len());
                 notify((EId)id, p_status.to_string());
@@ -216,8 +273,30 @@ protected:
              */
             case EId::ID_networkFoundHandler:
             {
+                if(is_debug()){
+                    logger::log(logger::LLOG::DEBUG, "uart", std::string(__func__) + " networkFoundHandler: " + zb_ezsp::Conv::print_buff(efr_raw->data(), efr_raw->len()));
+                }
+
                 auto p_network = ef->load<zb_ezsp::networkFoundHandler>(efr_raw->data(), efr_raw->len());
                 notify((EId)id, p_network.to_string());
+            }
+            break;
+            case EId::ID_networkState:
+            {
+                auto p_netstate = ef->load<zb_ezsp::networkState>(efr_raw->data(), efr_raw->len());
+                notify((EId)id, p_netstate.to_string());
+            }
+            break;
+            case EId::ID_getNetworkParameters:
+            {
+                auto p_netstate = ef->load<zb_ezsp::getNetworkParameters_resp>(efr_raw->data(), efr_raw->len());
+                notify((EId)id, p_netstate.to_string());
+            }
+            break;
+            case EId::ID_scanCompleteHandler:
+            {
+                auto p_handler = ef->load<zb_ezsp::scanCompleteHandler>(efr_raw->data(), efr_raw->len());
+                notify((EId)id, p_handler.to_string());
             }
             break;
             case EId::ID_energyScanResultHandler:
@@ -226,10 +305,16 @@ protected:
                 notify((EId)id, p_channel.to_string());
             }
             break;
+            case EId::ID_getConfigurationValue:
+            {
+                auto p_conf = ef->load<zb_ezsp::configid_get_resp>(efr_raw->data(), efr_raw->len());
+                notify((EId)id, p_conf.to_string());
+            }
+            break;
             case EId::ID_Echo:
             {
                 auto p_echo = ef->load<zb_ezsp::echo>(efr_raw->data(), efr_raw->len());
-                notify(EId::ID_Echo, p_echo.to_string());
+                notify((EId)id, p_echo.to_string());
             }
             break;
             case EId::ID_getValue:
@@ -238,7 +323,11 @@ protected:
                 notify((EId)id, p_status.to_string());
             }
             break;
+            /**
+             * EZSP status only
+             */
             case EId::ID_setValue:
+            case EId::ID_setConfigurationValue:
             {
                 auto p_status = ef->load<zb_ezsp::ezsp_status>(efr_raw->data(), efr_raw->len());
                 notify((EId)id, p_status.to_string());

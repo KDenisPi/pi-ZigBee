@@ -216,13 +216,21 @@ public:
     size_t get_param(zb_ezsp::ezsp_EzspStatus& param, const uint8_t* buff, size_t& pos);
 
     /**
-     * Start scan and related calls
+     * Start scan and another network related calls
      */
     size_t put_param(const zb_ezsp::start_scan& param, uint8_t* buff, size_t pos);
     size_t get_param(zb_ezsp::energyScanResultHandler& param, const uint8_t* buff, size_t& pos);
     size_t get_param(zb_ezsp::EmberZigbeeNetwork& param, const uint8_t* buff, size_t& pos);
     size_t get_param(zb_ezsp::networkFoundHandler& param, const uint8_t* buff, size_t& pos);
     size_t get_param(zb_ezsp::scanCompleteHandler& param, const uint8_t* buff, size_t& pos);
+    size_t get_param(zb_ezsp::networkState& param, const uint8_t* buff, size_t& pos);
+
+    size_t put_param(const zb_ezsp::EmberNetworkInitStruct& param, uint8_t* buff, size_t pos);
+    size_t put_param(const zb_ezsp::EmberNetworkParameters& param, uint8_t* buff, size_t pos);
+
+    size_t get_param(zb_ezsp::EmberNetworkParameters& param, const uint8_t* buff, size_t pos);
+    size_t get_param(zb_ezsp::getNetworkParameters_resp& param, const uint8_t* buff, size_t pos);
+
 
     /**
      * NCP Value
@@ -231,6 +239,16 @@ public:
 
     size_t put_param(const zb_ezsp::value_get_req& param, uint8_t* buff, size_t pos);
     size_t get_param(zb_ezsp::value_get_resp& param, const uint8_t* buff, size_t& pos);
+
+    /**
+     * Configuration value
+     */
+    size_t put_param(const zb_ezsp::configid_set_req& param, uint8_t* buff, size_t pos);
+    size_t put_param(const zb_ezsp::ezsp_configid_get_req& param, uint8_t* buff, size_t pos);
+
+    size_t get_param(zb_ezsp::ezsp_configid_get_resp& param, const uint8_t* buff, size_t& pos);
+
+
 
 public:
     /**
