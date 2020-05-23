@@ -12,6 +12,7 @@
 #include <cstdint>
 #include <string>
 #include "ezsp_defs.h"
+#include "ezsp_util.h"
 
 namespace zb_ezsp {
 
@@ -117,22 +118,14 @@ using  EmberZigbeeNetwork = struct ezsp_EmberZigbeeNetwork {
 
     const std::string to_string() const {
         char buff[128];
-        std::sprintf(buff, "Zigbee Network: CH:%d PAN:%d  ExPan:%02X:%02X:%02X:%02X:%02X:%02X:%02X:%02X Allow Join:%d StProfile:%02X NetInstance:%02X",
+        std::sprintf(buff, "Zigbee Network: CH:%d PAN:%d Allow Join:%d StProfile:%02X NetInstance:%02X",
         channel,
         panId,
-        extendedPanId[0],
-        extendedPanId[1],
-        extendedPanId[2],
-        extendedPanId[3],
-        extendedPanId[4],
-        extendedPanId[5],
-        extendedPanId[6],
-        extendedPanId[7],
         allowingJoin,
         stackProfile,
         nwkUpdateId
         );
-        return std::string(buff);
+        return std::string(buff)+ " ExPan:" + Conv::Eui64_to_string(extendedPanId);
     }
 };
 
@@ -239,16 +232,8 @@ struct EmberNetworkParameters {
 
     const std::string to_string() const {
         char buff[128];
-        std::sprintf(buff, "Network parameters: PAN:%d ExPan:%02X:%02X:%02X:%02X:%02X:%02X:%02X:%02X Pwr:%02X CH:%02X Join Method:%02x MgrID:%02X UpdID:%02X Chs:%08X",
+        std::sprintf(buff, "Network parameters: PAN:%d Pwr:%02X CH:%02X Join Method:%02x MgrID:%02X UpdID:%02X Chs:%08X",
         panId,
-        extendedPanId[0],
-        extendedPanId[1],
-        extendedPanId[2],
-        extendedPanId[3],
-        extendedPanId[4],
-        extendedPanId[5],
-        extendedPanId[6],
-        extendedPanId[7],
         radioTxPower,
         radioChannel,
         joinMethod,
@@ -256,7 +241,7 @@ struct EmberNetworkParameters {
         nwkUpdateId,
         channels
         );
-        return std::string(buff);
+        return std::string(buff) + " ExPan:" + Conv::Eui64_to_string(extendedPanId);
     }
 
 };
@@ -284,18 +269,10 @@ struct EmberCurrentSecurityState {
 
     const std::string to_string() const {
         char buff[128];
-        std::sprintf(buff, "Security state: Bitmask:%04X Trust center:%02X:%02X:%02X:%02X:%02X:%02X:%02X:%02X",
-        bitmask,
-        trustCenterLongAddress[0],
-        trustCenterLongAddress[1],
-        trustCenterLongAddress[2],
-        trustCenterLongAddress[3],
-        trustCenterLongAddress[4],
-        trustCenterLongAddress[5],
-        trustCenterLongAddress[6],
-        trustCenterLongAddress[7]
+        std::sprintf(buff, "Security state: Bitmask:%04X",
+        bitmask
         );
-        return std::string(buff);
+        return std::string(buff) + " Trust center:" + Conv::Eui64_to_string(trustCenterLongAddress);
     }
 
 };
@@ -309,6 +286,33 @@ struct getCurrentSecurityState {
         std::sprintf(buff, "Status: 0x%02X", status);
         return std::string(buff) + " " + state.to_string();
     }
+};
+
+struct childJoinHandler {
+    uint8_t index; // The index of the child of interest.
+    EZSP_Bool joining; // True if the child is joining. False the child is leaving.
+    EmberNodeId childId; // The node ID of the child.
+    EmberEUI64 childEui64; // The EUI64 of the child.
+    EmberNodeType childType; // The node type of the child.
+
+    const std::string to_string() const {
+        char buff[128];
+        std::sprintf(buff, "Child: Index:%d Joining:%d ID:%04X Type:%02X",
+        index,
+        joining,
+        childId,
+        childType
+        );
+        return std::string(buff) + " EUI64:" + Conv::Eui64_to_string(childEui64);
+    }
+};
+
+struct Eui64 {
+    EmberEUI64 eui64;
+};
+
+struct NodeId {
+    EmberNodeId nodeId;
 };
 
 }

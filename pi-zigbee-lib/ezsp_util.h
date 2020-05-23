@@ -71,6 +71,14 @@ public:
         return pos;
     }
 
+/*
+    static size_t get(const uint8_t* buff, size_t& pos, uint8_t& res[8], const size_t len, const size_t max_len){
+        assert(len<=max_len);
+        for(int i=0; i<len && i<max_len; i++)
+            res[i] = buff[pos++];
+        return pos;
+    }
+*/
     static size_t get(const uint8_t* buff, size_t& pos, uint16_t& res){
         res = (buff[pos+1] << 8);
         res |= buff[pos];
@@ -179,6 +187,26 @@ public:
         return result;
     }
 
+    static const std::string Eui64_to_string(const EmberEUI64 eui64){
+        char buff[128];
+        std::sprintf(buff, "EUI64:%02X:%02X:%02X:%02X:%02X:%02X:%02X:%02X",
+        eui64[0],
+        eui64[1],
+        eui64[2],
+        eui64[3],
+        eui64[4],
+        eui64[5],
+        eui64[6],
+        eui64[7]
+        );
+        return std::string(buff);
+    }
+
+    static const std::string to_string(const uint16_t ui16){
+        char buff[10];
+        std::sprintf(buff, "%04X", ui16);
+        return std::string(buff);
+    }
 };
 
 }

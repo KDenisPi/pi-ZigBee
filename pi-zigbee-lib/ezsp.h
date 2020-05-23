@@ -85,6 +85,19 @@ public:
     }
 
     /**
+     * Get node ID
+     */
+    void get_nodeId_Eui64() {
+        zb_ezsp::no_params no_prm;
+        add2output<zb_ezsp::no_params>(zb_ezsp::EId::ID_getEui64, no_prm);
+    }
+
+    void get_nodeId() {
+        zb_ezsp::no_params no_prm;
+        add2output<zb_ezsp::no_params>(zb_ezsp::EId::ID_getNodeId, no_prm);
+    }
+
+    /**
      * This function will start a scan
      * ch2scan - number channels to scan (15 channels, from 11 to 26). OxFF - scan all
      * channels - array of channels have to be scan. Not used if ch2scan = 0xFF
@@ -275,6 +288,12 @@ protected:
             {
                 auto p_ver = ef->load<zb_ezsp::ezsp_ver_resp>(efr_raw->data(), efr_raw->len());
                 notify(EId::ID_version, p_ver.to_string());
+
+                /**
+                 * Get node information
+                 */
+                get_nodeId_Eui64();
+                get_nodeId();
             }
             break;
             /**
@@ -316,6 +335,28 @@ protected:
                 notify((EId)id, p_network.to_string());
             }
             break;
+            case EId::ID_childJoinHandler:
+            {
+                auto p_child = ef->load<zb_ezsp::childJoinHandler>(efr_raw->data(), efr_raw->len());
+                notify((EId)id, p_child.to_string());
+            }
+            break;
+            case EId::ID_getEui64:
+            {
+                auto p_eui64 = ef->load<zb_ezsp::Eui64>(efr_raw->data(), efr_raw->len());
+                memcpy(this->_eui64, p_eui64.eui64, sizeof(EmberEUI64));
+                notify((EId)id, Conv::Eui64_to_string(p_eui64.eui64));
+
+            }
+            break;
+            case EId::ID_getNodeId:
+            {
+                auto p_nodeid = ef->load<zb_ezsp::NodeId>(efr_raw->data(), efr_raw->len());
+                this->_nodeId = p_nodeid.nodeId;
+                notify((EId)id, Conv::to_string(this->_nodeId));
+            }
+            break;
+
             case EId::ID_networkState:
             {
                 auto p_netstate = ef->load<zb_ezsp::networkState>(efr_raw->data(), efr_raw->len());
@@ -403,10 +444,22 @@ public:
         _uart->set_activate(true);
     }
 
+    EmberEUI64 _eui64;   // The 64-bit ID
+    EmberNodeId _nodeId;  // The 16-bit ID
+
+    const uint16_t node_id() const {
+        return _nodeId;
+    }
+
+    const uint8_t* node_id64() const {
+        return _eui64;
+    }
+
 private:
     uint8_t _seq;
     bool _debug;
     std::shared_ptr<zb_uart::ZBUart> _uart = std::make_shared<zb_uart::ZBUart>(true);
+
 
     /**
      * Detect Frame ID

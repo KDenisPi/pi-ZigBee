@@ -194,6 +194,10 @@ public:
         return params;
     }
 
+    size_t get_param(EmberEUI64& param, const uint8_t* buff, size_t& pos);
+    size_t get_param(Eui64& param, const uint8_t* buff, size_t& pos);
+    size_t get_param(NodeId& param, const uint8_t* buff, size_t& pos);
+
     /**
      * Version
      */
@@ -231,6 +235,7 @@ public:
 
     size_t get_param(zb_ezsp::EmberNetworkParameters& param, const uint8_t* buff, size_t pos);
     size_t get_param(zb_ezsp::getNetworkParameters_resp& param, const uint8_t* buff, size_t pos);
+    size_t get_param(zb_ezsp::childJoinHandler& param, const uint8_t* buff, size_t pos);
 
 
     /**

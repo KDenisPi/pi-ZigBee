@@ -15,6 +15,22 @@
 
 namespace zb_ezsp {
 
+size_t EFrame::get_param(EmberEUI64& param, const uint8_t* buff, size_t& pos){
+    pos = Conv::get(buff, pos, param, sizeof(param), sizeof(param));
+    return pos;
+}
+size_t EFrame::get_param(Eui64& param, const uint8_t* buff, size_t& pos){
+    pos = Conv::get(buff, pos, param.eui64, sizeof(param.eui64), sizeof(param.eui64));
+    //pos = get_param(param, buff, pos);
+    return pos;
+}
+
+size_t EFrame::get_param(NodeId& param, const uint8_t* buff, size_t& pos){
+    pos = Conv::get(buff, pos, param.nodeId);
+    return pos;
+}
+
+
 /**
  * Version
  */
@@ -183,6 +199,14 @@ size_t EFrame::get_param(zb_ezsp::getNetworkParameters_resp& param, const uint8_
     return pos;
 }
 
+size_t EFrame::get_param(zb_ezsp::childJoinHandler& param, const uint8_t* buff, size_t pos){
+    pos = Conv::get(buff, pos, param.index);
+    pos = Conv::get(buff, pos, param.joining);
+    pos = Conv::get(buff, pos, param.childId);
+    pos = Conv::get(buff, pos, param.childEui64, sizeof(param.childEui64), sizeof(param.childEui64));
+    pos = Conv::get_byte<EmberNodeType>(buff, pos, param.childType);
+    return pos;
+}
 
 
 /**

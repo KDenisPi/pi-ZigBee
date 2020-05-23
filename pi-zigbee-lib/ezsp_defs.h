@@ -38,8 +38,8 @@ public:
 
 using EZSP_Bool = uint8_t;
 using EZSP_EzspConfigId = uint8_t;
-using EmberNodeId = uint16_t;           // 16-bit ZigBee network address.
-using EmberEUI64 = uint8_t[8];  // EUI 64-bit ID (an IEEE address)
+using EmberNodeId = uint16_t;       // 16-bit ZigBee network address.
+using EmberEUI64 = uint8_t[8];      // EUI 64-bit ID (an IEEE address)
 
 
 using EId = enum EFrame_ID : id_type {
@@ -60,6 +60,9 @@ using EId = enum EFrame_ID : id_type {
                                             //is down. The radio will not be used until after sending a formNetwork or joinNetwork command.
 
     ID_permitJoining = 0x22,                //Tells the stack to allow other nodes to join the network with this node as their parent. Joining is initially disabled by default.
+    ID_childJoinHandler = 0x23,             //Indicates that a child has joined or left.
+    ID_getEui64 = 0x26,                     //Returns the EUI64 ID of the local node.
+    ID_getNodeId = 0x27,                    //Returns the 16-bit node ID of the local node.
     ID_getNetworkParameters = 0x28,         //Returns the current network parameters.
     ID_energyScanResultHandler = 0x48,
     ID_getConfigurationValue = 0x52,
