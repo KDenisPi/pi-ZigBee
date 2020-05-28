@@ -720,7 +720,7 @@ public:
             if(res==0){ //timeout
                 len = 0;
                 if(_debug){
-                    logger::log(logger::LLOG::DEBUG, "uart", std::string(__func__) +  " Timeout! Read bytes: " + std::to_string(read_bytes) + " "  + zb_ezsp::Conv::print_buff(buffer, read_bytes));
+                    //logger::log(logger::LLOG::DEBUG, "uart", std::string(__func__) +  " Timeout! Read bytes: " + std::to_string(read_bytes) + " "  + zb_ezsp::Conv::print_buff(buffer, read_bytes));
                     //std::cout << "Byte " << read_bytes << " " << zb_ezsp::Conv::print_buff(buffer, len) << std::endl;
                 }
                 return 0;

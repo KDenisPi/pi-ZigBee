@@ -315,5 +315,17 @@ struct NodeId {
     EmberNodeId nodeId;
 };
 
+/**
+ * The NCP used the trust center behavior policy to decide whether to allow a new node to join the network. The Host cannot
+ *   change the current decision, but it can change the policy for future decisions using the setPolicy command.
+ */
+struct trustCenterJoinHandler {
+    EmberNodeId newNodeId;      //The Node Id of the node whose status changed
+    EmberEUI64 newNodeEui64;    // The EUI64 of the node whose status changed.
+    EmberDeviceUpdate status;   // The status of the node: Secure Join/Rejoin, Unsecure Join/Rejoin, Device left.
+    EmberJoinDecision policyDecision;   // An EmberJoinDecision reflecting the decision made.
+    EmberNodeId parentOfNewNodeId;  // The parent of the node whose status has changed.
+};
+
 }
 #endif

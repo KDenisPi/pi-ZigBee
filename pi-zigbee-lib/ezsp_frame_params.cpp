@@ -208,6 +208,15 @@ size_t EFrame::get_param(zb_ezsp::childJoinHandler& param, const uint8_t* buff, 
     return pos;
 }
 
+size_t EFrame::get_param(zb_ezsp::trustCenterJoinHandler& param, const uint8_t* buff, size_t pos){
+    pos = Conv::get(buff, pos, param.newNodeId);
+    pos = Conv::get(buff, pos, param.newNodeEui64, sizeof(param.newNodeEui64), sizeof(param.newNodeEui64));
+    pos = Conv::get_byte<EmberDeviceUpdate>(buff, pos, param.status);
+    pos = Conv::get_byte<EmberJoinDecision>(buff, pos, param.policyDecision);
+    pos = Conv::get(buff, pos, param.parentOfNewNodeId);
+    return pos;
+}
+
 
 /**
  * Configuration parameters

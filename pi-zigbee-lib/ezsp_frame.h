@@ -236,6 +236,7 @@ public:
     size_t get_param(zb_ezsp::EmberNetworkParameters& param, const uint8_t* buff, size_t pos);
     size_t get_param(zb_ezsp::getNetworkParameters_resp& param, const uint8_t* buff, size_t pos);
     size_t get_param(zb_ezsp::childJoinHandler& param, const uint8_t* buff, size_t pos);
+    size_t get_param(zb_ezsp::trustCenterJoinHandler& param, const uint8_t* buff, size_t pos);
 
 
     /**

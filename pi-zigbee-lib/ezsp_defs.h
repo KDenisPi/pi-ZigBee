@@ -61,6 +61,7 @@ using EId = enum EFrame_ID : id_type {
 
     ID_permitJoining = 0x22,                //Tells the stack to allow other nodes to join the network with this node as their parent. Joining is initially disabled by default.
     ID_childJoinHandler = 0x23,             //Indicates that a child has joined or left.
+    ID_trustCenterJoinHandler = 0x24,       //
     ID_getEui64 = 0x26,                     //Returns the EUI64 ID of the local node.
     ID_getNodeId = 0x27,                    //Returns the 16-bit node ID of the local node.
     ID_getNetworkParameters = 0x28,         //Returns the current network parameters.
@@ -446,6 +447,20 @@ enum EmberCurrentSecurityBitmask : uint16_t {
     EMBER_GLOBAL_LINK_KEY = 0x0004,                     //  This denotes that the device has a Global Link Key. The Trust Center Link Key is the same across multiple nodes.
     EMBER_HAVE_TRUST_CENTER_LINK_KEY = 0x0010,          //  This denotes that the node has a Trust Center Link Key.
     EMBER_TRUST_CENTER_USES_HASHED_LINK_KEY = 0x0084    //  This denotes that the Trust Center is using a Hashed Link Key.
+};
+
+enum EmberDeviceUpdate : uint8_t {
+    EMBER_STANDARD_SECURITY_SECURED_REJOIN = 0x0,
+    EMBER_STANDARD_SECURITY_UNSECURED_JOIN = 0x1,
+    EMBER_DEVICE_LEFT = 0x2,
+    EMBER_STANDARD_SECURITY_UNSECURED_REJOIN = 0x3
+};
+
+enum EmberJoinDecision : uint8_t {
+    EMBER_USE_PRECONFIGURED_KEY = 0x00, // Allow the node to join. The joining node should have a pre-configured key. The security data sent to it will be encrypted with that key.
+    EMBER_SEND_KEY_IN_THE_CLEAR = 0x01, // Allow the node to join. Send the network key in-the-clear to the joining device.
+    EMBER_DENY_JOIN = 0x02,             // Deny join.
+    EMBER_NO_ACTION = 0x03              // Take no action.
 };
 
 }
