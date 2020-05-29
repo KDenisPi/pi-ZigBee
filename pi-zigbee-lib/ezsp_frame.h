@@ -141,11 +141,11 @@ public:
         return (ECallbackType)(res & EEnable::Mask);
     }
 
-    uint16_t network_index() const {
+    const uint8_t network_index() const {
         return ((_data->_ctrl_low >> 5) & EEnable::Mask);
     }
 
-    void set_network_index(const uint8_t nidx){
+    void set_network_index(const uint8_t nidx = 0){
         _data->_ctrl_low |= ((nidx & EEnable::Mask) << 5);
     }
 

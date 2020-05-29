@@ -111,20 +111,18 @@ void Ezsp::networkInit(){
 }
 
 void Ezsp::formNetwork(){
-    EmberNetworkParameters netPrm;
-    //uint8_t extPAN[8] = {0xAA, 0xBB, 0xCC, 0xDD, 0xAA, 0xBB, 0xCC, 0xDD};
-    uint8_t extPAN[8] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
 
-    //External PAN ID
-    memcpy(netPrm.extendedPanId, extPAN, sizeof(extPAN));
-    //PAN
-    netPrm.panId = 0xA0B0;
+    //Use net 0
+    EmberNetworkParameters netPrm(_networks[0].get());
+
     netPrm.radioTxPower = 8;  //dBm
     netPrm.radioChannel = 11;
     netPrm.joinMethod = EmberJoinMethod::EMBER_USE_MAC_ASSOCIATION;
     netPrm.nwkManagerId = 0;
     netPrm.nwkUpdateId = 0;
     netPrm.channels = 0;
+
+    logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__) + " Net: " + netPrm.to_string());
 
     add2output<zb_ezsp::EmberNetworkParameters>(zb_ezsp::EId::ID_formNetwork, netPrm);
 }

@@ -11,6 +11,7 @@
 
 #include <cstdint>
 #include <string>
+#include <cstring>
 #include "ezsp_defs.h"
 #include "ezsp_util.h"
 
@@ -218,7 +219,47 @@ struct EmberNetworkInitStruct {
     EmberNetworkInitBitmask bitmask;
 };
 
-struct EmberNetworkParameters {
+class EmberNetworkParameters {
+public:
+    EmberNetworkParameters() {
+        memset(extendedPanId, 0x00, sizeof(extendedPanId));
+        panId = 0;
+        radioTxPower = 8;
+        radioChannel = 11;
+        joinMethod = EmberJoinMethod::EMBER_USE_MAC_ASSOCIATION;
+        nwkManagerId = 0;
+        nwkUpdateId = 0;
+        channels = 0;
+    }
+
+    EmberNetworkParameters(const EmberNetworkParameters& net){
+
+        memcpy(extendedPanId, net.extendedPanId, sizeof(extendedPanId));
+
+        panId = net.panId;
+        radioTxPower = net.radioTxPower;
+        radioChannel = net.radioChannel;
+        joinMethod = net.joinMethod;
+        nwkManagerId = net.nwkManagerId;
+        nwkUpdateId = net.nwkUpdateId;
+        channels = net.channels;
+    }
+
+    EmberNetworkParameters(const EmberNetworkParameters* net){
+        memcpy(extendedPanId, net->extendedPanId, sizeof(extendedPanId));
+        panId = net->panId;
+        radioTxPower = net->radioTxPower;
+        radioChannel = net->radioChannel;
+        joinMethod = net->joinMethod;
+        nwkManagerId = net->nwkManagerId;
+        nwkUpdateId = net->nwkUpdateId;
+        channels = net->channels;
+    }
+
+    void set_ext_pan(const uint8_t* e_pan){
+        memcpy(extendedPanId, e_pan, sizeof(extendedPanId));
+    }
+
     uint8_t extendedPanId[8];   // The network's extended PAN identifier.
     uint16_t panId;             //The network's PAN identifier.
     uint8_t radioTxPower;       // A power setting, in dBm.

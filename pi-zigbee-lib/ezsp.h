@@ -10,8 +10,14 @@
 #define PI_ZIGBEE_LIB_EZSP_H_
 
 #include <functional>
+#include <memory>
+#include <array>
+
+#include "Threaded.h"
 
 #include "ezsp_frame.h"
+#include "ezsp_sm.h"
+
 #include "uart.h"
 #include "uart_efr_buff.h"
 
@@ -20,11 +26,12 @@ namespace zb_ezsp {
 /**
  * EZSP implementation
  */
-class Ezsp {
+class Ezsp : public piutils::Threaded {
 public:
     Ezsp(const bool debug_mode=true) : _seq(0), _debug(debug_mode), frame_received(nullptr) {
 
         _uart = std::make_shared<zb_uart::ZBUart>(debug_mode);
+        _events = std::make_shared<EventBuff>(20);
 
         _uart->callback_connected = std::bind(&Ezsp::callback_connected, this, std::placeholders::_1);
         _uart->callback_eframe_received = std::bind(&Ezsp::callback_eframe_received, this, std::placeholders::_1);
@@ -41,6 +48,15 @@ public:
     Ezsp(Ezsp&&) = delete;
     Ezsp& operator=(const Ezsp&) = delete;
     Ezsp& operator=(Ezsp&&) = delete;
+
+    /**
+     *
+     */
+    void add_event(const EventPtr evt){
+        std::lock_guard<std::mutex> lk(cv_m);
+        _events->put(evt);
+        cv.notify_one();
+    }
 
     /**
      * Sequence number
@@ -61,6 +77,10 @@ public:
     std::function<void(const EId id, const std::string)> frame_received;
 
     void notify(const EId id, const std::string info) const {
+        char buff[10];
+        std::sprintf(buff, "0x%02X", id);
+        logger::log(logger::LLOG::NECECCARY, "ezsp", std::string(__func__) + " ID: " + std::string(buff) + " " + info);
+
         if(frame_received != nullptr){
             frame_received(id, info);
         }
@@ -146,11 +166,11 @@ protected:
         std::shared_ptr<zb_ezsp::EFrame> efr = std::make_shared<zb_ezsp::EFrame>(id);
         efr->set_seq(seq_next());
 
-        logger::log(logger::LLOG::DEBUG, "uart", std::string(__func__) + " Create frame ID:" + std::to_string((uint16_t)id) + " SEQ: " +  std::to_string((uint16_t)efr->seq()));
+        logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__) + " Create frame ID:" + std::to_string((uint16_t)id) + " SEQ: " +  std::to_string((uint16_t)efr->seq()));
 
 
         if(is_debug()){
-            logger::log(logger::LLOG::DEBUG, "uart", std::string(__func__) + efr->to_string());
+            logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__) + efr->to_string());
         }
 
         //Convert EZSP frame to buffer
@@ -168,168 +188,22 @@ protected:
      *
      */
     void callback_connected(bool conn){
-        uint8_t w_buff[140];
-        zb_ezsp::ver_req ver;
-
-        logger::log(logger::LLOG::DEBUG, "uart", std::string(__func__) + " Connected: " + std::to_string(conn));
+        logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__) + " Connected: " + std::to_string(conn));
 
         if(!conn){ //Low level error
             return;
         }
 
         //create EZSP Version frame
+        zb_ezsp::ver_req ver;
         ver._ver = zb_ezsp::EzspVersion::ver();
         add2output<zb_ezsp::ver_req>(zb_ezsp::EId::ID_version, ver);
     }
 
     /**
-     *
+     * Process callbacks from UART
      */
-    void callback_eframe_received(const zb_uart::EFramePtr& efr_raw){
-        logger::log(logger::LLOG::DEBUG, "uart", std::string(__func__) + " Received frame Len: " + std::to_string(efr_raw->len()));
-
-        std::shared_ptr<zb_ezsp::EFrame> ef = std::make_shared<zb_ezsp::EFrame>();
-
-        auto id = detect_id(efr_raw->data(), efr_raw->len());
-        logger::log(logger::LLOG::DEBUG, "uart", std::string(__func__) + " Detected ID " + std::to_string((uint16_t)id));
-
-        switch(id){
-            case EId::ID_version:
-            {
-                auto p_ver = ef->load<zb_ezsp::ezsp_ver_resp>(efr_raw->data(), efr_raw->len());
-                notify(EId::ID_version, p_ver.to_string());
-
-                /**
-                 * Get node information
-                 */
-                get_nodeId_Eui64();
-                get_nodeId();
-            }
-            break;
-            /**
-             * Group of EmberStatus only responses
-             */
-            case EId::ID_startScan:
-            case EId::ID_stopScan:
-            case EId::ID_invalidCommand:
-            case EId::ID_networkInit:
-            case EId::ID_networkInitExtended:
-            case EId::ID_formNetwork:
-            case EId::ID_stackStatusHandler:
-            case EId::ID_permitJoining:
-            case EId::ID_setInitialSecurityState:
-            case EId::ID_leaveNetwork:
-            {
-                auto p_status = ef->load<zb_ezsp::ember_status>(efr_raw->data(), efr_raw->len());
-                notify((EId)id, p_status.to_string());
-            }
-            break;
-            /**
-             *Group no data responses
-             */
-            case EId::ID_noCallbacks:
-            {
-                notify((EId)id, std::string());
-            }
-            break;
-            /**
-             * Reports that a network was found as a result of a prior call to startScan. Gives the network parameters useful for deciding which network to join.
-             */
-            case EId::ID_networkFoundHandler:
-            {
-                if(is_debug()){
-                    logger::log(logger::LLOG::DEBUG, "uart", std::string(__func__) + " networkFoundHandler: " + zb_ezsp::Conv::print_buff(efr_raw->data(), efr_raw->len()));
-                }
-
-                auto p_network = ef->load<zb_ezsp::networkFoundHandler>(efr_raw->data(), efr_raw->len());
-                notify((EId)id, p_network.to_string());
-            }
-            break;
-            case EId::ID_childJoinHandler:
-            {
-                auto p_child = ef->load<zb_ezsp::childJoinHandler>(efr_raw->data(), efr_raw->len());
-                notify((EId)id, p_child.to_string());
-            }
-            break;
-            case EId::ID_getEui64:
-            {
-                auto p_eui64 = ef->load<zb_ezsp::Eui64>(efr_raw->data(), efr_raw->len());
-                memcpy(this->_eui64, p_eui64.eui64, sizeof(EmberEUI64));
-                notify((EId)id, Conv::Eui64_to_string(p_eui64.eui64));
-
-            }
-            break;
-            case EId::ID_getNodeId:
-            {
-                auto p_nodeid = ef->load<zb_ezsp::NodeId>(efr_raw->data(), efr_raw->len());
-                this->_nodeId = p_nodeid.nodeId;
-                notify((EId)id, Conv::to_string(this->_nodeId));
-            }
-            break;
-
-            case EId::ID_networkState:
-            {
-                auto p_netstate = ef->load<zb_ezsp::networkState>(efr_raw->data(), efr_raw->len());
-                notify((EId)id, p_netstate.to_string());
-            }
-            break;
-            case EId::ID_getNetworkParameters:
-            {
-                auto p_netstate = ef->load<zb_ezsp::getNetworkParameters_resp>(efr_raw->data(), efr_raw->len());
-                notify((EId)id, p_netstate.to_string());
-            }
-            break;
-            case EId::ID_scanCompleteHandler:
-            {
-                auto p_handler = ef->load<zb_ezsp::scanCompleteHandler>(efr_raw->data(), efr_raw->len());
-                notify((EId)id, p_handler.to_string());
-            }
-            break;
-            case EId::ID_energyScanResultHandler:
-            {
-                auto p_channel = ef->load<zb_ezsp::energyScanResultHandler>(efr_raw->data(), efr_raw->len());
-                notify((EId)id, p_channel.to_string());
-            }
-            break;
-            case EId::ID_getConfigurationValue:
-            {
-                auto p_conf = ef->load<zb_ezsp::configid_get_resp>(efr_raw->data(), efr_raw->len());
-                notify((EId)id, p_conf.to_string());
-            }
-            break;
-            case EId::ID_getCurrentSecurityState:
-            {
-                auto p_conf = ef->load<zb_ezsp::getCurrentSecurityState>(efr_raw->data(), efr_raw->len());
-                notify((EId)id, p_conf.to_string());
-            }
-            break;
-            case EId::ID_Echo:
-            {
-                auto p_echo = ef->load<zb_ezsp::echo>(efr_raw->data(), efr_raw->len());
-                notify((EId)id, p_echo.to_string());
-            }
-            break;
-            case EId::ID_getValue:
-            {
-                auto p_status = ef->load<zb_ezsp::value_get_resp>(efr_raw->data(), efr_raw->len());
-                notify((EId)id, p_status.to_string());
-            }
-            break;
-            /**
-             * EZSP status only
-             */
-            case EId::ID_setValue:
-            case EId::ID_setConfigurationValue:
-            {
-                auto p_status = ef->load<zb_ezsp::ezsp_status>(efr_raw->data(), efr_raw->len());
-                notify((EId)id, p_status.to_string());
-            }
-            break;
-
-            default:
-                notify((EId)id, std::string("Not supported yet"));
-        }
-    }
+    void callback_eframe_received(const zb_uart::EFramePtr& efr_raw);
 
     const bool is_debug() const {
         return _debug;
@@ -339,24 +213,13 @@ public:
     /**
      *
      */
-    void start() {
-        _uart->start();
-    }
-
-    void stop() {
-        _uart->stop();
+    bool start() {
+        return piutils::Threaded::start<Ezsp>(this);
     }
 
     /**
      *
      */
-    void activate() {
-        _uart->set_activate(true);
-    }
-
-    EmberEUI64 _eui64;   // The 64-bit ID
-    EmberNodeId _nodeId;  // The 16-bit ID
-
     const uint16_t node_id() const {
         return _nodeId;
     }
@@ -365,11 +228,65 @@ public:
         return _eui64;
     }
 
+    const Ezsp_State state() const {
+        return _state;
+    }
+
+protected:
+    void uart_start() {
+        _uart->start();
+    }
+
+    void uart_stop(){
+        _uart->stop();
+    }
+
+    void activate() {
+        _uart->set_activate(true);
+    }
+
+    const EventPtr& get_event(){
+        return _events->get();
+    }
+
+    void set_state(const Ezsp_State st){
+        _state = st;
+    }
+
+    /**
+     * Load configuration and another data detected during previos session
+     */
+    void load_config(){
+
+        /**
+         * Network information
+         */
+        //TODO: Temporal solution
+        _networks[0] = std::make_shared<EmberNetworkParameters>();
+
+        uint8_t ex_pan[8] = {0xC4,0x9D,0xF8,0x5C,0x57,0x01,0x6C,0xA7};
+        _networks[0]->set_ext_pan(ex_pan);
+        _networks[0]->panId = 41136;
+    }
+
+    const EmberNodeType node_type() const {
+        return _node_type;
+    }
+
+
 private:
     uint8_t _seq;
     bool _debug;
     std::shared_ptr<zb_uart::ZBUart> _uart = std::make_shared<zb_uart::ZBUart>(true);
 
+    Ezsp_State _state = Ezsp_State::SM_Initial;
+    std::shared_ptr<EventBuff> _events;
+
+    EmberNodeType _node_type = EmberNodeType::EMBER_COORDINATOR;
+    EmberEUI64 _eui64;   // The 64-bit ID
+    EmberNodeId _nodeId;  // The 16-bit ID
+
+    std::array<std::shared_ptr<EmberNetworkParameters>, 4> _networks;
 
     /**
      * Detect Frame ID

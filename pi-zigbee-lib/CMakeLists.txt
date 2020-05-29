@@ -5,7 +5,8 @@ include_directories(BEFORE
     ${PROJECT_SOURCE_DIR}/../pi-utils
 )
 
-add_library(pi-zigbee-lib STATIC uart.cpp ezsp.cpp ezsp_frame_params.cpp ezsp_itf.cpp ezsp_sm.cpp crc16.cpp)
+aux_source_directory(${PROJECT_SOURCE_DIR} PI_ZIGBEE_SOURCES)
+add_library(pi-zigbee-lib STATIC ${PI_ZIGBEE_SOURCES})
 
 set(CPACK_PROJECT_NAME ${PROJECT_NAME})
 set(CPACK_PROJECT_VERSION ${PROJECT_VERSION})

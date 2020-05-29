@@ -31,9 +31,6 @@ int main (int argc, char* argv[])
     ezsp->start();
     sleep(2);
 
-    std::cout << "Activate processing" << std::endl;
-    ezsp->activate();
-
     while(1){
         std::cout << "command> " << std::endl;
         std::cin >> cmd;
