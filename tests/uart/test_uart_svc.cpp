@@ -35,8 +35,11 @@ int main (int argc, char* argv[])
         std::cout << "command> " << std::endl;
         std::cin >> cmd;
 
-        if(cmd == "exit")
+        if(cmd == "exit"){
+            ezsp->stop();
+            sleep(5);
             break;
+        }
         if(cmd == "getvalue"){
             ezsp->getValue(zb_ezsp::EzspValueId::EZSP_VALUE_NODE_SHORT_ID);
         }
@@ -57,26 +60,14 @@ int main (int argc, char* argv[])
         else if(cmd =="echo"){
             ezsp->echo();
         }
-        else if(cmd == "formnetwork"){
-            ezsp->formNetwork();
-        }
-        else if(cmd == "permitjoin"){
-            ezsp->permitJoining();
-        }
-        else if(cmd == "leavenetwork"){
-            ezsp->leaveNetwork();
-        }
         else if(cmd == "getnetparams"){
             ezsp->getNetworkParameters();
-        }
-        else if(cmd == "initsecstate"){
-            ezsp->setInitialSecurityState();
         }
         else if(cmd == "getsecstate"){
             ezsp->getCurrentSecurityState();
         }
         else if(cmd == "help"){
-            std::cout << "Commands: exit, getvalue, getcfg, startscana, startscane, stopscan, echo, formnetwork, permitjoin, leavenetwork, getnetparams, initsecstate, getsecstate" << std::endl;
+            std::cout << "Commands: exit, getvalue, getcfg, startscana, startscane, stopscan, echo,  getnetparams, getsecstate" << std::endl;
         }
     }
 

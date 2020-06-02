@@ -33,6 +33,8 @@ public:
         _uart = std::make_shared<zb_uart::ZBUart>(debug_mode);
         _events = std::make_shared<EventBuff>(20);
 
+        load_config();
+
         _uart->callback_connected = std::bind(&Ezsp::callback_connected, this, std::placeholders::_1);
         _uart->callback_eframe_received = std::bind(&Ezsp::callback_eframe_received, this, std::placeholders::_1);
     }
@@ -214,6 +216,11 @@ public:
      *
      */
     bool start() {
+        //Add Start even to the queue
+        std::shared_ptr<EzspEvent> evt = std::make_shared<EzspEvent>(EVT_Start);
+        add_event(evt);
+
+        //Start working thread
         return piutils::Threaded::start<Ezsp>(this);
     }
 
@@ -250,6 +257,7 @@ protected:
     }
 
     void set_state(const Ezsp_State st){
+        logger::log(logger::LLOG::INFO, "ezsp", std::string(__func__) + " From: " + std::to_string(_state) + " To: " + std::to_string(st));
         _state = st;
     }
 

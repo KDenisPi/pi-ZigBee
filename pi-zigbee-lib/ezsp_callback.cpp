@@ -56,7 +56,7 @@ void Ezsp::callback_eframe_received(const zb_uart::EFramePtr& efr_raw){
             auto p_status = ef->load<zb_ezsp::ember_status>(efr_raw->data(), efr_raw->len());
             notify((EId)id, p_status.to_string());
 
-            if(p_status.status != EmberStatus::EMBER_SUCCESS){
+            if((p_status.status != EmberStatus::EMBER_SUCCESS) && (p_status.status != EMBER_NETWORK_UP) && (p_status.status != EMBER_NETWORK_DOWN)){
                 logger::log(logger::LLOG::ERROR, "ezsp", std::string(__func__) + "Error: " + std::to_string((uint16_t)p_status.status) + " Frame ID: " + std::to_string((uint16_t)id));
 
                 std::shared_ptr<EzspEvent> evt = std::make_shared<EzspEvent>(EVT_ERROR, p_status.status, ef->network_index());
@@ -66,6 +66,7 @@ void Ezsp::callback_eframe_received(const zb_uart::EFramePtr& efr_raw){
             else{
                 if(id == EId::ID_stackStatusHandler){
                     if(p_status.status == EmberStatus::EMBER_NETWORK_UP || p_status.status == EmberStatus::EMBER_NETWORK_DOWN){
+                        logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__) + " EVT NET_STATUS " + std::to_string((uint16_t)id));
                         add_event(std::make_shared<EzspEvent>(EVT_NET_STATUS, p_status.status, ef->network_index()));
                     }
                 }

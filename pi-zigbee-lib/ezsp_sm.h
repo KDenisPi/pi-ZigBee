@@ -70,6 +70,13 @@ public:
         _frame_id = frame_id;
     }
 
+    const std::string to_string() const {
+        char buff[60];
+        std::sprintf(buff, "Event: 0x%02X ID: 0x%02X Status: 0x%02X Prm: 0x%02X", _evt_id, _frame_id, _status, _prm_byte);
+
+        return std::string(buff);
+    }
+
 protected:
     Ezsp_SM_Event _evt_id;
     uint8_t _prm_byte;
