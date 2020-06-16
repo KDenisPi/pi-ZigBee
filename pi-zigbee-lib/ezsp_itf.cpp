@@ -15,6 +15,8 @@ namespace zb_ezsp {
  * Ping device
  */
 void Ezsp::echo() {
+    logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__));
+
     zb_ezsp::echo ech;
     ech.dataLength = 10;
     for(int i=0; i<ech.dataLength; i++){
@@ -65,6 +67,8 @@ void Ezsp::startScan(const zb_ezsp::EzspNetworkScanType scanType, const uint8_t 
 }
 
 void Ezsp::stopScan(){
+    logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__));
+
     zb_ezsp::no_params no_prm;
     add2output<zb_ezsp::no_params>(zb_ezsp::EId::ID_stopScan, no_prm);
 }
@@ -73,6 +77,8 @@ void Ezsp::stopScan(){
  * Allows the NCP to respond with a pending callback
  */
 void Ezsp::allowCallback(){
+    logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__));
+
     zb_ezsp::no_params no_prm;
     add2output<zb_ezsp::no_params>(zb_ezsp::EId::ID_callback, no_prm);
 }
@@ -81,6 +87,8 @@ void Ezsp::allowCallback(){
  * Value get/set
  */
 void Ezsp::getValue(const EzspValueId id){
+    logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__));
+
     zb_ezsp::value_get_req v_id;
     v_id.valueId = id;
     add2output<zb_ezsp::value_get_req>(zb_ezsp::EId::ID_getValue, v_id);
@@ -91,6 +99,8 @@ void Ezsp::getValue(const EzspValueId id){
  * Configuration value get/set
  */
 void Ezsp::getCinfigurationValue(const EzspConfigId id){
+    logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__));
+
     zb_ezsp::configid_get_req v_cfg;
     v_cfg.configId = id;
     add2output<zb_ezsp::configid_get_req>(zb_ezsp::EId::ID_getConfigurationValue, v_cfg);
@@ -100,12 +110,16 @@ void Ezsp::getCinfigurationValue(const EzspConfigId id){
  * Init network
  */
 void Ezsp::networkInitExt(const EmberNetworkInitBitmask bitmask/* = EmberNetworkInitBitmask::EMBER_NETWORK_INIT_NO_OPTIONS*/) {
+    logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__));
+
     zb_ezsp::EmberNetworkInitStruct net;
     net.bitmask = bitmask;
     add2output<zb_ezsp::EmberNetworkInitStruct>(zb_ezsp::EId::ID_networkInitExtended, net);
 }
 
 void Ezsp::networkInit(){
+    logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__));
+
     zb_ezsp::no_params no_prm;
     add2output<zb_ezsp::no_params>(zb_ezsp::EId::ID_networkInit, no_prm);
 }
@@ -132,6 +146,8 @@ void Ezsp::formNetwork(){
  * is down. The radio will not be used until after sending a formNetwork or joinNetwork command.
  */
 void Ezsp::leaveNetwork(){
+    logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__));
+
     zb_ezsp::no_params no_prm;
     add2output<zb_ezsp::no_params>(zb_ezsp::EId::ID_leaveNetwork, no_prm);
 }
@@ -140,12 +156,16 @@ void Ezsp::leaveNetwork(){
  * A value of 0x00 disables joining. A value of 0xFF enables joining. Any other value enables joining for that number of seconds.
  */
 void Ezsp::permitJoining(const uint8_t duration/*=0xFF*/){
+    logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__));
+
     zb_ezsp::permitJoining permit;
     permit.duration = duration;
     add2output<zb_ezsp::permitJoining>(zb_ezsp::EId::ID_permitJoining, permit);
 }
 
 void Ezsp::getNetworkParameters(){
+    logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__));
+
     zb_ezsp::no_params no_prm;
     add2output<zb_ezsp::no_params>(zb_ezsp::EId::ID_getNetworkParameters, no_prm);
 }
@@ -154,6 +174,8 @@ void Ezsp::getNetworkParameters(){
  * Security
  */
 void Ezsp::setInitialSecurityState(EmberCurrentSecurityBitmask bitmask/* = EmberCurrentSecurityBitmask::EMBER_STANDARD_SECURITY_MODE*/){
+    logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__));
+
     EmberCurrentSecurityState secSt;
     secSt.bitmask = bitmask;
     memset(secSt.trustCenterLongAddress, 0x00, sizeof(secSt.trustCenterLongAddress));
@@ -161,6 +183,8 @@ void Ezsp::setInitialSecurityState(EmberCurrentSecurityBitmask bitmask/* = Ember
 }
 
 void Ezsp::getCurrentSecurityState(){
+    logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__));
+
     zb_ezsp::no_params no_prm;
     add2output<zb_ezsp::no_params>(zb_ezsp::EId::ID_getCurrentSecurityState, no_prm);
 }

@@ -60,7 +60,7 @@ int main (int argc, char* argv[])
     std::cout << fr->to_string() << std::endl;
 
     memset(buffer, 0x00, sizeof(buffer));
-    size_t wr_len = uart->encode(fr, buffer, sizeof(buffer), true);
+    size_t wr_len = uart->encode(fr, buffer, sizeof(buffer));
     std::cout << print_buff(buffer, wr_len) << std::endl;
 
     /**

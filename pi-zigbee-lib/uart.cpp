@@ -82,17 +82,30 @@ namespace zb_uart {
                 continue;
             }
 
+            EFramePtr e_fr;
+            std::shared_ptr<zb_uart::UFrame> fr;
+            int read_cycles = 0;
+
             while(!p_uart->is_stop_signal()){
 
                 /**
-                 * Check output queue
+                 * Check output queue if no retry procedure
                  */
-                const EFramePtr e_fr = p_uart->get_ezsp_frame();
-                if(e_fr){
-                    std::shared_ptr<zb_uart::UFrame> fr = p_uart->compose_data(e_fr->data(), e_fr->len());
-                    wr_res = p_uart->send_frame(fr);
-                    if(wr_res == 0){
-                        logger::log(logger::LLOG::ERROR, "uart", std::string(__func__) + " Could not write to device");
+                if(!p_uart->is_nothind_to_send()){
+                    e_fr.reset();
+                    e_fr = p_uart->get_ezsp_frame();
+
+                    logger::log(logger::LLOG::DEBUG, "uart", std::string(__func__) + " Detected frame for sending");
+                    read_cycles = 0;
+
+                    if(e_fr){ //send frame if there is a new frame or we did not have answer for 2 cycle
+                        fr.reset();
+                        fr = p_uart->compose_data(e_fr->data(), e_fr->len());
+
+                        wr_res = p_uart->send_frame(fr);
+                        if(wr_res != 0){
+                            logger::log(logger::LLOG::ERROR, "uart", std::string(__func__) + " Could not write to device " + std::to_string(wr_res));
+                        }
                     }
                 }
 
@@ -105,6 +118,17 @@ namespace zb_uart {
 
                 if(r_res == 0 && rd_len == 0){ //timeout
                     logger::log(logger::LLOG::DEBUG, "uart", std::string(__func__) + " Timeout ");
+
+                    if(fr){
+                        if(read_cycles > 0 && read_cycles < 3){
+                            logger::log(logger::LLOG::DEBUG, "uart", std::string(__func__) + " retransmit " + fr->to_string());
+                            wr_res = p_uart->send_frame(fr, true);
+                            if(wr_res != 0){
+                                logger::log(logger::LLOG::ERROR, "uart", std::string(__func__) + " Could not write to device " + std::to_string(wr_res));
+                            }
+                        }
+                        read_cycles++;
+                    }
                 }
                 else if(r_res == 0 && rd_len > 0){
                     /**
@@ -113,20 +137,29 @@ namespace zb_uart {
                     std::shared_ptr<zb_uart::UFrame> fr_rsv = p_uart->parse(r_buff, rd_len, true);
                     if(fr_rsv){
                         if(p_uart->is_debug()){
-                            logger::log(logger::LLOG::DEBUG, "uart", std::string(__func__) + " UART Frame : " + fr_rsv->to_string());
+                            logger::log(logger::LLOG::DEBUG, "uart", std::string(__func__) + " Received UART Frame : " + fr_rsv->to_string());
                         }
 
-                        if(fr_rsv->is_DATA()){
+                        /**
+                         * Clear retry data
+                         */
+                        read_cycles = 0;
+                        fr.reset();
 
+                        if(fr_rsv->is_DATA()){
                             info->set_ackNum(fr_rsv->frmNum()+1);
 
-                            zb_uart::EFramePtr e_fr = std::make_shared<zb_uart::EFData>(fr_rsv->data_len(), fr_rsv->data());
+                            /**
+                             * TODO: Check which ACK NUM was reseived and which one current frame has
+                             */
 
+                            zb_uart::EFramePtr e_fr = std::make_shared<zb_uart::EFData>(fr_rsv->data_len(), fr_rsv->data());
                             /**
                              * Send ACK
                              */
                             std::shared_ptr<zb_uart::UFrame> fr_ack = p_uart->compose(zb_uart::ftype::ACK);
                             wr_res = p_uart->send_frame(fr_ack);
+                            logger::log(logger::LLOG::DEBUG, "uart", std::string(__func__) + " ACK sent : " + fr_ack->to_string());
 
                             if(p_uart->callback_eframe_received != nullptr)
                                 p_uart->callback_eframe_received(e_fr);
@@ -134,8 +167,11 @@ namespace zb_uart {
                         }
                     }
                 }
+                else{
+                    logger::log(logger::LLOG::ERROR, "uart", std::string(__func__) + " Could not recognize response");
+                }
 
-                sleep(1);
+                //sleep(1);
             }
 
         }//main loop

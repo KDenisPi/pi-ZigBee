@@ -168,7 +168,7 @@ protected:
         std::shared_ptr<zb_ezsp::EFrame> efr = std::make_shared<zb_ezsp::EFrame>(id);
         efr->set_seq(seq_next());
 
-        logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__) + " Create frame ID:" + std::to_string((uint16_t)id) + " SEQ: " +  std::to_string((uint16_t)efr->seq()));
+        logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__) + " ******* Create frame ID:" + std::to_string((uint16_t)id) + " SEQ: " +  std::to_string((uint16_t)efr->seq()));
 
 
         if(is_debug()){
@@ -277,10 +277,32 @@ protected:
         _networks[0]->panId = 41136;
     }
 
+    /**
+     * Get node type
+     */
     const EmberNodeType node_type() const {
         return _node_type;
     }
 
+    bool is_coordinator() const {
+        return (node_type() == EmberNodeType::EMBER_COORDINATOR);
+    }
+
+    /**
+     * Add child
+     */
+    void add_child(const std::shared_ptr<childJoinHandler> child) {
+        if(_childs.find(child->childId) == _childs.end()){
+            _childs[child->childId] = child;
+        }
+    }
+
+    void del_child(const EmberNodeId child_id){
+        auto child = _childs.find(child_id);
+        if(child != _childs.end()){
+            _childs.erase(child);
+        }
+    }
 
 private:
     uint8_t _seq;
@@ -295,6 +317,7 @@ private:
     EmberNodeId _nodeId;  // The 16-bit ID
 
     std::array<std::shared_ptr<EmberNetworkParameters>, 4> _networks;
+    std::map<EmberNodeId, std::shared_ptr<childJoinHandler>> _childs;
 
     /**
      * Detect Frame ID

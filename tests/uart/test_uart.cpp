@@ -44,7 +44,7 @@ int main (int argc, char* argv[])
 
             std::shared_ptr<zb_uart::UFrame> fr = uart->compose_data(w_buff, wr_len);
             memset(w_buff, 0x00, sizeof(w_buff));
-            wr_len = uart->encode(fr, w_buff, sizeof(w_buff), true);
+            wr_len = uart->encode(fr, w_buff, sizeof(w_buff));
             std::cout << "For send: " << print_buff(w_buff, wr_len) << std::endl;
             std::cout << fr->to_string() << std::endl;
 

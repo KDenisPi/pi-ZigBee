@@ -175,7 +175,7 @@ public:
     }
 
     template<typename T>
-    const T load(const uint8_t* buff, size_t len){
+    const std::shared_ptr<T> load(const uint8_t* buff, size_t len){
         size_t pos = 0;
         pos = Conv::get(buff, pos, _data->_seq);     //Sequence number
         pos = Conv::get(buff, pos, _data->_ctrl_low);    //Control low
@@ -189,9 +189,9 @@ public:
         _data->_id = Conv::get_id(buff, pos);
 
         //load parameters
-        T params;
-        get_param(params, buff, pos);
-        return params;
+        T* params = new T();
+        get_param(*params, buff, pos);
+        return std::shared_ptr<T>(params);
     }
 
     size_t get_param(EmberEUI64& param, const uint8_t* buff, size_t& pos);

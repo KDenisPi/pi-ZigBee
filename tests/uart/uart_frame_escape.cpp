@@ -87,7 +87,7 @@ int main (int argc, char* argv[])
         if(fr){
             std::cout << fr->to_string() << std::endl;
             //encode frame back to byte array
-            size_t fr_len = uart->encode(fr, buffer, sizeof(buffer), frames[i].randm, true);
+            size_t fr_len = uart->encode(fr, buffer, sizeof(buffer), frames[i].randm);
             success = compare_buffers(frames[i].data, frames[i].data_len+4, buffer, fr_len);
             if(!success){
                 std::cout << "Compare failed: " << print_buff(buffer, fr_len) << std::endl;

@@ -35,7 +35,11 @@ int main (int argc, char* argv[])
         std::cout << "command> " << std::endl;
         std::cin >> cmd;
 
+        std::cout << "process command " << cmd << std::endl;
         if(cmd == "exit"){
+
+            logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__) + "Exit command");
+
             ezsp->stop();
             sleep(5);
             break;

@@ -72,7 +72,7 @@ void Ezsp::worker(Ezsp* p_ezsp){
                     /**
                      * Create network
                      */
-                    if(p_ezsp->node_type() == EmberNodeType::EMBER_COORDINATOR){
+                    if(p_ezsp->is_coordinator()){
                         p_ezsp->setInitialSecurityState();
                     }
                     else{
@@ -96,6 +96,14 @@ void Ezsp::worker(Ezsp* p_ezsp){
             {
                 if(evt->get_status() == EmberStatus::EMBER_NETWORK_UP){
                     p_ezsp->set_state(Ezsp_State::SM_UP_and_Ready);
+
+                    /**
+                     * Allow join to network
+                     */
+                    if(p_ezsp->is_coordinator()){
+                        p_ezsp->permitJoining(); //permanently
+                    }
+
                 }
                 else if(evt->get_status() == EmberStatus::EMBER_NETWORK_DOWN){
                     p_ezsp->set_state(Ezsp_State::SM_Init_Network);

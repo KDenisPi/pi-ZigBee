@@ -39,8 +39,16 @@ class ZBUart_Info {
 public:
     friend ZBUart;
 
-    ZBUart_Info() : _frmNum(7), _ackNum(0), _fd(-1) {}
+    ZBUart_Info() : _frmNum(7), _ackNum(0), _fd(-1), _randm(true), _skip_stuffing(false) {}
     ~ZBUart_Info() {}
+
+    const bool is_randm() const {
+        return _randm;
+    }
+
+    const bool is_skip_stuffing() const {
+        return _skip_stuffing;
+    }
 
     /**
      * 5.2 Acknowledgements and Frame Numbers
@@ -138,6 +146,9 @@ protected:
     bool _ixoff = true;
     uint8_t _read_min = 0;
     uint8_t _read_timeout = 10;  //10 tenths of a second - 1 sec
+
+    bool _randm;
+    bool _skip_stuffing;
 };
 
 /**
@@ -482,7 +493,7 @@ public:
 
             Note: Skip Stuffing used for debug purposes only
      */
-    size_t encode(const std::shared_ptr<UFrame> frame, uint8_t* out_buff, const size_t len, const bool randm = false, const bool skip_stuffing = false) const {
+    size_t encode(const std::shared_ptr<UFrame> frame, uint8_t* out_buff, const size_t len, const bool retry = false) const {
         size_t out_len = 0, i = 0;
         uint8_t tmp_buff[133];
         memset(tmp_buff, 0x00, sizeof(tmp_buff));
@@ -491,11 +502,15 @@ public:
          4.1.0 for DATA
         */
        if(frame->is_DATA()){
-           frame->set_frmNum(_info->get_next_frmNum());
-           frame->set_ackNum(_info->get_ackNum());
+            if(retry)//if retry do no increase frmNum
+                frame->set_frmNum(_info->get_current_frmNum());
+            else
+                frame->set_frmNum(_info->get_next_frmNum());
+
+            frame->set_ackNum(_info->get_ackNum());
        }
        else if(frame->is_ACK() || frame->is_NAK()){
-           frame->set_ackNum(_info->get_ackNum());
+            frame->set_ackNum(_info->get_ackNum());
        }
 
         //4.1.1 Set Control byte
@@ -506,7 +521,7 @@ public:
         if(frame->data_len() > 0){
             memcpy(&tmp_buff[1], frame->data(), frame->data_len());
 
-            if(randm)
+            if(_info->is_randm())
                 randomize(&tmp_buff[1], frame->data_len());
 
             out_len += frame->data_len();
@@ -522,7 +537,7 @@ public:
         //
 
         //4.1.4 Byte Stuffing  TODO: Improve buffer size check
-        if(_debug && skip_stuffing){
+        if(_debug && _info->is_skip_stuffing()){
             memcpy(out_buff, tmp_buff, out_len);
         }
         else{
@@ -603,7 +618,7 @@ public:
 
         //create RST frame
         std::shared_ptr<UFrame> fr_rst = compose(ftype::RST);
-        size_t wr_len = encode(fr_rst, wr_buff, sizeof(wr_buff), true);
+        size_t wr_len = encode(fr_rst, wr_buff, sizeof(wr_buff));
 
         if(_debug){
             logger::log(logger::LLOG::DEBUG, "uart", std::string(__func__) + " RST: " + zb_ezsp::Conv::print_buff(wr_buff, wr_len));
@@ -762,11 +777,11 @@ public:
     /**
      * Send UART Frame
      */
-    int send_frame(const std::shared_ptr<zb_uart::UFrame>& fr){
+    int send_frame(const std::shared_ptr<zb_uart::UFrame>& fr, const bool retry = false){
         uint8_t w_buff[140];
         memset(w_buff, 0x00, sizeof(w_buff));
 
-        size_t wr_len = encode(fr, w_buff, sizeof(w_buff), true);
+        size_t wr_len = encode(fr, w_buff, sizeof(w_buff), retry);
 
         if(is_debug()){
             logger::log(logger::LLOG::DEBUG, "uart", std::string(__func__) + " UART Frame: " + fr->to_string());
@@ -792,6 +807,10 @@ public:
          }
 
          return _eframes->get();
+    }
+
+    const bool is_nothind_to_send() const {
+        return _eframes->is_empty();
     }
 
 

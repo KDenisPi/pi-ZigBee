@@ -330,11 +330,11 @@ struct getCurrentSecurityState {
 };
 
 struct childJoinHandler {
-    uint8_t index; // The index of the child of interest.
-    EZSP_Bool joining; // True if the child is joining. False the child is leaving.
-    EmberNodeId childId; // The node ID of the child.
-    EmberEUI64 childEui64; // The EUI64 of the child.
-    EmberNodeType childType; // The node type of the child.
+    uint8_t index;              // The index of the child of interest.
+    EZSP_Bool joining;          // True if the child is joining. False the child is leaving.
+    EmberNodeId childId;        // The node ID of the child.
+    EmberEUI64 childEui64;      // The EUI64 of the child.
+    EmberNodeType childType;    // The node type of the child.
 
     const std::string to_string() const {
         char buff[128];
@@ -366,6 +366,17 @@ struct trustCenterJoinHandler {
     EmberDeviceUpdate status;   // The status of the node: Secure Join/Rejoin, Unsecure Join/Rejoin, Device left.
     EmberJoinDecision policyDecision;   // An EmberJoinDecision reflecting the decision made.
     EmberNodeId parentOfNewNodeId;  // The parent of the node whose status has changed.
+
+    const std::string to_string() const {
+        char buff[128];
+        std::sprintf(buff, "trustCenterJoin: ID:%04X Status:%02X p.Decision:%04X Parent:%04X",
+        newNodeId,
+        status,
+        policyDecision,
+        parentOfNewNodeId
+        );
+        return std::string(buff) + " EUI64:" + Conv::Eui64_to_string(newNodeEui64);
+    }
 };
 
 }
