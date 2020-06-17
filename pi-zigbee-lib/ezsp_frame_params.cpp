@@ -259,5 +259,64 @@ size_t EFrame::get_param(zb_ezsp::getCurrentSecurityState& param, const uint8_t*
     return pos;
 }
 
-
+/**
+ * APS Frame
+ */
+size_t EFrame::put_param(const zb_ezsp::EmberApsFrame& param, uint8_t* buff, size_t pos){
+    pos = Conv::put(buff, pos, param.profileId);
+    pos = Conv::put(buff, pos, param.clusterId);
+    pos = Conv::put(buff, pos, param.sourceEndpoint);
+    pos = Conv::put(buff, pos, param.destinationEndpoint);
+    pos = Conv::put(buff, pos, (uint16_t)param.options);
+    pos = Conv::put(buff, pos, param.groupId);
+    pos = Conv::put(buff, pos, param.sequence);
+    return pos;
 }
+
+size_t EFrame::get_param(zb_ezsp::EmberApsFrame& param, const uint8_t* buff, size_t& pos){
+    pos = Conv::get(buff, pos, param.profileId);
+    pos = Conv::get(buff, pos, param.clusterId);
+    pos = Conv::get(buff, pos, param.sourceEndpoint);
+    pos = Conv::get(buff, pos, param.destinationEndpoint);
+    pos = Conv::get_word<EmberApsOption>(buff, pos, param.options);
+    pos = Conv::get(buff, pos, param.groupId);
+    pos = Conv::get(buff, pos, param.sequence);
+    return pos;
+}
+
+size_t EFrame::put_param(const zb_ezsp::sendUnicast& param, uint8_t* buff, size_t pos){
+    pos = Conv::put(buff, pos, (uint8_t)param.type);
+    pos = Conv::put(buff, pos, param.indexOrDestination);
+    pos = put_param(param.apsFrame, buff, pos);
+    pos = Conv::put(buff, pos, param.messageTag);
+    pos = Conv::put(buff, pos, param.messageLength);
+    pos = Conv::put(buff, pos, param.messageContents, param.messageLength, sizeof(param.messageContents));
+    return pos;
+}
+
+size_t EFrame::get_param(zb_ezsp::incomingMessageHandler& param, const uint8_t* buff, size_t& pos){
+    pos = Conv::get_byte<EmberIncomingMessageType>(buff, pos, param.type);
+    pos = get_param(param.apsFrame, buff, pos);
+    pos = Conv::get(buff, pos, param.lastHopLqi);
+    pos = Conv::get(buff, pos, param.lastHopRssi);
+    pos = Conv::get(buff, pos, param.sender);
+    pos = Conv::get(buff, pos, param.bindingIndex);
+    pos = Conv::get(buff, pos, param.addressIndex);
+    pos = Conv::get(buff, pos, param.messageLength);
+    pos = Conv::get(buff, pos, param.messageContents, param.messageLength, sizeof(param.messageContents));
+    return pos;
+}
+
+size_t EFrame::get_param(zb_ezsp::messageSentHandler& param, const uint8_t* buff, size_t& pos){
+    pos = Conv::get_byte<EmberOutgoingMessageType>(buff, pos, param.type);
+    pos = Conv::get(buff, pos, param.indexOrDestination);
+    pos = get_param(param.apsFrame, buff, pos);
+    pos = Conv::get(buff, pos, param.messageTag);
+    pos = Conv::get_byte<EmberStatus>(buff, pos, param.status);
+    pos = Conv::get(buff, pos, param.messageLength);
+    pos = Conv::get(buff, pos, param.messageContents, param.messageLength, sizeof(param.messageContents));
+    return pos;
+}
+
+
+}//namespace zb_ezsp

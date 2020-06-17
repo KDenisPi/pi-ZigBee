@@ -262,6 +262,16 @@ public:
     size_t get_param(zb_ezsp::EmberCurrentSecurityState& param, const uint8_t* buff, size_t& pos);
     size_t get_param(zb_ezsp::getCurrentSecurityState& param, const uint8_t* buff, size_t& pos);
 
+    /**
+     * APS Frame
+     */
+    size_t put_param(const zb_ezsp::EmberApsFrame& param, uint8_t* buff, size_t pos);
+    size_t get_param(zb_ezsp::EmberApsFrame& param, const uint8_t* buff, size_t& pos);
+
+    size_t put_param(const zb_ezsp::sendUnicast& param, uint8_t* buff, size_t pos);
+    size_t get_param(zb_ezsp::messageSentHandler& param, const uint8_t* buff, size_t& pos);
+    size_t get_param(zb_ezsp::incomingMessageHandler& param, const uint8_t* buff, size_t& pos);
+
 
 public:
     /**

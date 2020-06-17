@@ -379,5 +379,93 @@ struct trustCenterJoinHandler {
     }
 };
 
+/**
+ * ZigBee APS frame parameters.
+ */
+struct EmberApsFrame {
+    uint16_t profileId;         // The application profile ID that describes the format of the message.
+    uint16_t clusterId;         // The cluster ID for this message.
+    uint8_t sourceEndpoint;     // The source endpoint.
+    uint8_t destinationEndpoint;// The destination endpoint.
+    EmberApsOption options;     // A bitmask of options.
+    uint16_t groupId;           // The group ID for this message, if it is multicast mode.
+    uint8_t sequence;           // The sequence number.
+
+    const std::string to_string() const {
+        char buff[128];
+        std::sprintf(buff, " EmberApsFrame profileId:%04X clusterId:%04X Endpoint src:%02X dest:%02X Options:%04X GrID:%04X Seq:%02X",
+        profileId,
+        clusterId,
+        sourceEndpoint,
+        destinationEndpoint,
+        options,
+        groupId,
+        sequence
+        );
+        return std::string(buff);
+    }
+};
+
+struct sendUnicast {
+    EmberOutgoingMessageType type;  // Specifies the outgoing message type. Must be one of EMBER_OUTGOING_DIRECT, EMBER_OUTGOING_VIA_ADDRESS_TABLE, or EMBER_OUTGOING_VIA_BINDING.
+    EmberNodeId indexOrDestination; // Depending on the type of addressing used, this is either the EmberNodeId of the destination,
+                                    // an index into the address table, or an index into the binding table.
+    EmberApsFrame apsFrame;         // The APS frame which is to be added to the message.
+    uint8_t messageTag;             // A value chosen by the Host. This value is used in the ezspMessageSentHandler response to refer to this message.
+    uint8_t messageLength;          // The length of the messageContents parameter in bytes.
+    uint8_t messageContents[100];   // Content of the message.
+};
+
+struct incomingMessageHandler {
+    EmberIncomingMessageType type;  //The type of the incoming message. One of the following: EMBER_INCOMING_UNICAST, EMBER_INCOMING_UNICAST_REPLY, EMBER_INCOMING_MULTICAST,
+                                    //EMBER_INCOMING_MULTICAST_LOOPBACK, EMBER_INCOMING_BROADCAST, EMBER_INCOMING_BROADCAST_LOOPBACK
+    EmberApsFrame apsFrame;         // The APS frame from the incoming message.
+    uint8_t lastHopLqi;             // The link quality from the node that last relayed the message.
+    int8_t lastHopRssi;             // The energy level (in units of dBm) observed during the reception.
+    EmberNodeId sender;             // The sender of the message.
+    uint8_t bindingIndex;           // The index of a binding that matches the message or 0xFF if there is no matching binding.
+    uint8_t addressIndex;           // The index of the entry in the address table that matches the sender of the message or 0xFF if there is no matching entry.
+    uint8_t messageLength;          // The length of the messageContents parameter in bytes.
+    uint8_t messageContents[120];   // The incoming message.
+
+    const std::string to_string() const {
+        char buff[128];
+        std::sprintf(buff, " IncomingMessage type:%02X lastHopLqi:%02X lastHopRssi:%02d Sender:%04X bindingIndex:%02X addressIndex:%02X messageLength:%02X",
+        type,
+        lastHopLqi,
+        lastHopRssi,
+        sender,
+        bindingIndex,
+        addressIndex,
+        messageLength
+        );
+        return std::string(buff) + apsFrame.to_string();
+    }
+};
+
+struct messageSentHandler {
+    EmberOutgoingMessageType type;  // The type of message sent.
+    uint16_t indexOrDestination;    // The destination to which the message was sent, for direct unicasts, or the address table or binding
+                                    //index for other unicasts. The value is unspecified for multicasts and broadcasts.
+    EmberApsFrame apsFrame;         // The APS frame for the message.
+    uint8_t messageTag;             // The value supplied by the ezspSendMulticast command.
+    EmberStatus status;             // An EmberStatus value of EMBER_SUCCESS if an ACK was received from the destination or EMBER_DELIVERY_FAILED if no ACK was received.
+    uint8_t messageLength;          // The length of the messageContents parameter in bytes.
+    uint8_t messageContents[100];   // The unicast message supplied by the Host. The message contents are only included here if the
+                                    //decision for the messageContentsInCallback policy is messageTagAndContentsInCallback.
+
+    const std::string to_string() const {
+        char buff[128];
+        std::sprintf(buff, " messageSent type:%02X indexOrDestination:%04X Tag:%02d Status:%02X messageLength:%02X",
+        type,
+        indexOrDestination,
+        messageTag,
+        status,
+        messageLength
+        );
+        return std::string(buff) + apsFrame.to_string();
+    }
+};
+
 }
 #endif

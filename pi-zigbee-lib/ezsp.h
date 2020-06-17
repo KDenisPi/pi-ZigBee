@@ -154,8 +154,16 @@ public:
     void setInitialSecurityState(EmberCurrentSecurityBitmask bitmask = EmberCurrentSecurityBitmask::EMBER_STANDARD_SECURITY_MODE);
     void getCurrentSecurityState();
 
-    static void worker(Ezsp* p_ezsp);
 
+    /**
+     * Messaging
+     */
+    void sendUnicast();
+
+    /**
+     * EZSP SM worker
+     */
+    static void worker(Ezsp* p_ezsp);
 
 protected:
     /**

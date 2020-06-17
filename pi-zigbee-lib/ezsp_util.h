@@ -46,6 +46,9 @@ public:
         return pos;
     }
 
+    /**
+     * Put byte array
+     */
     static size_t put(uint8_t* buff, size_t& pos, const uint8_t* data, const size_t len, const size_t max_len){
         assert(len<=max_len);
         for(int i=0; i<len && i<max_len; i++)
@@ -64,6 +67,9 @@ public:
         return pos;
     }
 
+    /**
+     * Get byte array
+     */
     static size_t get(const uint8_t* buff, size_t& pos, uint8_t* res, const size_t len, const size_t max_len){
         assert(len<=max_len);
         for(int i=0; i<len && i<max_len; i++)

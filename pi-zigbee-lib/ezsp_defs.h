@@ -65,6 +65,9 @@ using EId = enum EFrame_ID : id_type {
     ID_getEui64 = 0x26,                     //Returns the EUI64 ID of the local node.
     ID_getNodeId = 0x27,                    //Returns the 16-bit node ID of the local node.
     ID_getNetworkParameters = 0x28,         //Returns the current network parameters.
+    ID_sendUnicast  = 0x34,                 //Sends a unicast message as per the ZigBee specification. The message will arrive at its destination only if there is a known route to the destination node
+    ID_messageSentHandler = 0x3F,           //A callback indicating the stack has completed sending a message
+    ID_incomingMessageHandler = 0x45,       //A callback indicating a message has been received.
     ID_energyScanResultHandler = 0x48,
     ID_getConfigurationValue = 0x52,
     ID_setConfigurationValue = 0x53,
@@ -461,6 +464,44 @@ enum EmberJoinDecision : uint8_t {
     EMBER_SEND_KEY_IN_THE_CLEAR = 0x01, // Allow the node to join. Send the network key in-the-clear to the joining device.
     EMBER_DENY_JOIN = 0x02,             // Deny join.
     EMBER_NO_ACTION = 0x03              // Take no action.
+};
+
+enum EmberOutgoingMessageType : uint8_t {
+    EMBER_OUTGOING_DIRECT               = 0x00, // Unicast sent directly to an EmberNodeId.
+    EMBER_OUTGOING_VIA_ADDRESS_TABLE    = 0x01, // Unicast sent using an entry in the address table.
+    EMBER_OUTGOING_VIA_BINDING          = 0x02, // Unicast sent using an entry in the binding table.
+    EMBER_OUTGOING_MULTICAST            = 0x03, // Multicast message. This value is passed to emberMessageSentHandler() only. It may not be passed to emberSendUnicast().
+    EMBER_OUTGOING_BROADCAST            = 0x04 // Broadcast message. This value is passed to emberMessageSentHandler() only. It may not be passed to emberSendUnicast().
+};
+
+// Options to use when sending a message.
+enum EmberApsOption : uint16_t {
+    EMBER_APS_OPTION_NONE = 0x0000,                     // No options.
+    EMBER_APS_OPTION_ENCRYPTION = 0x0020,               // Send the message using APS Encryption, using the Link Key shared with the destination node to encrypt the data at the APS Level.
+    EMBER_APS_OPTION_RETRY = 0x0040,                    // Resend the message using the APS retry mechanism.
+    EMBER_APS_OPTION_ENABLE_ROUTE_DISCOVERY = 0x0100,   // Causes a route discovery to be initiated if no route to the destination is known.
+    EMBER_APS_OPTION_FORCE_ROUTE_DISCOVERY = 0x0200,    // Causes a route discovery to be initiated even if one is known.
+    EMBER_APS_OPTION_SOURCE_EUI64 = 0x0400,             // Include the source EUI64 in the network frame.
+    EMBER_APS_OPTION_DESTINATION_EUI64 = 0x0800,        // Include the destination EUI64 in the network frame.
+    EMBER_APS_OPTION_ENABLE_ADDRESS_DISCOVERY = 0x1000, // Send a ZDO request to discover the node ID of the destination, if it is not already know.
+    EMBER_APS_OPTION_POLL_RESPONSE = 0x2000,            // Reserved.
+    EMBER_APS_OPTION_ZDO_RESPONSE_REQUIRED = 0x4000,    // This incoming message is a ZDO request not handled by the EmberZNet stack, and the application is
+                                                        // responsible for sending a ZDO response. This flag is used only when the ZDO is configured to have requests
+                                                        // handled by the application. See the EZSP_CONFIG_APPLICATION_ZDO_FLAGS configuration parameter for more information.
+    EMBER_APS_OPTION_FRAGMENT = 0x8000                  // This message is part of a fragmented message. This option may only be set for unicasts. The groupId field
+                                                        // gives the index of this fragment in the low-order byte. If the low-order byte is zero this is the first fragment and
+                                                        // the high-order byte contains the number of fragments in the message.
+};
+
+// Incoming message types.
+enum EmberIncomingMessageType : uint8_t {
+    EMBER_INCOMING_UNICAST = 0x00,                  // Unicast.
+    EMBER_INCOMING_UNICAST_REPLY = 0x01,            // Unicast reply.
+    EMBER_INCOMING_MULTICAST = 0x02,                // Multicast.
+    EMBER_INCOMING_MULTICAST_LOOPBACK = 0x03,       // Multicast sent by the local device.
+    EMBER_INCOMING_BROADCAST = 0x04,                // Broadcast.
+    EMBER_INCOMING_BROADCAST_LOOPBACK = 0x05,       // Broadcast sent by the local device.
+    EMBER_INCOMING_MANY_TO_ONE_ROUTE_REQUEST = 0x06 // Many to one route request.
 };
 
 }

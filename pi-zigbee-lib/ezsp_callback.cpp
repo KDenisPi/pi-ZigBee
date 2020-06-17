@@ -148,6 +148,20 @@ void Ezsp::callback_eframe_received(const zb_uart::EFramePtr& efr_raw){
             notify((EId)id, p_handler->to_string());
         }
         break;
+        case EId::ID_messageSentHandler:
+        {
+            auto p_sentMsg = ef->load<zb_ezsp::messageSentHandler>(efr_raw->data(), efr_raw->len());
+            logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__) + " messageSentHandler TAG: " + std::to_string((uint16_t)p_sentMsg->messageTag));
+
+            notify((EId)id, p_sentMsg->to_string());
+        }
+        break;
+        case EId::ID_incomingMessageHandler:
+        {
+            auto p_inMsg = ef->load<zb_ezsp::incomingMessageHandler>(efr_raw->data(), efr_raw->len());
+            notify((EId)id, p_inMsg->to_string());
+        }
+        break;
         case EId::ID_energyScanResultHandler:
         {
             auto p_channel = ef->load<zb_ezsp::energyScanResultHandler>(efr_raw->data(), efr_raw->len());
