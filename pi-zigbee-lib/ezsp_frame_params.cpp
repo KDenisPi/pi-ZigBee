@@ -294,6 +294,13 @@ size_t EFrame::put_param(const zb_ezsp::sendUnicast& param, uint8_t* buff, size_
     return pos;
 }
 
+size_t EFrame::get_param(zb_ezsp::sendUnicast_resp& param, const uint8_t* buff, size_t& pos){
+    pos = Conv::get_byte<EmberStatus>(buff, pos, param.status);
+    pos = Conv::get(buff, pos, param.sequence);
+    return pos;
+}
+
+
 size_t EFrame::get_param(zb_ezsp::incomingMessageHandler& param, const uint8_t* buff, size_t& pos){
     pos = Conv::get_byte<EmberIncomingMessageType>(buff, pos, param.type);
     pos = get_param(param.apsFrame, buff, pos);
@@ -315,6 +322,12 @@ size_t EFrame::get_param(zb_ezsp::messageSentHandler& param, const uint8_t* buff
     pos = Conv::get_byte<EmberStatus>(buff, pos, param.status);
     pos = Conv::get(buff, pos, param.messageLength);
     pos = Conv::get(buff, pos, param.messageContents, param.messageLength, sizeof(param.messageContents));
+    return pos;
+}
+
+size_t EFrame::get_param(zb_ezsp::incomingRouteErrorHandler& param, const uint8_t* buff, size_t& pos){
+    pos = Conv::get_byte<EmberStatus>(buff, pos, param.status);
+    pos = Conv::get(buff, pos, param.target);
     return pos;
 }
 

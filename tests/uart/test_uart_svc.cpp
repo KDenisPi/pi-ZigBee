@@ -70,8 +70,15 @@ int main (int argc, char* argv[])
         else if(cmd == "getsecstate"){
             ezsp->getCurrentSecurityState();
         }
+        else if(cmd == "neighbors"){
+            const std::string nlist = ezsp->neighbors();
+            std::cout <<  "List of neighbors: " << std::endl << (nlist.empty() ? "Empty" : nlist) << std::endl;
+        }
+        else if(cmd == "sendunicast"){
+            ezsp->sendUnicast();
+        }
         else if(cmd == "help"){
-            std::cout << "Commands: exit, getvalue, getcfg, startscana, startscane, stopscan, echo,  getnetparams, getsecstate" << std::endl;
+            std::cout << "Commands: exit, getvalue, getcfg, startscana, startscane, stopscan, echo, getnetparams, getsecstate, neighbors, sendunicast" << std::endl;
         }
     }
 

@@ -416,6 +416,21 @@ struct sendUnicast {
     uint8_t messageContents[100];   // Content of the message.
 };
 
+struct sendUnicast_resp {
+    EmberStatus status;
+    uint8_t sequence;   // The sequence number that will be used when this message is transmitted.
+
+    const std::string to_string() const {
+        char buff[128];
+        std::sprintf(buff, " sendUnicast Status:%02X sequence:%02X",
+        status,
+        sequence
+        );
+        return std::string(buff);
+    }
+
+};
+
 struct incomingMessageHandler {
     EmberIncomingMessageType type;  //The type of the incoming message. One of the following: EMBER_INCOMING_UNICAST, EMBER_INCOMING_UNICAST_REPLY, EMBER_INCOMING_MULTICAST,
                                     //EMBER_INCOMING_MULTICAST_LOOPBACK, EMBER_INCOMING_BROADCAST, EMBER_INCOMING_BROADCAST_LOOPBACK
@@ -465,6 +480,21 @@ struct messageSentHandler {
         );
         return std::string(buff) + apsFrame.to_string();
     }
+};
+
+struct incomingRouteErrorHandler {
+    EmberStatus status;     //  EMBER_SOURCE_ROUTE_FAILURE EMBER_MANY_TO_ONE_ROUTE_FAILURE.
+    EmberNodeId target;     //  The short id of the remote node.
+
+    const std::string to_string() const {
+        char buff[128];
+        std::sprintf(buff, " incomingRouteErrorHandler Status:%02X target:%04X",
+        status,
+        target
+        );
+        return std::string(buff);
+    }
+
 };
 
 }

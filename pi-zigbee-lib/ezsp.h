@@ -161,6 +161,13 @@ public:
     void sendUnicast();
 
     /**
+     *
+     */
+    const std::string neighbors() {
+        return list_childs();
+    }
+
+    /**
      * EZSP SM worker
      */
     static void worker(Ezsp* p_ezsp);
@@ -297,7 +304,7 @@ protected:
     }
 
     /**
-     * Add child
+     * Child operations (Add, Delete, Print, Get)
      */
     void add_child(const std::shared_ptr<childJoinHandler> child) {
         if(_childs.find(child->childId) == _childs.end()){
@@ -311,6 +318,26 @@ protected:
             _childs.erase(child);
         }
     }
+
+    const std::string list_childs() {
+        std::string result;
+        for (auto it = _childs.begin(); it != _childs.end(); ++it) {
+            result += it->second->to_string() + "\n";
+        }
+        return result;
+    }
+
+    const EmberNodeId get_child() {
+        if(_childs.empty())
+            return 0;
+        auto it = _childs.begin();
+        return it->first;
+    }
+
+    const size_t count_child() {
+        return _childs.size();
+    }
+
 
 private:
     uint8_t _seq;

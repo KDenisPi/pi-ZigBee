@@ -75,6 +75,7 @@ using EId = enum EFrame_ID : id_type {
     ID_setInitialSecurityState = 0x68,
     ID_getCurrentSecurityState = 0x69,
     ID_networkInitExtended  = 0x70,         //Similar to ezspNetworkInit(). Resume network operation after a reboot. This command is different in that it accepts options to control the network initialization.
+    ID_incomingRouteErrorHandler = 0x80,
     ID_Echo = 0x81,
     ID_getValue = 0xAA,
     ID_setValue = 0xAB

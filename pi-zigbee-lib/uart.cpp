@@ -117,7 +117,7 @@ namespace zb_uart {
                 r_res = p_uart->read_data(r_buff, rd_len);
 
                 if(r_res == 0 && rd_len == 0){ //timeout
-                    logger::log(logger::LLOG::DEBUG, "uart", std::string(__func__) + " Timeout ");
+                    //logger::log(logger::LLOG::DEBUG, "uart", std::string(__func__) + " Timeout ");
 
                     if(fr){
                         if(read_cycles > 0 && read_cycles < 3){

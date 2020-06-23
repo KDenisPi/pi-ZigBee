@@ -189,4 +189,37 @@ void Ezsp::getCurrentSecurityState(){
     add2output<zb_ezsp::no_params>(zb_ezsp::EId::ID_getCurrentSecurityState, no_prm);
 }
 
+/**
+ * Messaging
+ */
+void Ezsp::sendUnicast(){
+    logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__));
+
+    if(count_child() == 0){
+        logger::log(logger::LLOG::NECECCARY, "ezsp", std::string(__func__) + " No neighbors found");
+        return;
+    }
+
+    zb_ezsp::sendUnicast send_uni;
+
+    /**
+     * Try to send packet to the first connected device
+     */
+    EmberNodeId node_id = get_child();
+    send_uni.type = EmberOutgoingMessageType::EMBER_OUTGOING_DIRECT;
+    send_uni.indexOrDestination = node_id;
+    send_uni.messageTag = 1;
+    send_uni.messageLength = 0;
+
+    send_uni.apsFrame.profileId = 0x0104;   //Home automation
+    send_uni.apsFrame.clusterId = 0x0402;
+    send_uni.apsFrame.sourceEndpoint = 0x01;
+    send_uni.apsFrame.destinationEndpoint = 0x01;
+    send_uni.apsFrame.options = EmberApsOption::EMBER_APS_OPTION_NONE;
+    send_uni.apsFrame.groupId = 0;
+    send_uni.apsFrame.sequence = 0x01;
+
+    add2output<zb_ezsp::sendUnicast>(zb_ezsp::EId::ID_sendUnicast, send_uni);
+}
+
 }

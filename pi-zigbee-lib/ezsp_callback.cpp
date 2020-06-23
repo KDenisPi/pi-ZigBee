@@ -180,6 +180,17 @@ void Ezsp::callback_eframe_received(const zb_uart::EFramePtr& efr_raw){
             notify((EId)id, p_conf->to_string());
         }
         break;
+        case EId::ID_sendUnicast:
+        {
+            auto p_conf = ef->load<zb_ezsp::getCurrentSecurityState>(efr_raw->data(), efr_raw->len());
+            notify((EId)id, p_conf->to_string());
+        }
+        case EId::ID_incomingRouteErrorHandler:
+        {
+            auto p_sendUnicast = ef->load<zb_ezsp::sendUnicast_resp>(efr_raw->data(), efr_raw->len());
+            notify((EId)id, p_sendUnicast->to_string());
+        }
+        break;
         case EId::ID_Echo:
         {
             auto p_echo = ef->load<zb_ezsp::echo>(efr_raw->data(), efr_raw->len());
