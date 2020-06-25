@@ -167,6 +167,11 @@ void Ezsp::callback_eframe_received(const zb_uart::EFramePtr& efr_raw){
             auto p_channel = ef->load<zb_ezsp::energyScanResultHandler>(efr_raw->data(), efr_raw->len());
             notify((EId)id, p_channel->to_string());
         }
+        case EId::ID_getChildData:
+        {
+            auto p_cldData = ef->load<zb_ezsp::getChildData>(efr_raw->data(), efr_raw->len());
+            notify((EId)id, p_cldData->to_string());
+        }
         break;
         case EId::ID_getConfigurationValue:
         {

@@ -51,6 +51,8 @@ public:
     Ezsp& operator=(const Ezsp&) = delete;
     Ezsp& operator=(Ezsp&&) = delete;
 
+    static const uint8_t EMBER_CHILD_TABLE_SIZE = 64;
+
     /**
      *
      */
@@ -165,6 +167,20 @@ public:
      */
     const std::string neighbors() {
         return list_childs();
+    }
+
+    void get_childData(const uint8_t index = 0){
+        logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__) + " Index: " + std::to_string(index));
+
+        if(index >= EMBER_CHILD_TABLE_SIZE){ //Low level error
+            logger::log(logger::LLOG::ERROR, "ezsp", std::string(__func__) + " Invalid Index: " + std::to_string(index));
+            return;
+        }
+
+        //create EZSP Version frame
+        zb_ezsp::get_by_index cldIdx;
+        cldIdx.index = index;
+        add2output<zb_ezsp::get_by_index>(zb_ezsp::EId::ID_getChildData, cldIdx);
     }
 
     /**

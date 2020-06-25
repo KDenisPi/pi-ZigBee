@@ -77,8 +77,11 @@ int main (int argc, char* argv[])
         else if(cmd == "sendunicast"){
             ezsp->sendUnicast();
         }
+        else if(cmd == "getchild"){
+            ezsp->get_childData();
+        }
         else if(cmd == "help"){
-            std::cout << "Commands: exit, getvalue, getcfg, startscana, startscane, stopscan, echo, getnetparams, getsecstate, neighbors, sendunicast" << std::endl;
+            std::cout << "Commands: exit, getvalue, getcfg, startscana, startscane, stopscan, echo, getnetparams, getsecstate, neighbors, sendunicast, getchild" << std::endl;
         }
     }
 

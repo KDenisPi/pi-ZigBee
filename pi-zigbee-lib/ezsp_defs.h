@@ -36,6 +36,8 @@ public:
 
 };
 
+
+
 using EZSP_Bool = uint8_t;
 using EZSP_EzspConfigId = uint8_t;
 using EmberNodeId = uint16_t;       // 16-bit ZigBee network address.
@@ -69,6 +71,7 @@ using EId = enum EFrame_ID : id_type {
     ID_messageSentHandler = 0x3F,           //A callback indicating the stack has completed sending a message
     ID_incomingMessageHandler = 0x45,       //A callback indicating a message has been received.
     ID_energyScanResultHandler = 0x48,
+    ID_getChildData = 0x4A,                 //Returns information about a child of the local node.
     ID_getConfigurationValue = 0x52,
     ID_setConfigurationValue = 0x53,
     ID_invalidCommand = 0x58,

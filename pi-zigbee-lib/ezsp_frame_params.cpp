@@ -331,5 +331,23 @@ size_t EFrame::get_param(zb_ezsp::incomingRouteErrorHandler& param, const uint8_
     return pos;
 }
 
+size_t EFrame::get_param(zb_ezsp::getChildData& param, const uint8_t* buff, size_t& pos){
+    pos = Conv::get_byte<EmberStatus>(buff, pos, param.status);
+    pos = Conv::get(buff, pos, param.childId);
+    pos = Conv::get(buff, pos, param.childEui64, sizeof(param.childEui64), sizeof(param.childEui64));
+    pos = Conv::get_byte<EmberNodeType>(buff, pos, param.childType);
+    return pos;
+}
+
+
+/**
+ * Get data by Index
+ */
+size_t EFrame::put_param(const zb_ezsp::get_by_index& param, uint8_t* buff, size_t pos){
+    pos = Conv::put(buff, pos, param.index);
+    return pos;
+}
+
+
 
 }//namespace zb_ezsp

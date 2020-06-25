@@ -275,6 +275,13 @@ public:
     size_t get_param(zb_ezsp::incomingMessageHandler& param, const uint8_t* buff, size_t& pos);
 
     size_t get_param(zb_ezsp::incomingRouteErrorHandler& param, const uint8_t* buff, size_t& pos);
+    size_t get_param(zb_ezsp::getChildData& param, const uint8_t* buff, size_t& pos);
+
+    /**
+     * Get data by Index
+     */
+    size_t put_param(const zb_ezsp::get_by_index& param, uint8_t* buff, size_t pos);
+
 
 public:
     /**

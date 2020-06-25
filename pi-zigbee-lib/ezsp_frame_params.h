@@ -344,7 +344,7 @@ struct childJoinHandler {
         childId,
         childType
         );
-        return std::string(buff) + " EUI64:" + Conv::Eui64_to_string(childEui64);
+        return std::string(buff) + Conv::Eui64_to_string(childEui64);
     }
 };
 
@@ -375,7 +375,7 @@ struct trustCenterJoinHandler {
         policyDecision,
         parentOfNewNodeId
         );
-        return std::string(buff) + " EUI64:" + Conv::Eui64_to_string(newNodeEui64);
+        return std::string(buff) + Conv::Eui64_to_string(newNodeEui64);
     }
 };
 
@@ -493,6 +493,30 @@ struct incomingRouteErrorHandler {
         target
         );
         return std::string(buff);
+    }
+};
+
+/**
+ * Group of requests based on Index number only
+ */
+struct get_by_index {
+    uint8_t index;
+};
+
+struct getChildData {
+    EmberStatus status;         // EMBER_SUCCESS if there is a child at index. EMBER_NOT_JOINED if there is no child at index.
+    EmberNodeId childId;        // The node ID of the child.
+    EmberEUI64 childEui64;      // The EUI64 of the child.
+    EmberNodeType childType;    // The EmberNodeType value for the child.
+
+    const std::string to_string() const {
+        char buff[128];
+        std::sprintf(buff, " getChildData Status:%02X ID:%04X Type:%02X ",
+        status,
+        childId,
+        childType
+        );
+        return std::string(buff) + Conv::Eui64_to_string(childEui64);
     }
 
 };
