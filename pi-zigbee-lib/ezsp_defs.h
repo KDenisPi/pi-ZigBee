@@ -67,6 +67,11 @@ using EId = enum EFrame_ID : id_type {
     ID_getEui64 = 0x26,                     //Returns the EUI64 ID of the local node.
     ID_getNodeId = 0x27,                    //Returns the 16-bit node ID of the local node.
     ID_getNetworkParameters = 0x28,         //Returns the current network parameters.
+
+    ID_clearBindingTable = 0x2A,            //Deletes all binding table entries.
+    ID_setBinding = 0x2B,                   //Sets an entry in the binding table.
+    ID_getBinding = 0x2C,                   //Gets an entry from the binding table.
+
     ID_sendUnicast  = 0x34,                 //Sends a unicast message as per the ZigBee specification. The message will arrive at its destination only if there is a known route to the destination node
     ID_messageSentHandler = 0x3F,           //A callback indicating the stack has completed sending a message
     ID_incomingMessageHandler = 0x45,       //A callback indicating a message has been received.
@@ -506,6 +511,14 @@ enum EmberIncomingMessageType : uint8_t {
     EMBER_INCOMING_BROADCAST = 0x04,                // Broadcast.
     EMBER_INCOMING_BROADCAST_LOOPBACK = 0x05,       // Broadcast sent by the local device.
     EMBER_INCOMING_MANY_TO_ONE_ROUTE_REQUEST = 0x06 // Many to one route request.
+};
+
+enum EmberBindingType : uint8_t {
+    EMBER_UNUSED_BINDING  = 0x00,       // A binding that is currently not in use.
+    EMBER_UNICAST_BINDING = 0x01,       // A unicast binding whose 64-bit identifier is the destination EUI64.
+    EMBER_MANY_TO_ONE_BINDING = 0x02,   // A unicast binding whose 64-bit identifier is the aggregator EUI64.
+    EMBER_MULTICAST_BINDING = 0x03      // A multicast binding whose 64-bit identifier is the group address. A multicast binding
+                                        // can be used to send messages to the group and to receive messages sent to the group.
 };
 
 }

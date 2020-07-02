@@ -17,6 +17,7 @@
 
 #include "ezsp_frame.h"
 #include "ezsp_sm.h"
+#include "ezsp_db_json.h"
 
 #include "uart.h"
 #include "uart_efr_buff.h"
@@ -26,9 +27,10 @@ namespace zb_ezsp {
 /**
  * EZSP implementation
  */
+
 class Ezsp : public piutils::Threaded {
 public:
-    Ezsp(const bool debug_mode=true) : _seq(0), _debug(debug_mode), frame_received(nullptr) {
+    Ezsp(const bool debug_mode=true, const std::string config = "./config.json") : _seq(0), _debug(debug_mode), frame_received(nullptr), _config_prm(config) {
 
         _uart = std::make_shared<zb_uart::ZBUart>(debug_mode);
         _events = std::make_shared<EventBuff>(20);
@@ -184,6 +186,26 @@ public:
     }
 
     /**
+     * Binding
+     */
+    void clearBindingTable() {
+        logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__));
+
+        zb_ezsp::no_params no_prm;
+        add2output<zb_ezsp::no_params>(zb_ezsp::EId::ID_clearBindingTable, no_prm);
+    }
+
+    void setBinding();
+
+    void getBinding(const uint8_t index){
+        logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__) + " Index: " + std::to_string(index));
+
+        zb_ezsp::get_by_index get_bind;
+        get_bind.index = index;
+        add2output<zb_ezsp::get_by_index>(zb_ezsp::EId::ID_getBinding, get_bind);
+    }
+
+    /**
      * EZSP SM worker
      */
     static void worker(Ezsp* p_ezsp);
@@ -300,12 +322,17 @@ protected:
         /**
          * Network information
          */
+        _config.load(_config_prm);
+        _config.load_networks(_networks);
+
+/*
         //TODO: Temporal solution
         _networks[0] = std::make_shared<EmberNetworkParameters>();
 
         uint8_t ex_pan[8] = {0xC4,0x9D,0xF8,0x5C,0x57,0x01,0x6C,0xA7};
         _networks[0]->set_ext_pan(ex_pan);
         _networks[0]->panId = 41136;
+*/
     }
 
     /**
@@ -350,6 +377,14 @@ protected:
         return it->first;
     }
 
+    const std::shared_ptr<childJoinHandler> get_child_obj() {
+        if(_childs.empty())
+            return std::shared_ptr<childJoinHandler>();
+
+        auto it = _childs.begin();
+        return it->second;
+    }
+
     const size_t count_child() {
         return _childs.size();
     }
@@ -367,8 +402,11 @@ private:
     EmberEUI64 _eui64;   // The 64-bit ID
     EmberNodeId _nodeId;  // The 16-bit ID
 
-    std::array<std::shared_ptr<EmberNetworkParameters>, 4> _networks;
-    std::map<EmberNodeId, std::shared_ptr<childJoinHandler>> _childs;
+    net_array _networks;
+    child_map _childs;
+
+    std::string _config_prm; //config parameters (file name for JSON)
+    EzspDbJson _config;
 
     /**
      * Detect Frame ID

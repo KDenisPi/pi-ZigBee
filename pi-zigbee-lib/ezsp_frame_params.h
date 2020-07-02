@@ -518,8 +518,55 @@ struct getChildData {
         );
         return std::string(buff) + Conv::Eui64_to_string(childEui64);
     }
-
 };
+
+/**
+ * An entry in the binding table.
+ */
+struct EmberBindingTableEntry {
+    EmberBindingType type;  // The type of binding.
+    uint8_t local;          // The endpoint on the local node.
+    uint16_t clusterId;     // A cluster ID that matches one from the local endpoint's simple descriptor. This cluster ID is set by
+                            //the provisioning application to indicate which part an endpoint's functionality is bound to this particular remote node and is used to distinguish between
+                            //unicast and multicast bindings. Note that a binding can be used to send messages with any cluster ID, not just the one listed in the binding.
+    uint8_t remote;         // The endpoint on the remote node (specified by identifier).
+    EmberEUI64 identifier;  // A 64-bit identifier. This is either the destination EUI64 (for unicasts) or the 64-bit group address (for multicasts).
+    uint8_t networkIndex;   //The index of the network the binding belongs to.
+
+    const std::string to_string() const {
+        char buff[128];
+        std::sprintf(buff, " EmberBindingTableEntry type:%02X local:%02X clusterId:%04X remote:%02X NetIdx:%02X identifier ",
+        type,
+        local,
+        clusterId,
+        remote,
+        networkIndex
+        );
+        return std::string(buff) + Conv::Eui64_to_string(identifier);
+    }
+};
+
+/**
+ * Sets an entry in the binding table.
+ */
+struct setBinding_req {
+    uint8_t index;  // The index of a binding table entry.
+    EmberBindingTableEntry value;   // The contents of the binding entry.
+};
+
+struct getBinding {
+    EmberStatus status;             // An EmberStatus value indicating success or the reason for failure.
+    EmberBindingTableEntry value;   // The contents of the binding entry.
+
+    const std::string to_string() const {
+        char buff[128];
+        std::sprintf(buff, " getBinding status:%02X ",
+        status
+        );
+        return std::string(buff) + value.to_string();
+    }
+};
+
 
 }
 #endif

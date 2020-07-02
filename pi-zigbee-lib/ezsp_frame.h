@@ -282,6 +282,16 @@ public:
      */
     size_t put_param(const zb_ezsp::get_by_index& param, uint8_t* buff, size_t pos);
 
+    /**
+     * Binfing
+     */
+    size_t put_param(const zb_ezsp::EmberBindingTableEntry& param, uint8_t* buff, size_t pos);
+    size_t get_param(zb_ezsp::EmberBindingTableEntry& param, const uint8_t* buff, size_t& pos);
+
+    size_t put_param(const zb_ezsp::setBinding_req& param, uint8_t* buff, size_t pos);
+    size_t get_param(zb_ezsp::getBinding& param, const uint8_t* buff, size_t& pos);
+
+
 
 public:
     /**

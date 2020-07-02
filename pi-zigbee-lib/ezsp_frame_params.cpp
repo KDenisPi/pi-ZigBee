@@ -348,6 +348,43 @@ size_t EFrame::put_param(const zb_ezsp::get_by_index& param, uint8_t* buff, size
     return pos;
 }
 
+/**
+ * Binding
+ */
+size_t EFrame::put_param(const zb_ezsp::EmberBindingTableEntry& param, uint8_t* buff, size_t pos){
+    pos = Conv::put(buff, pos, (uint8_t)param.type);
+    pos = Conv::put(buff, pos, param.local);
+    pos = Conv::put(buff, pos, param.clusterId);
+    pos = Conv::put(buff, pos, param.remote);
+    pos = Conv::put(buff, pos, param.identifier, sizeof(param.identifier), sizeof(param.identifier));
+    pos = Conv::put(buff, pos, param.networkIndex);
+    return pos;
+
+}
+
+size_t EFrame::get_param(zb_ezsp::EmberBindingTableEntry& param, const uint8_t* buff, size_t& pos){
+    pos = Conv::get_byte<EmberBindingType>(buff, pos, param.type);
+    pos = Conv::get(buff, pos, param.local);
+    pos = Conv::get(buff, pos, param.clusterId);
+    pos = Conv::get(buff, pos, param.remote);
+    pos = Conv::get(buff, pos, param.identifier, sizeof(param.identifier), sizeof(param.identifier));
+    pos = Conv::get(buff, pos, param.networkIndex);
+    return pos;
+
+}
+
+size_t EFrame::put_param(const zb_ezsp::setBinding_req& param, uint8_t* buff, size_t pos){
+    pos = Conv::put(buff, pos, param.index);
+    pos = put_param(param.value, buff, pos);
+    return pos;
+}
+
+size_t EFrame::get_param(zb_ezsp::getBinding& param, const uint8_t* buff, size_t& pos){
+    pos = Conv::get_byte<EmberStatus>(buff, pos, param.status);
+    pos = get_param(param.value, buff, pos);
+    return pos;
+}
+
 
 
 }//namespace zb_ezsp

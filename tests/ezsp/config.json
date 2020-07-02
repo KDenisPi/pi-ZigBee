@@ -1,0 +1,6 @@
+{
+    "version" : "1.0",
+    "networks" : [
+        {"panId" : 41136, "extendedPanId" : ["0xC4","0x9D","0xF8","0x5C","0x57","0x01","0x6C","0xA7"], "radioTxPower" : 8, "radioChannel": 11, "joinMethod" : 0}
+    ]
+}

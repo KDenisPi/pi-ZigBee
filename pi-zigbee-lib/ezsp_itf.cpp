@@ -222,4 +222,30 @@ void Ezsp::sendUnicast(){
     add2output<zb_ezsp::sendUnicast>(zb_ezsp::EId::ID_sendUnicast, send_uni);
 }
 
+/**
+ * Binding
+ */
+void Ezsp::setBinding(){
+    logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__));
+
+    zb_ezsp::setBinding_req set_bnd;
+
+    const std::shared_ptr<childJoinHandler> cld = get_child_obj();
+    if(cld){
+        set_bnd.index = 0x00;
+        set_bnd.value.type = EmberBindingType::EMBER_UNICAST_BINDING;
+        set_bnd.value.local = 0x00;
+        set_bnd.value.clusterId = 0x0402;
+        set_bnd.value.remote = 0x00;
+        memcpy(set_bnd.value.identifier, cld->childEui64, sizeof(set_bnd.value.identifier));
+        set_bnd.value.networkIndex = 0x00; //TODO: get network index
+
+        add2output<zb_ezsp::setBinding_req>(zb_ezsp::EId::ID_setBinding, set_bnd);
+    }
+    else {
+        logger::log(logger::LLOG::ERROR, "ezsp", std::string(__func__) + " No child");
+        return;
+    }
+}
+
 }

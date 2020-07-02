@@ -52,6 +52,8 @@ void Ezsp::callback_eframe_received(const zb_uart::EFramePtr& efr_raw){
         case EId::ID_permitJoining:
         case EId::ID_setInitialSecurityState:
         case EId::ID_leaveNetwork:
+        case EId::ID_clearBindingTable:
+        case EId::ID_setBinding:
         {
             auto p_status = ef->load<zb_ezsp::ember_status>(efr_raw->data(), efr_raw->len());
             notify((EId)id, p_status->to_string());
@@ -154,6 +156,12 @@ void Ezsp::callback_eframe_received(const zb_uart::EFramePtr& efr_raw){
             logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__) + " messageSentHandler TAG: " + std::to_string((uint16_t)p_sentMsg->messageTag));
 
             notify((EId)id, p_sentMsg->to_string());
+        }
+        break;
+        case EId::ID_getBinding:
+        {
+            auto p_handler = ef->load<zb_ezsp::getBinding>(efr_raw->data(), efr_raw->len());
+            notify((EId)id, p_handler->to_string());
         }
         break;
         case EId::ID_incomingMessageHandler:
