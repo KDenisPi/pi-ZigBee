@@ -78,7 +78,7 @@ int main (int argc, char* argv[])
 
     std::cout << "*** Echo frame ***" << std::endl;
 
-    zb_ezsp::echo echo_;
+    zb_ezsp::data_array echo_;
     echo_.dataLength = 10;
     uint8_t ch = 'A';
     for(int i=0; i<echo_.dataLength; i++)
@@ -89,7 +89,7 @@ int main (int argc, char* argv[])
 
     std::cout << ef_echo->to_string() << std::endl;
     memset(buffer_in, 0x00, sizeof(buffer));
-    size_t len_in = ef_echo->put<zb_ezsp::echo>(buffer_in, 0, echo_);
+    size_t len_in = ef_echo->put<zb_ezsp::data_array>(buffer_in, 0, echo_);
     std::cout << print_buff(buffer_in, len_in) << std::endl;
 
     std::cout << "Finished " << success << std::endl;

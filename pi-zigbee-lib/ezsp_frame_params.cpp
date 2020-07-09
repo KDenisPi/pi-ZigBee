@@ -30,6 +30,10 @@ size_t EFrame::get_param(NodeId& param, const uint8_t* buff, size_t& pos){
     return pos;
 }
 
+size_t EFrame::get_param(uint8t_value& param, const uint8_t* buff, size_t& pos){
+    pos = Conv::get(buff, pos, param.value);
+    return pos;
+}
 
 /**
  * Version
@@ -48,13 +52,13 @@ size_t EFrame::get_param(ver_resp& param, const uint8_t* buff, size_t& pos){
 /**
  * Echo
  */
-size_t EFrame::put_param(const zb_ezsp::echo& param, uint8_t* buff, size_t pos){
+size_t EFrame::put_param(const zb_ezsp::data_array& param, uint8_t* buff, size_t pos){
     pos = Conv::put(buff, pos, param.dataLength);
     pos = Conv::put(buff, pos, param.data, param.dataLength, free_len(pos));
     return pos;
 }
 
-size_t EFrame::get_param(zb_ezsp::echo& param, const uint8_t* buff, size_t& pos){
+size_t EFrame::get_param(zb_ezsp::data_array& param, const uint8_t* buff, size_t& pos){
     pos = Conv::get(buff, pos, param.dataLength);
     pos = Conv::get(buff, pos, param.data, param.dataLength, sizeof(param.data));
     return pos;
@@ -216,6 +220,14 @@ size_t EFrame::get_param(zb_ezsp::trustCenterJoinHandler& param, const uint8_t* 
     pos = Conv::get(buff, pos, param.parentOfNewNodeId);
     return pos;
 }
+
+size_t EFrame::get_param(zb_ezsp::getParentChildParameters& param, const uint8_t* buff, size_t pos){
+    pos = Conv::get(buff, pos, param.childCount);
+    pos = Conv::get(buff, pos, param.parentEui64, sizeof(param.parentEui64), sizeof(param.parentEui64));
+    pos = Conv::get(buff, pos, param.parentNodeId);
+    return pos;
+}
+
 
 
 /**

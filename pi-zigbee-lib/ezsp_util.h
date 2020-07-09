@@ -208,6 +208,9 @@ public:
         return std::string(buff);
     }
 
+    /**
+     *
+     */
     static const std::string to_string(const uint16_t ui16){
         char buff[10];
         std::sprintf(buff, "%04X", ui16);

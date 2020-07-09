@@ -197,6 +197,7 @@ public:
     size_t get_param(EmberEUI64& param, const uint8_t* buff, size_t& pos);
     size_t get_param(Eui64& param, const uint8_t* buff, size_t& pos);
     size_t get_param(NodeId& param, const uint8_t* buff, size_t& pos);
+    size_t get_param(uint8t_value& param, const uint8_t* buff, size_t& pos);
 
     /**
      * Version
@@ -207,8 +208,8 @@ public:
     /**
      * Echo
      */
-    size_t put_param(const echo& param, uint8_t* buff, size_t pos);
-    size_t get_param(echo& param, const uint8_t* buff, size_t& pos);
+    size_t put_param(const data_array& param, uint8_t* buff, size_t pos);
+    size_t get_param(data_array& param, const uint8_t* buff, size_t& pos);
 
     /**
      * Request without any parameters and response with Ember or Ezsp status only
@@ -238,6 +239,7 @@ public:
     size_t get_param(zb_ezsp::childJoinHandler& param, const uint8_t* buff, size_t pos);
     size_t get_param(zb_ezsp::trustCenterJoinHandler& param, const uint8_t* buff, size_t pos);
 
+    size_t get_param(zb_ezsp::getParentChildParameters& param, const uint8_t* buff, size_t pos);
 
     /**
      * NCP Value

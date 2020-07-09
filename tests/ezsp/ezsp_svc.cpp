@@ -23,7 +23,7 @@ int main (int argc, char* argv[])
 
     logger::log_init("/var/log/logs/zigbee_log");
 
-    ezsp = std::make_shared<zb_ezsp::Ezsp>(true);
+    ezsp = std::make_shared<zb_ezsp::Ezsp>(true, "/home/deniskudia/sources/pi-ZigBee/tests/ezsp/config.json");
     ezsp->frame_received = std::bind(&ezsp_callback, std::placeholders::_1, std::placeholders::_2);
     sleep(2);
 
@@ -80,8 +80,14 @@ int main (int argc, char* argv[])
         else if(cmd == "getchild"){
             ezsp->get_childData();
         }
+        else if(cmd == "neighborCount"){
+            ezsp->neighborCount();
+        }
+        else if(cmd == "getDeviceInfo"){
+            ezsp->getDeviceInfo();
+        }
         else if(cmd == "help"){
-            std::cout << "Commands: exit, getvalue, getcfg, startscana, startscane, stopscan, echo, getnetparams, getsecstate, neighbors, sendunicast, getchild" << std::endl;
+            std::cout << "Commands: exit, getvalue, getcfg, startscana, startscane, stopscan, echo, getnetparams, getsecstate, neighbors, neighborCount, sendunicast, getchild getDeviceInfo" << std::endl;
         }
     }
 

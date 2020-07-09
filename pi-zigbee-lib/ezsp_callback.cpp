@@ -79,6 +79,16 @@ void Ezsp::callback_eframe_received(const zb_uart::EFramePtr& efr_raw){
         }
         break;
         /**
+         * uint8_t value only
+         */
+        case EId::ID_neighborCount:
+        {
+            auto p_8t_value = ef->load<zb_ezsp::uint8t_value>(efr_raw->data(), efr_raw->len());
+            notify((EId)id, p_8t_value->to_string());
+        }
+        break;
+
+        /**
          *Group no data responses
             */
         case EId::ID_noCallbacks:
@@ -144,6 +154,12 @@ void Ezsp::callback_eframe_received(const zb_uart::EFramePtr& efr_raw){
             notify((EId)id, p_netstate->to_string());
         }
         break;
+        case EId::ID_getParentChildParameters:
+        {
+            auto p_netstate = ef->load<zb_ezsp::getParentChildParameters>(efr_raw->data(), efr_raw->len());
+            notify((EId)id, p_netstate->to_string());
+        }
+        break;
         case EId::ID_scanCompleteHandler:
         {
             auto p_handler = ef->load<zb_ezsp::scanCompleteHandler>(efr_raw->data(), efr_raw->len());
@@ -204,9 +220,13 @@ void Ezsp::callback_eframe_received(const zb_uart::EFramePtr& efr_raw){
             notify((EId)id, p_sendUnicast->to_string());
         }
         break;
+        /**
+         * Data array based responses
+         */
         case EId::ID_Echo:
+        case EId::ID_getMfgToken:
         {
-            auto p_echo = ef->load<zb_ezsp::echo>(efr_raw->data(), efr_raw->len());
+            auto p_echo = ef->load<zb_ezsp::data_array>(efr_raw->data(), efr_raw->len());
             notify((EId)id, p_echo->to_string());
         }
         break;

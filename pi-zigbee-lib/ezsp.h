@@ -152,6 +152,20 @@ public:
     void permitJoining(const uint8_t duration=0xFF);
     void getNetworkParameters();
 
+    void getParentChildParameters(){
+        logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__));
+
+        zb_ezsp::no_params no_prm;
+        add2output<zb_ezsp::no_params>(zb_ezsp::EId::ID_getParentChildParameters, no_prm);
+    }
+
+    void neighborCount(){
+        logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__));
+
+        zb_ezsp::no_params no_prm;
+        add2output<zb_ezsp::no_params>(zb_ezsp::EId::ID_neighborCount, no_prm);
+    }
+
     /**
      * Security
      */
@@ -203,6 +217,25 @@ public:
         zb_ezsp::get_by_index get_bind;
         get_bind.index = index;
         add2output<zb_ezsp::get_by_index>(zb_ezsp::EId::ID_getBinding, get_bind);
+    }
+
+    void getMfgToken(const EzspMfgTokenId token){
+        logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__) + " Token: " + std::to_string(token));
+        zb_ezsp::get_by_index get_Mfg_token;
+        get_Mfg_token.index = token;
+        add2output<zb_ezsp::get_by_index>(zb_ezsp::EId::ID_getMfgToken, get_Mfg_token);
+    }
+
+    /**
+     * Request manufacturer configuration
+     */
+    void getDeviceInfo(){
+        getMfgToken(EzspMfgTokenId::EZSP_MFG_CUSTOM_VERSION);
+        getMfgToken(EzspMfgTokenId::EZSP_MFG_STRING);
+        getMfgToken(EzspMfgTokenId::EZSP_MFG_BOARD_NAME);
+        getMfgToken(EzspMfgTokenId::EZSP_MFG_MANUF_ID);
+        getMfgToken(EzspMfgTokenId::EZSP_MFG_PHY_CONFIG);
+        getMfgToken(EzspMfgTokenId::EZSP_MFG_BOOTLOAD_AES_KEY);
     }
 
     /**

@@ -17,13 +17,13 @@ namespace zb_ezsp {
 void Ezsp::echo() {
     logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__));
 
-    zb_ezsp::echo ech;
+    zb_ezsp::data_array ech;
     ech.dataLength = 10;
     for(int i=0; i<ech.dataLength; i++){
         ech.data[i] = '0' + 1;
     }
 
-    add2output<zb_ezsp::echo>(zb_ezsp::EId::ID_Echo, ech);
+    add2output<zb_ezsp::data_array>(zb_ezsp::EId::ID_Echo, ech);
 }
 
 /**

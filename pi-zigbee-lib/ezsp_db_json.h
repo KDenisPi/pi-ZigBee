@@ -41,10 +41,9 @@ public:
 
         try{
             _conf = json::parse(ijson);
-
             std::string cfg_ver = _conf.at("version");
-
             logger::log(logger::LLOG::INFO, "json", std::string(__func__) + " Config version: " + cfg_ver);
+
             result = true;
         }
         catch (json::parse_error& e){
@@ -65,27 +64,33 @@ public:
      */
     virtual bool load_networks(net_array& networks){
         bool result = true;
+        uint8_t ex_pan[8];
+        int net_idx = 0;
+
         try
         {
             json::reference netws = _conf.at("networks");
-            int net_idx = 0;
-            for(auto& net : netws.items()){
+            for(auto& item : netws.items()){
                 std::shared_ptr<EmberNetworkParameters> p_net = std::make_shared<EmberNetworkParameters>();
 
+                auto& net = item.value();
                 p_net->panId = get_mandatory<uint16_t>(net, "panId");
                 p_net->radioTxPower = get_optional<uint8_t>(net, "radioTxPower", 0);
                 p_net->radioChannel = get_mandatory<uint8_t>(net, "radioChannel");
                 p_net->joinMethod = static_cast<EmberJoinMethod>(get_optional<uint8_t>(net, "joinMethod", (uint8_t)EmberJoinMethod::EMBER_USE_MAC_ASSOCIATION));
-                p_net->nwkManagerId = get_mandatory<uint16_t>(net, "nwkManagerId");
+
+                p_net->nwkManagerId = get_optional<uint16_t>(net, "nwkManagerId", 0);
                 p_net->nwkUpdateId = get_optional<uint8_t>(net, "nwkUpdateId", 0);
                 p_net->channels = get_optional<uint32_t>(net, "channels", 0);
 
-                uint8_t ex_pan[8];
-                json::reference extendedPanId = netws.at("extendedPanId");
+                json::reference extendedPanId = net.at("extendedPanId");
                 for(int i = 0; i < extendedPanId.size() && i < 8; i++){
-                    ex_pan[i] = extendedPanId.at(i);
+                    std::string bt = extendedPanId.at(i);
+                    ex_pan[i] = std::stoi(bt, nullptr, 16);
                 }
+                p_net->set_ext_pan(ex_pan);
 
+                logger::log(logger::LLOG::INFO, "json", std::string(__func__) + " Index: " + std::to_string(net_idx) + " " + p_net->to_string());
                 networks[net_idx++] = p_net;
             }
         }

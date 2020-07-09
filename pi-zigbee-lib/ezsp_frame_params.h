@@ -40,16 +40,15 @@ using ver_resp = struct ezsp_ver_resp {
 };
 
 /**
- * Echo command ID 0x81
- *
- * Description: Variable length data from the Host is echoed back by the NCP. This command has no other effects and is designed for testing the link between the Host and NCP.
+ * Echo command ID 0x81, and other command view [dataLength, array]
+*
  */
-using echo = struct ezsp_echo { //__attribute__((packed, aligned(1)))
-    uint8_t dataLength;     // The length of the data parameter in bytes.
-    uint8_t data[10];         // The data to be echoed back.
+using data_array = struct ezsp_data_array { //__attribute__((packed, aligned(1)))
+    uint8_t dataLength;        // The length of the data parameter in bytes.
+    uint8_t data[120];         // The data to be echoed back.
 
     const std::string to_string() const {
-        std::string result = "Ping Length: " + std::to_string(dataLength);
+        std::string result = " Length: " + std::to_string(dataLength) + " Data: " + Conv::print_buff(data, dataLength);
         return result;
     }
 };
@@ -73,6 +72,17 @@ using ember_status = struct ezsp_EmberStatus {
         return std::string(buff);
     }
 };
+
+using uint8t_value = struct ezsp_8tValue {
+    uint value;
+
+    const std::string to_string() const {
+        char buff[20];
+        std::sprintf(buff, "Status: 0x%02X", value);
+        return std::string(buff);
+    }
+};
+
 
 using ezsp_status = struct ezsp_EzspStatus {
     EzspStatus status;
@@ -497,6 +507,21 @@ struct incomingRouteErrorHandler {
 };
 
 /**
+ * Returns information about the children of the local node and the parent of the local node.
+ */
+struct getParentChildParameters {
+    uint8_t childCount;         // The number of children the node currently has.
+    EmberEUI64 parentEui64;     // The parent's EUI64. The value is undefined for nodes without parents (coordinators and nodes that are not joined to a network).
+    EmberNodeId parentNodeId;   // The parent's node ID. The value is undefined for nodes without parents (coordinators and nodes that are not joined to a network).
+
+    const std::string to_string() const {
+        char buff[128];
+        std::sprintf(buff, " ParentChildParameters Count:%02X Parent: NodeID:%04X", childCount, parentNodeId);
+        return std::string(buff) + Conv::Eui64_to_string(parentEui64);
+    }
+};
+
+/**
  * Group of requests based on Index number only
  */
 struct get_by_index {
@@ -550,7 +575,7 @@ struct EmberBindingTableEntry {
  * Sets an entry in the binding table.
  */
 struct setBinding_req {
-    uint8_t index;  // The index of a binding table entry.
+    uint8_t index;  // The index of a binding table entry. (1-240)
     EmberBindingTableEntry value;   // The contents of the binding entry.
 };
 

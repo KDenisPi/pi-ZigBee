@@ -48,6 +48,7 @@ using EId = enum EFrame_ID : id_type {
     ID_version = 0x00,
     ID_callback = 0x06,                     //Allows the NCP to respond with a pending callback.
     ID_noCallbacks = 0x07,                  //Indicates that there are currently no pending callbacks.
+    ID_getMfgToken = 0x0B,                  //Retrieves a manufacturing token from the Flash Information Area of the NCP (except for EZSP_STACK_CAL_DATA which is managed by the stack).
     ID_networkInit = 0x17,                  //Resume network operation after a reboot. The node retains its original type. This should be called on startup whether or
                                             //not the node was previously part of a network. EMBER_NOT_JOINED is returned if the node is not part of a network.
     ID_networkState = 0x18,                 //Returns a value indicating whether the node is joining, joined to, or leaving a network.
@@ -67,6 +68,7 @@ using EId = enum EFrame_ID : id_type {
     ID_getEui64 = 0x26,                     //Returns the EUI64 ID of the local node.
     ID_getNodeId = 0x27,                    //Returns the 16-bit node ID of the local node.
     ID_getNetworkParameters = 0x28,         //Returns the current network parameters.
+    ID_getParentChildParameters = 0x29,     //Returns information about the children of the local node and the parent of the local node.
 
     ID_clearBindingTable = 0x2A,            //Deletes all binding table entries.
     ID_setBinding = 0x2B,                   //Sets an entry in the binding table.
@@ -83,6 +85,7 @@ using EId = enum EFrame_ID : id_type {
     ID_setInitialSecurityState = 0x68,
     ID_getCurrentSecurityState = 0x69,
     ID_networkInitExtended  = 0x70,         //Similar to ezspNetworkInit(). Resume network operation after a reboot. This command is different in that it accepts options to control the network initialization.
+    ID_neighborCount = 0x7A,                //Returns the number of active entries in the neighbor table.
     ID_incomingRouteErrorHandler = 0x80,
     ID_Echo = 0x81,
     ID_getValue = 0xAA,
@@ -402,10 +405,54 @@ using EzspConfigId = enum EFrame_EzspConfigId : uint8_t {
     EZSP_CONFIG_MAX_HOPS = 0x10,                // The maximum number of hops for a message.
     EZSP_CONFIG_MAX_END_DEVICE_CHILDREN = 0x11, // The maximum number of end device children that a router will support.
     EZSP_CONFIG_INDIRECT_TRANSMISSION_TIMEOUT = 0x12, // The maximum amount of time that the MAC will hold a message for indirect transmission to a child.
-    EZSP_CONFIG_END_DEVICE_POLL_TIMEOUT = 0x1,  // The maximum amount of time that an end device child can wait between polls. If no poll is heard within
+    EZSP_CONFIG_END_DEVICE_POLL_TIMEOUT = 0x13, // The maximum amount of time that an end device child can wait between polls. If no poll is heard within
                                                 //this timeout, then the parent removes the end device from its tables.
-    EZSP_CONFIG_MOBILE_NODE_POLL_TIMEOUT = 0x14 // The maximum amount of time that a mobile node can wait between polls. If no poll is heard within this
+    EZSP_CONFIG_MOBILE_NODE_POLL_TIMEOUT = 0x14,// The maximum amount of time that a mobile node can wait between polls. If no poll is heard within this
                                                 //timeout, then the parent removes the mobile node from its tables.
+    EZSP_CONFIG_RESERVED_MOBILE_CHILD_ENTRIES = 0x15, // The number of child table entries reserved for use only by mobile nodes.
+    EZSP_CONFIG_TX_POWER_MODE = 0x17,           // Enables boost power mode and/or the alternate transmitter output.
+    EZSP_CONFIG_DISABLE_RELAY = 0x18,           // 0: Allow this node to relay messages. 1: Prevent this node from relaying messages.
+    EZSP_CONFIG_TRUST_CENTER_ADDRESS_CACHE_SIZE = 0x19, // The maximum number of EUI64 to network address associations that the Trust Center can maintain.
+                                                //These address cache entries are reserved for and reused by the Trust Center when processing device
+                                                //join/rejoin authentications. This cache size limits the number of overlapping joins the Trust Center can
+                                                //process within a narrow time window (e.g. two seconds), and thus should be set to the maximum
+                                                //number of near simultaneous joins the Trust Center is expected to accommodate. (Note, the total number
+                                                //of such address associations maintained by the NCP is the sum of the value of this setting and the value of::EZSP_CONFIG_ADDRESS_TABLE_SIZE.)
+    EZSP_CONFIG_SOURCE_ROUTE_TABLE_SIZE = 0x1A, // The size of the source route table.
+    EZSP_CONFIG_END_DEVICE_POLL_TIMEOUT_SHIFT = 0x1B, // The units used for timing out end devices on their parents.
+    EZSP_CONFIG_FRAGMENT_WINDOW_SIZE = 0x1C,    // The number of blocks of a fragmented message that can be sent in a single window.
+    EZSP_CONFIG_FRAGMENT_DELAY_MS = 0x1D,       // The time the stack will wait (in milliseconds) between sending blocks of a fragmented message.
+    EZSP_CONFIG_KEY_TABLE_SIZE = 0x1E,          // The size of the Key Table used for storing individual link keys (if the device is a Trust Center) or
+                                                //Application Link Keys (if the device is a normal node).
+    EZSP_CONFIG_APS_ACK_TIMEOUT = 0x1F,         // The APS ACK timeout value. The stack waits this amount of time between resends of APS retried messages.
+    EZSP_CONFIG_ACTIVE_SCAN_DURATION = 0x20,    // The duration of an active scan, in the units used by the 15.4 scan parameter (((1 << duration) + 1) *
+                                                //15ms). This also controls the jitter used when responding to a beacon request.
+    EZSP_CONFIG_END_DEVICE_BIND_TIMEOUT = 0x21, // The time the coordinator will wait (in seconds) for a second end device bind request to arrive.
+    EZSP_CONFIG_PAN_ID_CONFLICT_REPORT_THRESHOLD = 0x22, //  The number of PAN id conflict reports that must be received by the network manager within one minute to trigger a PAN id change.
+    EZSP_CONFIG_REQUEST_KEY_TIMEOUT = 0x24,     // The timeout value in minutes for how long the Trust Center or a normal node waits for the ZigBee
+                                                //Request Key to complete. On the Trust Center this controls whether or not the device buffers the request, waiting for a matching pair of ZigBee
+                                                //Request Key. If the value is non-zero, the Trust Center buffers and waits for that amount of time. If the value is zero, the Trust Center does not buffer the
+                                                //request and immediately responds to the request. Zero is the most compliant behavior.
+    EZSP_CONFIG_CERTIFICATE_TABLE_SIZE = 0x29,  // This value indicates the size of the runtime modifiable certificate table. Normally certificates are stored in
+                                                //MFG tokens but this table can be used to field upgrade devices with new Smart Energy certificates. This value cannot be set, it can only be queried.
+    EZSP_CONFIG_APPLICATION_ZDO_FLAGS = 0x2A,   //This is a bitmask that controls which incoming ZDO request messages are passed to the application. The
+                                                //bits are defined in the EmberZdoConfigurationFlags enumeration. To see if the application is required to send a ZDO response in reply to an incoming
+                                                //message, the application must check the APS options bit field within the incomingMessageHandler callback to see
+                                                //if the EMBER_APS_OPTION_ZDO_RESPONSE_REQUIRED flag is set.
+    EZSP_CONFIG_BROADCAST_TABLE_SIZE = 0x2B,    // The maximum number of broadcasts during a single broadcast timeout period.
+    EZSP_CONFIG_MAC_FILTER_TABLE_SIZE = 0x2C,   // The size of the MAC filter list table.
+    EZSP_CONFIG_SUPPORTED_NETWORKS = 0x2D,      // The number of supported networks.
+    EZSP_CONFIG_SEND_MULTICASTS_TO_SLEEPY_ADDRESS = 0x2E,  // Whether multicasts are sent to the RxOnWhenIdle=true address (0xFFFD) or the sleepy
+                                                //broadcast address (0xFFFF). The RxOnWhenIdle=true address is the ZigBee compliant destination for multicasts.
+    EZSP_CONFIG_ZLL_GROUP_ADDRESSES = 0x2F,     // ZLL group address initial configuration.
+    EZSP_CONFIG_ZLL_RSSI_THRESHOLD = 0x30,      // ZLL rssi threshold initial configuration.
+    EZSP_CONFIG_MTORR_FLOW_CONTROL = 0x33,      // Toggles the mtorr flow control in the stack.
+    EZSP_CONFIG_RETRY_QUEUE_SIZE = 0x34,        // Setting the retry queue size.
+    EZSP_CONFIG_NEW_BROADCAST_ENTRY_THRESHOLD = 0x35,  // Setting the new broadcast entry threshold.
+    EZSP_CONFIG_TRANSIENT_KEY_TIMEOUT_S = 0x36, // The length of time, in seconds, that a trust center will store a transient link key that a device can use to join
+                                                //its network. A transient key is added with a call to emberAddTransientLinkKey. After the transient key is added,
+                                                //it will be removed once this amount of time has passed. A joining device will not be able to use that key
+                                                //to join until it is added again on the trust center. The default value is 300 seconds, i.e., 5 minutes.
 };
 
 /**
@@ -519,6 +566,44 @@ enum EmberBindingType : uint8_t {
     EMBER_MANY_TO_ONE_BINDING = 0x02,   // A unicast binding whose 64-bit identifier is the aggregator EUI64.
     EMBER_MULTICAST_BINDING = 0x03      // A multicast binding whose 64-bit identifier is the group address. A multicast binding
                                         // can be used to send messages to the group and to receive messages sent to the group.
+};
+
+enum EmberZdoConfigurationFlags : uint8_t {
+    EMBER_APP_RECEIVES_SUPPORTED_ZDO_REQUESTS = 0x01,   //Set this flag in order to receive supported ZDO request messages via the incomingMessageHandler callback. A supported
+                                                        //ZDO request is one that is handled by the EmberZNet stack. The stack will continue to handle the request and
+                                                        //send the appropriate ZDO response even if this configuration option is enabled.
+    EMBER_APP_HANDLES_UNSUPPORTED_ZDO_REQUESTS = 0x02,  //Set this flag in order to receive unsupported ZDO request messages via the
+                                                        //incomingMessageHandler callback. An unsupported ZDO request is one that is not
+                                                        //handled by the EmberZNet stack, other than to send a 'not supported' ZDO response. If this
+                                                        //configuration option is enabled, the stack will no longer send any ZDO response, and it is the
+                                                        //application's responsibility to do so.
+    EMBER_APP_HANDLES_ZDO_ENDPOINT_REQUESTS = 0x04,     //Set this flag in order to receive the following ZDO request messages via the
+                                                        //incomingMessageHandler callback: SIMPLE_DESCRIPTOR_REQUEST, MATCH_DESCRIPTORS_REQUEST, and ACTIVE_ENDPOINTS_REQUEST. If this
+                                                        //configuration option is enabled, the stack will no longer send any ZDO response for these requests, and it is the application's responsibility
+                                                        //to do so.
+    EMBER_APP_HANDLES_ZDO_BINDING_REQUESTS = 0x08,      //Set this flag in order to receive the following ZDO request messages via the
+                                                        //incomingMessageHandler callback: BINDING_TABLE_REQUEST, BIND_REQUEST, and UNBIND_REQUEST. If this configuration
+                                                        //option is enabled, the stack will no longer send any ZDO response for these requests, and it is the
+                                                        //application's responsibility to do so.
+};
+
+enum EzspMfgTokenId : uint8_t {
+    EZSP_MFG_CUSTOM_VERSION = 0x00, //Custom version (2 bytes).
+    EZSP_MFG_STRING = 0x01,     // Manufacturing string (16 bytes).
+    EZSP_MFG_BOARD_NAME = 0x02, // Board name (16 bytes).
+    EZSP_MFG_MANUF_ID = 0x03,   // Manufacturing ID (2 bytes).
+    EZSP_MFG_PHY_CONFIG = 0x04, // Radio configuration (2 bytes).
+    EZSP_MFG_BOOTLOAD_AES_KEY = 0x05, // Bootload AES key (16 bytes).
+    EZSP_MFG_ASH_CONFIG = 0x06, // ASH configuration (40 bytes).
+    EZSP_MFG_EZSP_STORAGE = 0x07, // EZSP storage (8 bytes).
+    EZSP_STACK_CAL_DATA = 0x08, // Radio calibration data (64 bytes). 4 bytes are stored for each of the 16 channels. This token is not stored in the Flash
+                                //Information Area. It is updated by the stack each time a calibration is performed.
+    EZSP_MFG_CBKE_DATA = 0x09,  // Certificate Based Key Exchange (CBKE) data (92 bytes).
+    EZSP_MFG_INSTALLATION_CODE = 0x0A, // Installation code (20 bytes).
+    EZSP_STACK_CAL_FILTER = 0x0B, // Radio channel filter calibration data (1 byte). This token is not
+                                //stored in the Flash Information Area. It is updated by the stack each time a calibration is performed.
+    EZSP_MFG_CUSTOM_EUI_64 = 0x0C, // Custom EUI64 MAC address (8 bytes).
+    EZSP_MFG_CTUNE = 0x0D       // CTUNE value (2 byte).
 };
 
 }
