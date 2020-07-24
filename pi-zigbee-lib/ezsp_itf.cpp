@@ -229,23 +229,33 @@ void Ezsp::setBinding(){
     logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__));
 
     zb_ezsp::setBinding_req set_bnd;
+    uint8_t bnd_idx = 0;
 
-    const std::shared_ptr<childJoinHandler> cld = get_child_obj();
-    if(cld){
-        set_bnd.index = 0x00;
-        set_bnd.value.type = EmberBindingType::EMBER_UNICAST_BINDING;
-        set_bnd.value.local = 0x00;
-        set_bnd.value.clusterId = 0x0402;
-        set_bnd.value.remote = 0x00;
-        memcpy(set_bnd.value.identifier, cld->childEui64, sizeof(set_bnd.value.identifier));
-        set_bnd.value.networkIndex = 0x00; //TODO: get network index
+    for (auto it = _childs.begin(); it != _childs.end(); ++it) {
+        const std::shared_ptr<childJoinHandler> cld = it->second;
 
-        add2output<zb_ezsp::setBinding_req>(zb_ezsp::EId::ID_setBinding, set_bnd);
+        if(cld){
+            logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__) + cld->to_string());
+
+
+            set_bnd.index = bnd_idx++;
+            set_bnd.value.type = EmberBindingType::EMBER_UNICAST_BINDING;
+            set_bnd.value.local = 0x01; //0x00;
+            set_bnd.value.clusterId = 0x0402;
+            set_bnd.value.remote = 0x01; //0x00;
+            memcpy(set_bnd.value.identifier, cld->childEui64, sizeof(set_bnd.value.identifier));
+            set_bnd.value.networkIndex = 0x00; //TODO: get network index
+
+            logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__) + " Bind: " + set_bnd.to_string());
+
+            add2output<zb_ezsp::setBinding_req>(zb_ezsp::EId::ID_setBinding, set_bnd);
+        }
+        else {
+            logger::log(logger::LLOG::ERROR, "ezsp", std::string(__func__) + " No child");
+            return;
+        }
     }
-    else {
-        logger::log(logger::LLOG::ERROR, "ezsp", std::string(__func__) + " No child");
-        return;
-    }
+
 }
 
 }

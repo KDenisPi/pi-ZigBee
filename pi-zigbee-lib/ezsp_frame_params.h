@@ -78,7 +78,7 @@ using uint8t_value = struct ezsp_8tValue {
 
     const std::string to_string() const {
         char buff[20];
-        std::sprintf(buff, "Status: 0x%02X", value);
+        std::sprintf(buff, "Value: 0x%02X", value);
         return std::string(buff);
     }
 };
@@ -379,7 +379,7 @@ struct trustCenterJoinHandler {
 
     const std::string to_string() const {
         char buff[128];
-        std::sprintf(buff, "trustCenterJoin: ID:%04X Status:%02X p.Decision:%04X Parent:%04X",
+        std::sprintf(buff, "trustCenterJoin: ID:%04X Status:%02X p.Decision:%04X Parent:%04X ",
         newNodeId,
         status,
         policyDecision,
@@ -577,6 +577,15 @@ struct EmberBindingTableEntry {
 struct setBinding_req {
     uint8_t index;  // The index of a binding table entry. (1-240)
     EmberBindingTableEntry value;   // The contents of the binding entry.
+
+    const std::string to_string() const {
+        char buff[128];
+        std::sprintf(buff, " setBinding Index:%02X ",
+            index
+        );
+        return std::string(buff) + value.to_string();
+    }
+
 };
 
 struct getBinding {

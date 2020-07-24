@@ -86,8 +86,14 @@ int main (int argc, char* argv[])
         else if(cmd == "getDeviceInfo"){
             ezsp->getDeviceInfo();
         }
+        else if(cmd == "bind"){
+            ezsp->setBinding();
+        }
+        else if(cmd == "clearBind"){
+            ezsp->clearBindingTable();
+        }
         else if(cmd == "help"){
-            std::cout << "Commands: exit, getvalue, getcfg, startscana, startscane, stopscan, echo, getnetparams, getsecstate, neighbors, neighborCount, sendunicast, getchild getDeviceInfo" << std::endl;
+            std::cout << "Commands: exit, getvalue, getcfg, startscana, startscane, stopscan, echo, getnetparams, getsecstate, neighbors, neighborCount, sendunicast, getchild, getDeviceInfo, bind, clearBind" << std::endl;
         }
     }
 
