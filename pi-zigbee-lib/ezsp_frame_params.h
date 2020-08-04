@@ -424,6 +424,17 @@ struct sendUnicast {
     uint8_t messageTag;             // A value chosen by the Host. This value is used in the ezspMessageSentHandler response to refer to this message.
     uint8_t messageLength;          // The length of the messageContents parameter in bytes.
     uint8_t messageContents[100];   // Content of the message.
+
+    const std::string to_string() const {
+        char buff[140];
+        std::sprintf(buff, " sendUnicast type:%02X Idx:%04X Tag:%02X Len:%02X ",
+        type,
+        indexOrDestination,
+        messageTag,
+        messageLength
+        );
+    }
+
 };
 
 struct sendUnicast_resp {

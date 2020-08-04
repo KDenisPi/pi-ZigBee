@@ -15,6 +15,7 @@
 
 #include "Threaded.h"
 
+#include "ezsp_zcl.h"
 #include "ezsp_frame.h"
 #include "ezsp_sm.h"
 #include "ezsp_db_json.h"
@@ -177,6 +178,7 @@ public:
      * Messaging
      */
     void sendUnicast();
+    void sendZcl();
 
     /**
      *
