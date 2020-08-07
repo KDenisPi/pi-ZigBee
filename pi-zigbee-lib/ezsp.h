@@ -133,7 +133,7 @@ public:
      * Configuration value get/set
      */
     void getCinfigurationValue(const EzspConfigId id);
-
+    void setCinfigurationValue(const EzspConfigId id, const uint16_t value);
     /**
      * Init network
      */
@@ -362,15 +362,6 @@ protected:
          */
         _config.load(_config_prm);
         _config.load_networks(_networks);
-
-/*
-        //TODO: Temporal solution
-        _networks[0] = std::make_shared<EmberNetworkParameters>();
-
-        uint8_t ex_pan[8] = {0xC4,0x9D,0xF8,0x5C,0x57,0x01,0x6C,0xA7};
-        _networks[0]->set_ext_pan(ex_pan);
-        _networks[0]->panId = 41136;
-*/
     }
 
     /**

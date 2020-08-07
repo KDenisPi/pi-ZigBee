@@ -254,7 +254,6 @@ public:
      */
     size_t put_param(const zb_ezsp::configid_set_req& param, uint8_t* buff, size_t pos);
     size_t put_param(const zb_ezsp::ezsp_configid_get_req& param, uint8_t* buff, size_t pos);
-
     size_t get_param(zb_ezsp::ezsp_configid_get_resp& param, const uint8_t* buff, size_t& pos);
 
     /**
