@@ -23,13 +23,13 @@ int main (int argc, char* argv[])
     len = fzcl.put(buff, sizeof(buff));
 
     std::string zcl_data = zb_ezsp::Conv::print_buff(buff, len);
-    std::cout << "Easy: " << zcl_data << std::endl;
+    std::cout << "Easy: " << len << " " << zcl_data << std::endl;
     logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__) + " ZCL " + zcl_data);
 
     fzcl.MnfSpec();
     len = fzcl.put(buff, sizeof(buff));
     zcl_data = zb_ezsp::Conv::print_buff(buff, len);
-    std::cout << "Mnfc: " << zcl_data << std::endl;
+    std::cout << "Mnfc: " << len << " " << zcl_data << std::endl;
     logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__) + " ZCL " + zcl_data);
 
     std::cout << "Finished " << success << std::endl;

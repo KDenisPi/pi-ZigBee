@@ -230,36 +230,43 @@ void Ezsp::sendZcl(){
         return;
     }
 
-    zb_ezsp::sendUnicast send_uni;
-
     /**
      * Try to send packet to the first connected device
      */
-    EmberNodeId node_id = get_child();
-    send_uni.type = EmberOutgoingMessageType::EMBER_OUTGOING_DIRECT;
-    send_uni.indexOrDestination = node_id;
-    send_uni.messageTag = 1;
-    send_uni.messageLength = 0;
+    for (auto it = _childs.begin(); it != _childs.end(); ++it) {
+        const std::shared_ptr<childJoinHandler> cld = it->second;
 
-    send_uni.apsFrame.profileId = 0x0104;   //Home automation
-    send_uni.apsFrame.clusterId = 0x0402;
-    send_uni.apsFrame.sourceEndpoint = 0x01;
-    send_uni.apsFrame.destinationEndpoint = 0x01;
-    send_uni.apsFrame.options = EmberApsOption::EMBER_APS_OPTION_NONE;
-    send_uni.apsFrame.groupId = 0;
-    send_uni.apsFrame.sequence = 0x01;
+        uint8_t tag = 1;
+        if(cld){
+            logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__) + cld->to_string());
 
-    /**
-     * ZCL
-     */
-    zb_ezsp::zcl::ZclFrame fzcl(zb_ezsp::zcl::GeneralCmd::DiscoverAttr);
-    send_uni.messageLength = fzcl.put(send_uni.messageContents, sizeof(send_uni.messageContents));
+            zb_ezsp::sendUnicast send_uni;
+            send_uni.type = EmberOutgoingMessageType::EMBER_OUTGOING_DIRECT;
+            send_uni.indexOrDestination = cld->childId;
+            send_uni.messageTag = tag++;
+            send_uni.messageLength = 0;
 
-    //Debug only
-    logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__) + send_uni.to_string());
-    logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__) + " ZCL " + Conv::print_buff(send_uni.messageContents, send_uni.messageLength));
+            send_uni.apsFrame.profileId = 0x0104;   //Home automation
+            send_uni.apsFrame.clusterId = 0x0402;
+            send_uni.apsFrame.sourceEndpoint = 0x01;
+            send_uni.apsFrame.destinationEndpoint = 0x01;
+            send_uni.apsFrame.options = EmberApsOption::EMBER_APS_OPTION_NONE;
+            send_uni.apsFrame.groupId = 0;
+            send_uni.apsFrame.sequence = 0x01;
 
-    add2output<zb_ezsp::sendUnicast>(zb_ezsp::EId::ID_sendUnicast, send_uni);
+            /**
+             * ZCL
+             */
+            zb_ezsp::zcl::ZclFrame fzcl(zb_ezsp::zcl::GeneralCmd::DiscoverAttr);
+            send_uni.messageLength = fzcl.put(send_uni.messageContents, sizeof(send_uni.messageContents));
+
+            //Debug only
+            logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__) + send_uni.to_string());
+            logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__) + " ZCL " + Conv::print_buff(send_uni.messageContents, send_uni.messageLength));
+
+            add2output<zb_ezsp::sendUnicast>(zb_ezsp::EId::ID_sendUnicast, send_uni);
+        }
+    }
 }
 
 /**

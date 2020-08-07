@@ -115,9 +115,15 @@ void Ezsp::callback_eframe_received(const zb_uart::EFramePtr& efr_raw){
             notify((EId)id, p_child->to_string());
 
             /**
-             * Save child information
+             * Save child information of child Joined and delete if un-Joined
              */
-            add_child(p_child);
+            if(p_child->joining > 0 )
+                add_child(p_child);
+            else
+            {
+                del_child(p_child->childId);
+            }
+
         }
         break;
         case ID_trustCenterJoinHandler:
@@ -211,12 +217,12 @@ void Ezsp::callback_eframe_received(const zb_uart::EFramePtr& efr_raw){
         break;
         case EId::ID_sendUnicast:
         {
-            auto p_conf = ef->load<zb_ezsp::getCurrentSecurityState>(efr_raw->data(), efr_raw->len());
+            auto p_conf = ef->load<zb_ezsp::sendUnicast_resp>(efr_raw->data(), efr_raw->len());
             notify((EId)id, p_conf->to_string());
         }
         case EId::ID_incomingRouteErrorHandler:
         {
-            auto p_sendUnicast = ef->load<zb_ezsp::sendUnicast_resp>(efr_raw->data(), efr_raw->len());
+            auto p_sendUnicast = ef->load<zb_ezsp::incomingRouteErrorHandler>(efr_raw->data(), efr_raw->len());
             notify((EId)id, p_sendUnicast->to_string());
         }
         break;

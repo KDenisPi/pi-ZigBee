@@ -74,8 +74,8 @@ int main (int argc, char* argv[])
             const std::string nlist = ezsp->neighbors();
             std::cout <<  "List of neighbors: " << std::endl << (nlist.empty() ? "Empty" : nlist) << std::endl;
         }
-        else if(cmd == "sendunicast"){
-            ezsp->sendUnicast();
+        else if(cmd == "sendZcl"){
+            ezsp->sendZcl();
         }
         else if(cmd == "getchild"){
             ezsp->get_childData();
@@ -93,7 +93,7 @@ int main (int argc, char* argv[])
             ezsp->clearBindingTable();
         }
         else if(cmd == "help"){
-            std::cout << "Commands: exit, getvalue, getcfg, startscana, startscane, stopscan, echo, getnetparams, getsecstate, neighbors, neighborCount, sendunicast, getchild, getDeviceInfo, bind, clearBind" << std::endl;
+            std::cout << "Commands: exit, getvalue, getcfg, startscana, startscane, stopscan, echo, getnetparams, getsecstate, neighbors, neighborCount, sendZcl, getchild, getDeviceInfo, bind, clearBind" << std::endl;
         }
     }
 

@@ -433,6 +433,7 @@ struct sendUnicast {
         messageTag,
         messageLength
         );
+        return std::string(buff);
     }
 
 };
