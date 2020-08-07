@@ -31,6 +31,9 @@ void release();
 void set_level(const LLOG level);
 void set_update_conf();
 
+const std::string get_time();
+const std::string get_time_ms();
+
 using log_message = std::pair<std::string, std::string>;
 using log_message_type = std::pair<logger::LLOG, log_message>;
 using log_type = piutils::circbuff::CircularBuffer<log_message_type>;

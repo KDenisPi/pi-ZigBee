@@ -23,18 +23,37 @@ namespace logger {
 std::shared_ptr<Logger> plog;
 Logger* p_plog;
 
-/*
-std::chrono::time_point<std::chrono::system_clock> tp;
-char mtime[30];
-*/
-/*
+
+const std::string get_time(){
     char mtime[30];
     std::chrono::time_point<std::chrono::system_clock> tp;
     tp = std::chrono::system_clock::now();
     std::time_t time_now = std::chrono::system_clock::to_time_t(tp);
     std::strftime(mtime, sizeof(mtime), "%T", std::localtime(&time_now));
-    std::cout << mtime << " | " << level << " | " << pattern << " | "<< message << std::endl;
-*/
+    return std::string(mtime);
+}
+
+const std::string get_time_ms(){
+    char mtime[30];
+    std::chrono::time_point<std::chrono::system_clock> tp;
+    tp = std::chrono::system_clock::now();
+    std::time_t time_now = std::chrono::system_clock::to_time_t(tp);
+
+    auto duration = tp.time_since_epoch();
+    auto hours = std::chrono::duration_cast<std::chrono::hours>(duration);
+    auto minutes = std::chrono::duration_cast<std::chrono::minutes>(duration);
+    auto seconds = std::chrono::duration_cast<std::chrono::seconds>(duration);
+    auto milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(duration);
+
+    std::sprintf(mtime, "%02d:%02lu:%02lu.%03lu",
+        std::localtime(&time_now)->tm_hour,
+        (minutes.count()%60),
+        (seconds.count()%60),
+        (milliseconds.count()%1000)
+    );
+
+    return std::string(mtime);
+}
 
 /*
 *

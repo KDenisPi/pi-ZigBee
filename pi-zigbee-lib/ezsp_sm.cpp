@@ -66,6 +66,12 @@ void Ezsp::worker(Ezsp* p_ezsp){
             case Ezsp_SM_Event::EVT_UART_UP:
             {
                 if(p_ezsp->state() == Ezsp_State::SM_Initial){
+
+                    /**
+                     * Get/Set some configuration values
+                     */
+                    p_ezsp->getCinfigurationValue(EzspConfigId::EZSP_CONFIG_INDIRECT_TRANSMISSION_TIMEOUT);
+
                     //Low level is UP
                     p_ezsp->set_state(Ezsp_State::SM_Init_Network);
 

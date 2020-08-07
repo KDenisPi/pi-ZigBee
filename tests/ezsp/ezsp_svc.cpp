@@ -10,7 +10,8 @@ using namespace std;
 std::shared_ptr<zb_ezsp::Ezsp> ezsp;
 
 void ezsp_callback(const zb_ezsp::EId id, const std::string info){
-    std::cout << "ID:" << std::hex << (uint16_t)id << " " << info << std::endl;
+
+    std::cout << logger::get_time_ms() << " ID:" << std::hex << (uint16_t)id << " " << zb_ezsp::Ezsp::get_id_name(id) << " "<< info << std::endl;
 }
 
 /**

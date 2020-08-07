@@ -259,11 +259,11 @@ protected:
         std::shared_ptr<zb_ezsp::EFrame> efr = std::make_shared<zb_ezsp::EFrame>(id);
         efr->set_seq(seq_next());
 
-        logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__) + " ******* Create frame ID:" + std::to_string((uint16_t)id) + " SEQ: " +  std::to_string((uint16_t)efr->seq()));
+        logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__) + " Create frame ID:" + std::to_string((uint16_t)id) + " " + get_id_name(id) + " SEQ: " +  std::to_string((uint16_t)efr->seq()));
 
 
         if(is_debug()){
-            logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__) + efr->to_string());
+            logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__) + " " + get_id_name(id) + " " + efr->to_string());
         }
 
         //Convert EZSP frame to buffer
@@ -467,6 +467,19 @@ private:
 
         return id;
     }
+
+    static std::map<EId, std::string> _frameId2String;
+
+public:
+    static const std::string get_id_name(const EId id){
+        auto id_info = _frameId2String.find(id);
+        if(id_info != _frameId2String.end()){
+            return id_info->second;
+        }
+
+        return std::string("Unknown");
+    }
+
 };
 
 }
