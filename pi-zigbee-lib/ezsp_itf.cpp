@@ -222,6 +222,9 @@ void Ezsp::sendUnicast(){
     add2output<zb_ezsp::sendUnicast>(zb_ezsp::EId::ID_sendUnicast, send_uni);
 }
 
+/**
+ *
+ */
 void Ezsp::sendZcl(){
     logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__));
 
@@ -258,6 +261,7 @@ void Ezsp::sendZcl(){
              * ZCL
              */
             zb_ezsp::zcl::ZclFrame fzcl(zb_ezsp::zcl::GeneralCmd::DiscoverAttr);
+            fzcl.Serv2Cln();
             send_uni.messageLength = fzcl.put(send_uni.messageContents, sizeof(send_uni.messageContents));
 
             //Debug only
@@ -268,6 +272,35 @@ void Ezsp::sendZcl(){
         }
     }
 }
+
+/**
+ *
+ */
+void Ezsp::setExtendedTimeout(const EmberNodeId remoteNodeId, bool extTimeout /*= true*/){
+    logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__));
+
+    auto child = get_child_obj(remoteNodeId);
+    if(child){
+        struct setExtendedTimeout extTm;
+        memcpy(extTm.remoteEui64 , child->childEui64, sizeof(extTm.remoteEui64));
+        extTm.extendedTimeout = extTimeout;
+
+        add2output<zb_ezsp::setExtendedTimeout>(zb_ezsp::EId::ID_setExtendedTimeout, extTm);
+    }
+}
+
+void Ezsp::getExtendedTimeout(const EmberNodeId remoteNodeId){
+    logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__));
+
+    auto child = get_child_obj(remoteNodeId);
+    if(child){
+        struct getExtendedTimeout extTm;
+        memcpy(extTm.remoteEui64 , child->childEui64, sizeof(extTm.remoteEui64));
+
+        add2output<zb_ezsp::getExtendedTimeout>(zb_ezsp::EId::ID_getExtendedTimeout, extTm);
+    }
+}
+
 
 /**
  * Binding

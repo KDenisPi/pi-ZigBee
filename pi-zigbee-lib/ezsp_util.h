@@ -56,6 +56,11 @@ public:
         return pos;
     }
 
+    static size_t put(uint8_t* buff, size_t pos, const EmberEUI64 val){
+        return put(buff, pos, val, sizeof(EmberEUI64), sizeof(EmberEUI64));
+    }
+
+
 
     static size_t get(const uint8_t* buff, size_t& pos, uint8_t& res){
         res = buff[pos++];

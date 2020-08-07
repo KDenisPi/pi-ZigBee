@@ -180,6 +180,9 @@ public:
     void sendUnicast();
     void sendZcl();
 
+    void setExtendedTimeout(const EmberNodeId remoteNodeId, bool extTimeout = true);
+    void getExtendedTimeout(const EmberNodeId remoteNodeId);
+
     /**
      *
      */
@@ -412,12 +415,21 @@ protected:
         return it->first;
     }
 
-    const std::shared_ptr<childJoinHandler> get_child_obj() {
+    const std::shared_ptr<childJoinHandler> get_child_obj(const EmberNodeId childId = 0x0000) {
         if(_childs.empty())
             return std::shared_ptr<childJoinHandler>();
 
-        auto it = _childs.begin();
-        return it->second;
+        if(childId == 0x0000){
+            auto it = _childs.begin();
+            return it->second;
+        }
+
+        auto child = _childs.find(childId);
+        if(child != _childs.end()){
+            return child->second;
+        }
+
+        return std::shared_ptr<childJoinHandler>();
     }
 
     const size_t count_child() {

@@ -613,6 +613,14 @@ struct getBinding {
     }
 };
 
+struct setExtendedTimeout {
+    EmberEUI64 remoteEui64;     // The address of the node for which the timeout is to be set.
+    EZSP_Bool  extendedTimeout; // true if the retry interval should be increased by EMBER_INDIRECT_TRANSMISSION_TIMEOUT. false if the normal retry interval should be used.
+};
+
+struct getExtendedTimeout {
+    EmberEUI64 remoteEui64; // The address of the node for which the timeout is to be returned.
+};
 
 }
 #endif

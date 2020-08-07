@@ -200,6 +200,15 @@ public:
         _control |= ZclFrameCtrl_MnfSpec;
     }
 
+    const bool is_Serv2Cln() const {
+        return (_control & ZclFrameCtrl_Dir_ServerClient);
+    }
+
+    void Serv2Cln(){
+        _control |= ZclFrameCtrl_Dir_ServerClient;
+    }
+
+
     const uint16_t SeqNum() const {
         return _seq_num;
     }

@@ -352,6 +352,20 @@ size_t EFrame::get_param(zb_ezsp::getChildData& param, const uint8_t* buff, size
 }
 
 
+size_t EFrame::put_param(const zb_ezsp::setExtendedTimeout& param, uint8_t* buff, size_t pos){
+    //pos = Conv::put(buff, pos, param.remoteEui64);
+    pos = Conv::put(buff, pos, param.remoteEui64, sizeof(param.remoteEui64), sizeof(param.remoteEui64));
+    pos = Conv::put(buff, pos, (uint8_t)param.extendedTimeout);
+    return pos;
+}
+
+size_t EFrame::put_param(const zb_ezsp::getExtendedTimeout& param, uint8_t* buff, size_t pos){
+    //pos = Conv::put(buff, pos, param.remoteEui64);
+    pos = Conv::put(buff, pos, param.remoteEui64, sizeof(param.remoteEui64), sizeof(param.remoteEui64));
+    return pos;
+}
+
+
 /**
  * Get data by Index
  */

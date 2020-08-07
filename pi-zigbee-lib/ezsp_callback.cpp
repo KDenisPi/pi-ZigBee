@@ -82,6 +82,7 @@ void Ezsp::callback_eframe_received(const zb_uart::EFramePtr& efr_raw){
          * uint8_t value only
          */
         case EId::ID_neighborCount:
+        case EId::ID_getExtendedTimeout:
         {
             auto p_8t_value = ef->load<zb_ezsp::uint8t_value>(efr_raw->data(), efr_raw->len());
             notify((EId)id, p_8t_value->to_string());
@@ -89,9 +90,10 @@ void Ezsp::callback_eframe_received(const zb_uart::EFramePtr& efr_raw){
         break;
 
         /**
-         *Group no data responses
-            */
+        * Group no data on responses
+        */
         case EId::ID_noCallbacks:
+        case EId::ID_setExtendedTimeout:
         {
             notify((EId)id, std::string());
         }
@@ -117,8 +119,14 @@ void Ezsp::callback_eframe_received(const zb_uart::EFramePtr& efr_raw){
             /**
              * Save child information of child Joined and delete if un-Joined
              */
-            if(p_child->joining > 0 )
+            if(p_child->joining > 0 ){
                 add_child(p_child);
+
+                if(p_child->childType == EmberNodeType::EMBER_SLEEPY_END_DEVICE){
+                    setExtendedTimeout(p_child->childId, true);
+                    getExtendedTimeout(p_child->childId);
+                }
+            }
             else
             {
                 del_child(p_child->childId);

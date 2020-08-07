@@ -265,7 +265,7 @@ public:
     size_t get_param(zb_ezsp::getCurrentSecurityState& param, const uint8_t* buff, size_t& pos);
 
     /**
-     * APS Frame
+     * APS Frame & messaging
      */
     size_t put_param(const zb_ezsp::EmberApsFrame& param, uint8_t* buff, size_t pos);
     size_t get_param(zb_ezsp::EmberApsFrame& param, const uint8_t* buff, size_t& pos);
@@ -278,6 +278,10 @@ public:
 
     size_t get_param(zb_ezsp::incomingRouteErrorHandler& param, const uint8_t* buff, size_t& pos);
     size_t get_param(zb_ezsp::getChildData& param, const uint8_t* buff, size_t& pos);
+
+    size_t put_param(const zb_ezsp::setExtendedTimeout& param, uint8_t* buff, size_t pos);
+    size_t put_param(const zb_ezsp::getExtendedTimeout& param, uint8_t* buff, size_t pos);
+
 
     /**
      * Get data by Index
