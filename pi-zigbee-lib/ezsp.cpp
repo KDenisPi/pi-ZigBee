@@ -13,7 +13,7 @@ namespace zb_ezsp {
 
 uint8_t EzspVersion::_ver = 4;
 
-std::map<EId, std::string> Ezsp::_frameId2String = {
+std::map<id_type, std::string> Ezsp::_frameId2String = {
     {ID_version, std::string("Version")},
     {ID_callback, std::string("Callback")},
     {ID_noCallbacks, std::string("No Callback")},
@@ -50,8 +50,12 @@ std::map<EId, std::string> Ezsp::_frameId2String = {
     {ID_getConfigurationValue, std::string("getConfigurationValue")},
     {ID_setConfigurationValue, std::string("setConfigurationValue")},
     {ID_invalidCommand, std::string("invalidCommand")},
+
     {ID_setInitialSecurityState, std::string("setInitialSecurityState")},
     {ID_getCurrentSecurityState, std::string("getCurrentSecurityState")},
+    {ID_getKey, std::string("getKey")},
+    {ID_becomeTrustCenter, std::string("becomeTrustCenter")},
+
     {ID_networkInitExtended, std::string("networkInitExtended")},
     {ID_neighborCount, std::string("neighborCount")},
     {ID_setExtendedTimeout, std::string("setExtendedTimeout")},

@@ -30,7 +30,8 @@ enum Ezsp_SM_Event : uint16_t {
     EVT_UART_UP         = 1,
     EVT_NET_STATUS      = 2,
     EVT_NEIGHBOR_CONN   = 3,
-    EVT_ERROR           = 4
+    EVT_ERROR           = 4,
+    EVT_TRUST_CENTER    = 5     //I am trust center now
 };
 
 /**

@@ -622,5 +622,80 @@ struct getExtendedTimeout {
     EmberEUI64 remoteEui64; // The address of the node for which the timeout is to be returned.
 };
 
+/**
+ * //A structure containing a key and its associated data
+ */
+struct EmberKeyStruct {
+    EmberKeyStructBitmask bitmask;  // A bitmask indicating the presence of data within the various fields in the structure.
+    EmberKeyType type;              // The type of the key.
+    EmberKeyData key;               // The actual key data.
+    uint32_t outgoingFrameCounter;  // The outgoing frame counter associated with the key.
+    uint32_t incomingFrameCounter;  // The frame counter of the partner device associated with the key.
+    uint8_t sequenceNumber;         // The sequence number associated with the key.
+    EmberEUI64 partnerEUI64;        // The IEEE address of the partner device also in possession of the key.
+
+    /**
+     *
+     */
+    void copy_data(const EmberKeyStruct& other){
+        type = other.type;
+        bitmask = other.bitmask;
+        memcpy((void*)other.key, key, sizeof(other.key));
+
+        if(other.bitmask&EmberKeyStructBitmask::EMBER_KEY_HAS_INCOMING_FRAME_COUNTER)
+            incomingFrameCounter = other.incomingFrameCounter;
+        else
+            incomingFrameCounter = 0;
+
+        if(other.bitmask&EmberKeyStructBitmask::EMBER_KEY_HAS_OUTGOING_FRAME_COUNTER)
+            outgoingFrameCounter = other.outgoingFrameCounter;
+        else
+            outgoingFrameCounter = 0;
+
+        if(other.bitmask&EmberKeyStructBitmask::EMBER_KEY_HAS_PARTNER_EUI64)
+            memcpy((void*)other.partnerEUI64, partnerEUI64, sizeof(other.partnerEUI64));
+        else
+           memset(partnerEUI64, 0x00, sizeof(partnerEUI64));
+
+        if(other.bitmask&EmberKeyStructBitmask::EMBER_KEY_HAS_SEQUENCE_NUMBER)
+            sequenceNumber = other.sequenceNumber;
+        else
+            sequenceNumber = 0;
+    }
+
+    /**
+     *
+     */
+    const std::string to_string() const {
+        char buff[128];
+        std::sprintf(buff, " EmberKeyStruct bitmask:%04X Type:%02X Cntr Out:%08X In:%08X Seq:%02X",
+        bitmask,
+        type,
+        outgoingFrameCounter,
+        incomingFrameCounter,
+        sequenceNumber
+        );
+        return std::string(buff) + " Partner: " + Conv::Eui64_to_string(partnerEUI64);
+    }
+};
+
+struct getKey {
+    EmberStatus status;         // The success or failure code of the operation.
+    EmberKeyStruct keyStruct;   // The structure containing the key and its associated data.
+
+    const std::string to_string() const {
+        char buff[128];
+        std::sprintf(buff, " getKey status:%02X ",
+        status
+        );
+        return std::string(buff) + keyStruct.to_string();
+    }
+
+};
+
+struct BecomeTrustCenter {
+    EmberKeyData key;               // The actual key data.
+};
+
 }
 #endif

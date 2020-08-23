@@ -70,6 +70,7 @@ void Ezsp::worker(Ezsp* p_ezsp){
                     /**
                      * Get/Set some configuration values
                      */
+                    p_ezsp->setCinfigurationValue(EzspConfigId::EZSP_CONFIG_INDIRECT_TRANSMISSION_TIMEOUT, 6000);
                     p_ezsp->getCinfigurationValue(EzspConfigId::EZSP_CONFIG_INDIRECT_TRANSMISSION_TIMEOUT);
 
                     //Low level is UP
@@ -104,15 +105,37 @@ void Ezsp::worker(Ezsp* p_ezsp){
                     p_ezsp->set_state(Ezsp_State::SM_UP_and_Ready);
 
                     /**
+                     * If I would like to be trust center itself but not become it yet then ask key and become Trust Center
+                     */
+                    if(p_ezsp->is_trust_center() && !p_ezsp->is_become_trust_center()){
+                        p_ezsp->getKey();   //get current network key
+                    }
+                    else{
+                        /**
+                         * Allow join to network
+                         */
+                        if(p_ezsp->is_coordinator()){
+                            p_ezsp->permitJoining(); //permanently
+                        }
+                    }
+                }
+                else if(evt->get_status() == EmberStatus::EMBER_NETWORK_DOWN){
+                    p_ezsp->set_state(Ezsp_State::SM_Init_Network);
+                }
+            }
+            break;
+            case Ezsp_SM_Event::EVT_TRUST_CENTER:
+            {
+                //become Trust center
+                p_ezsp->become_trust_center();
+
+                if(p_ezsp->state() == Ezsp_State::SM_UP_and_Ready){
+                    /**
                      * Allow join to network
                      */
                     if(p_ezsp->is_coordinator()){
                         p_ezsp->permitJoining(); //permanently
                     }
-
-                }
-                else if(evt->get_status() == EmberStatus::EMBER_NETWORK_DOWN){
-                    p_ezsp->set_state(Ezsp_State::SM_Init_Network);
                 }
             }
             break;

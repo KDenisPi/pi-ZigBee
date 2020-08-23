@@ -71,6 +71,12 @@ size_t EFrame::put_param(const zb_ezsp::ezsp_no_params& param, uint8_t* buff, si
     return pos;
 }
 
+size_t EFrame::put_param(const zb_ezsp::uint8t_value& param, uint8_t* buff, size_t pos){
+    pos = Conv::put(buff, pos, param.value);
+    return pos;
+}
+
+
 size_t EFrame::get_param(zb_ezsp::ezsp_no_params& param, const uint8_t* buff, size_t& pos){
     return pos;
 }
@@ -259,6 +265,11 @@ size_t EFrame::put_param(const zb_ezsp::EmberCurrentSecurityState& param, uint8_
     return pos;
 }
 
+size_t EFrame::put_param(const zb_ezsp::BecomeTrustCenter& param, uint8_t* buff, size_t pos){
+    pos = Conv::put(buff, pos, param.key, sizeof(param.key), sizeof(param.key));
+    return pos;
+}
+
 size_t EFrame::get_param(zb_ezsp::EmberCurrentSecurityState& param, const uint8_t* buff, size_t& pos){
     pos = Conv::get_word<EmberCurrentSecurityBitmask>(buff, pos, param.bitmask);
     pos = Conv::get(buff, pos, param.trustCenterLongAddress, sizeof(param.trustCenterLongAddress), sizeof(param.trustCenterLongAddress));
@@ -270,6 +281,24 @@ size_t EFrame::get_param(zb_ezsp::getCurrentSecurityState& param, const uint8_t*
     pos = get_param(param.state, buff, pos);
     return pos;
 }
+
+size_t EFrame::get_param(zb_ezsp::EmberKeyStruct& param, const uint8_t* buff, size_t& pos){
+    pos = Conv::get_word<EmberKeyStructBitmask>(buff, pos, param.bitmask);
+    pos = Conv::get_byte<EmberKeyType>(buff, pos, param.type);
+    pos = Conv::get(buff, pos, param.key, sizeof(param.key), sizeof(param.key));
+    pos = Conv::get(buff, pos, param.outgoingFrameCounter);
+    pos = Conv::get(buff, pos, param.incomingFrameCounter);
+    pos = Conv::get(buff, pos, param.sequenceNumber);
+    pos = Conv::get(buff, pos, param.partnerEUI64, sizeof(param.partnerEUI64), sizeof(param.partnerEUI64));
+    return pos;
+}
+
+size_t EFrame::get_param(zb_ezsp::getKey& param, const uint8_t* buff, size_t& pos){
+    pos = Conv::get_byte<EmberStatus>(buff, pos, param.status);
+    pos = get_param(param.keyStruct, buff, pos);
+    return pos;
+}
+
 
 /**
  * APS Frame

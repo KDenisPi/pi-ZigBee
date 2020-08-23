@@ -20,7 +20,7 @@ void Ezsp::callback_eframe_received(const zb_uart::EFramePtr& efr_raw){
     std::shared_ptr<zb_ezsp::EFrame> ef = std::make_shared<zb_ezsp::EFrame>();
 
     auto id = detect_id(efr_raw->data(), efr_raw->len());
-    logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__) + " Detected ID " + std::to_string((uint16_t)id));
+    logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__) + " Detected ID " + std::to_string((uint16_t)id) + " " + get_id_name(id));
 
     switch(id){
         case EId::ID_version:
@@ -54,6 +54,7 @@ void Ezsp::callback_eframe_received(const zb_uart::EFramePtr& efr_raw){
         case EId::ID_leaveNetwork:
         case EId::ID_clearBindingTable:
         case EId::ID_setBinding:
+        case EId::ID_becomeTrustCenter:
         {
             auto p_status = ef->load<zb_ezsp::ember_status>(efr_raw->data(), efr_raw->len());
             notify((EId)id, p_status->to_string());
@@ -73,7 +74,12 @@ void Ezsp::callback_eframe_received(const zb_uart::EFramePtr& efr_raw){
                     }
                 }
                 else if(id == EId::ID_setInitialSecurityState){
+                    if(is_coordinator()){
                         formNetwork();
+                    }
+                }
+                else if(id == EId::ID_becomeTrustCenter){
+                        add_event(std::make_shared<EzspEvent>(EVT_TRUST_CENTER));
                 }
             }
         }
@@ -123,6 +129,7 @@ void Ezsp::callback_eframe_received(const zb_uart::EFramePtr& efr_raw){
                 add_child(p_child);
 
                 if(p_child->childType == EmberNodeType::EMBER_SLEEPY_END_DEVICE){
+                    getExtendedTimeout(p_child->childId);
                     setExtendedTimeout(p_child->childId, true);
                     getExtendedTimeout(p_child->childId);
                 }
@@ -155,7 +162,6 @@ void Ezsp::callback_eframe_received(const zb_uart::EFramePtr& efr_raw){
             notify((EId)id, Conv::to_string(this->_nodeId));
         }
         break;
-
         case EId::ID_networkState:
         {
             auto p_netstate = ef->load<zb_ezsp::networkState>(efr_raw->data(), efr_raw->len());
@@ -205,6 +211,7 @@ void Ezsp::callback_eframe_received(const zb_uart::EFramePtr& efr_raw){
             auto p_channel = ef->load<zb_ezsp::energyScanResultHandler>(efr_raw->data(), efr_raw->len());
             notify((EId)id, p_channel->to_string());
         }
+        break;
         case EId::ID_getChildData:
         {
             auto p_cldData = ef->load<zb_ezsp::getChildData>(efr_raw->data(), efr_raw->len());
@@ -223,11 +230,34 @@ void Ezsp::callback_eframe_received(const zb_uart::EFramePtr& efr_raw){
             notify((EId)id, p_conf->to_string());
         }
         break;
+        case EId::ID_getKey:
+        {
+            auto p_key = ef->load<zb_ezsp::getKey>(efr_raw->data(), efr_raw->len());
+            if(p_key->status == EmberStatus::EMBER_SUCCESS){
+                if(p_key->keyStruct.type == EmberKeyType::EMBER_CURRENT_NETWORK_KEY){
+                    _key_network.copy_data(p_key->keyStruct);
+
+                if(is_trust_center() && !is_become_trust_center()){
+                    //become Trust center
+                    BecomeTrustCenter();
+                }
+
+                }
+                else if(p_key->keyStruct.type == EmberKeyType::EMBER_TRUST_CENTER_LINK_KEY){
+                    _key_trust_center_link.copy_data(p_key->keyStruct);
+                }
+            }
+
+            notify((EId)id, p_key->to_string());
+
+        }
+        break;
         case EId::ID_sendUnicast:
         {
             auto p_conf = ef->load<zb_ezsp::sendUnicast_resp>(efr_raw->data(), efr_raw->len());
             notify((EId)id, p_conf->to_string());
         }
+        break;
         case EId::ID_incomingRouteErrorHandler:
         {
             auto p_sendUnicast = ef->load<zb_ezsp::incomingRouteErrorHandler>(efr_raw->data(), efr_raw->len());

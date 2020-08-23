@@ -173,6 +173,21 @@ public:
     void setInitialSecurityState(EmberCurrentSecurityBitmask bitmask = EmberCurrentSecurityBitmask::EMBER_STANDARD_SECURITY_MODE);
     void getCurrentSecurityState();
 
+    void getKey(const EmberKeyType key = EmberKeyType::EMBER_CURRENT_NETWORK_KEY){
+        logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__));
+
+        zb_ezsp::uint8t_value int8_value;
+        int8_value.value = key;
+        add2output<zb_ezsp::uint8t_value>(zb_ezsp::EId::ID_getKey, int8_value);
+    }
+
+    void BecomeTrustCenter(){
+        logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__));
+        zb_ezsp::BecomeTrustCenter trCenter;
+
+        memcpy(_key_network.key, trCenter.key, sizeof(trCenter.key));
+        add2output<zb_ezsp::BecomeTrustCenter>(zb_ezsp::EId::ID_becomeTrustCenter, trCenter);
+    }
 
     /**
      * Messaging
@@ -375,6 +390,18 @@ protected:
         return (node_type() == EmberNodeType::EMBER_COORDINATOR);
     }
 
+    bool is_trust_center() const {
+        return _trust_center;
+    }
+
+    bool is_become_trust_center() const {
+        return _become_trust_center;
+    }
+
+    void become_trust_center(const bool become_trust = true){
+        _become_trust_center = become_trust;
+    }
+
     /**
      * Child operations (Add, Delete, Print, Get)
      */
@@ -436,9 +463,20 @@ private:
     Ezsp_State _state = Ezsp_State::SM_Initial;
     std::shared_ptr<EventBuff> _events;
 
+    /**
+     * Network parameters
+     */
     EmberNodeType _node_type = EmberNodeType::EMBER_COORDINATOR;
     EmberEUI64 _eui64;   // The 64-bit ID
     EmberNodeId _nodeId;  // The 16-bit ID
+    bool _trust_center = true;  //Is I would like to be trust center itself
+    bool _become_trust_center = false; //If I belobe trust center already
+
+    /**
+     * Security. Keys.
+     */
+    EmberKeyStruct _key_network;              // The current active Network Key used by all devices in the network.
+    EmberKeyStruct _key_trust_center_link;    // A shared key between the Trust Center and a device.
 
     net_array _networks;
     child_map _childs;
@@ -468,10 +506,10 @@ private:
         return id;
     }
 
-    static std::map<EId, std::string> _frameId2String;
+    static std::map<id_type, std::string> _frameId2String;
 
 public:
-    static const std::string get_id_name(const EId id){
+    static const std::string get_id_name(const id_type id){
         auto id_info = _frameId2String.find(id);
         if(id_info != _frameId2String.end()){
             return id_info->second;

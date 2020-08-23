@@ -36,13 +36,11 @@ public:
 
 };
 
-
-
 using EZSP_Bool = uint8_t;
 using EZSP_EzspConfigId = uint8_t;
 using EmberNodeId = uint16_t;       // 16-bit ZigBee network address.
 using EmberEUI64 = uint8_t[8];      // EUI 64-bit ID (an IEEE address)
-
+using EmberKeyData = uint8_t[16];   // A 128-bit key contents EmberCertificateData
 
 using EId = enum EFrame_ID : id_type {
     ID_version = 0x00,
@@ -82,9 +80,15 @@ using EId = enum EFrame_ID : id_type {
     ID_getConfigurationValue = 0x52,
     ID_setConfigurationValue = 0x53,
     ID_invalidCommand = 0x58,
-    ID_setInitialSecurityState = 0x68,
-    ID_getCurrentSecurityState = 0x69,
+
+    ID_setInitialSecurityState = 0x68,      //Sets the security state that will be used by the device when it forms or joins the network.
+    ID_getCurrentSecurityState = 0x69,      //Gets the current security state that is being used by a device that is joined in the network.
+    ID_getKey = 0x6a,                       //Gets a Security Key based on the passed key type.
+
     ID_networkInitExtended  = 0x70,         //Similar to ezspNetworkInit(). Resume network operation after a reboot. This command is different in that it accepts options to control the network initialization.
+
+    ID_becomeTrustCenter = 0x77,            //This function causes a coordinator to become the Trust Center when it is operating in a network that is not using one.
+
     ID_neighborCount = 0x7A,                //Returns the number of active entries in the neighbor table.
     ID_setExtendedTimeout = 0x7E,           //
     ID_getExtendedTimeout = 0x7F,           //
@@ -606,6 +610,23 @@ enum EzspMfgTokenId : uint8_t {
                                 //stored in the Flash Information Area. It is updated by the stack each time a calibration is performed.
     EZSP_MFG_CUSTOM_EUI_64 = 0x0C, // Custom EUI64 MAC address (8 bytes).
     EZSP_MFG_CTUNE = 0x0D       // CTUNE value (2 byte).
+};
+
+enum EmberKeyType : uint8_t {
+    EMBER_TRUST_CENTER_LINK_KEY = 0x01, // A shared key between the Trust Center and a device.
+    EMBER_CURRENT_NETWORK_KEY = 0x03,   // The current active Network Key used by all devices in the network.
+    EMBER_NEXT_NETWORK_KEY = 0x04,      // The alternate Network Key that was previously in use, or the newer key that will be switched to.
+    EMBER_APPLICATION_LINK_KEY = 0x05   // An Application Link Key shared with another (non-Trust Center) device.
+};
+
+/**
+ * Describes the presence of valid data within the EmberKeyStruct structure.
+ */
+enum EmberKeyStructBitmask : uint16_t {
+    EMBER_KEY_HAS_SEQUENCE_NUMBER        = 0x0001, // The key has a sequence number associated with it.
+    EMBER_KEY_HAS_OUTGOING_FRAME_COUNTER = 0x0002, // The key has an outgoing frame counter associated with it.
+    EMBER_KEY_HAS_INCOMING_FRAME_COUNTER = 0x0004, // The key has an incoming frame counter associated with it.
+    EMBER_KEY_HAS_PARTNER_EUI64          = 0x0008  // The key has a Partner IEEE address associated with it.
 };
 
 }
