@@ -213,6 +213,29 @@ public:
         return std::string(buff);
     }
 
+    static const std::string KeyData_to_string(const EmberKeyData keyData){
+        char buff[128];
+        std::sprintf(buff, "Key:%02X:%02X:%02X:%02X:%02X:%02X:%02X:%02X:%02X:%02X:%02X:%02X:%02X:%02X:%02X:%02X",
+        keyData[0],
+        keyData[1],
+        keyData[2],
+        keyData[3],
+        keyData[4],
+        keyData[5],
+        keyData[6],
+        keyData[7],
+        keyData[8],
+        keyData[9],
+        keyData[10],
+        keyData[11],
+        keyData[12],
+        keyData[13],
+        keyData[14],
+        keyData[15]
+        );
+        return std::string(buff);
+    }
+
     /**
      *
      */

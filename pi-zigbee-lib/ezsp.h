@@ -127,7 +127,7 @@ public:
      * Value get/set
      */
     void getValue(const EzspValueId id);
-
+    void getValueTokenStackNodeData();
 
     /**
      * Configuration value get/set
@@ -170,10 +170,10 @@ public:
     /**
      * Security
      */
-    void setInitialSecurityState(EmberCurrentSecurityBitmask bitmask = EmberCurrentSecurityBitmask::EMBER_STANDARD_SECURITY_MODE);
+    void setInitialSecurityState();
     void getCurrentSecurityState();
 
-    void getKey(const EmberKeyType key = EmberKeyType::EMBER_CURRENT_NETWORK_KEY){
+    void getKey(const EmberKeyType key = EmberKeyTypeEnum::EMBER_CURRENT_NETWORK_KEY){
         logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__));
 
         zb_ezsp::uint8t_value int8_value;

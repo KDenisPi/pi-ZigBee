@@ -234,6 +234,10 @@ size_t EFrame::get_param(zb_ezsp::getParentChildParameters& param, const uint8_t
     return pos;
 }
 
+size_t EFrame::get_param(zb_ezsp::stackTokenChangedHandler& param, const uint8_t* buff, size_t pos){
+    pos = Conv::get(buff, pos, param.tokenAddress);
+    return pos;
+}
 
 
 /**
@@ -259,8 +263,17 @@ size_t EFrame::get_param(zb_ezsp::ezsp_configid_get_resp& param, const uint8_t* 
 /**
  * Security
  */
+size_t EFrame::put_param(const zb_ezsp::EmberInitialSecurityState& param, uint8_t* buff, size_t pos){
+    pos = Conv::put(buff, pos, param.bitmask);
+    pos = Conv::put(buff, pos, param.preconfiguredKey, sizeof(param.preconfiguredKey), sizeof(param.preconfiguredKey));
+    pos = Conv::put(buff, pos, param.networkKey, sizeof(param.networkKey), sizeof(param.networkKey));
+    pos = Conv::put(buff, pos, param.networkKeySequenceNumber);
+    pos = Conv::put(buff, pos, param.preconfiguredTrustCenterEui64, sizeof(param.preconfiguredTrustCenterEui64), sizeof(param.preconfiguredTrustCenterEui64));
+    return pos;
+}
+
 size_t EFrame::put_param(const zb_ezsp::EmberCurrentSecurityState& param, uint8_t* buff, size_t pos){
-    pos = Conv::put(buff, pos, (uint16_t)param.bitmask);
+    pos = Conv::put(buff, pos, param.bitmask);
     pos = Conv::put(buff, pos, param.trustCenterLongAddress, sizeof(param.trustCenterLongAddress), sizeof(param.trustCenterLongAddress));
     return pos;
 }
@@ -271,7 +284,7 @@ size_t EFrame::put_param(const zb_ezsp::BecomeTrustCenter& param, uint8_t* buff,
 }
 
 size_t EFrame::get_param(zb_ezsp::EmberCurrentSecurityState& param, const uint8_t* buff, size_t& pos){
-    pos = Conv::get_word<EmberCurrentSecurityBitmask>(buff, pos, param.bitmask);
+    pos = Conv::get_word<EmberSecurityBitmask>(buff, pos, param.bitmask);
     pos = Conv::get(buff, pos, param.trustCenterLongAddress, sizeof(param.trustCenterLongAddress), sizeof(param.trustCenterLongAddress));
     return pos;
 }

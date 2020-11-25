@@ -74,6 +74,9 @@ void Ezsp::callback_eframe_received(const zb_uart::EFramePtr& efr_raw){
                     }
                 }
                 else if(id == EId::ID_setInitialSecurityState){
+
+                    getCurrentSecurityState();
+
                     if(is_coordinator()){
                         formNetwork();
                     }
@@ -139,6 +142,12 @@ void Ezsp::callback_eframe_received(const zb_uart::EFramePtr& efr_raw){
                 del_child(p_child->childId);
             }
 
+        }
+        break;
+        case ID_stackTokenChangedHandler:
+        {
+            auto p_token =  ef->load<zb_ezsp::stackTokenChangedHandler>(efr_raw->data(), efr_raw->len());
+            notify((EId)id, p_token->to_string());
         }
         break;
         case ID_trustCenterJoinHandler:
@@ -234,7 +243,7 @@ void Ezsp::callback_eframe_received(const zb_uart::EFramePtr& efr_raw){
         {
             auto p_key = ef->load<zb_ezsp::getKey>(efr_raw->data(), efr_raw->len());
             if(p_key->status == EmberStatus::EMBER_SUCCESS){
-                if(p_key->keyStruct.type == EmberKeyType::EMBER_CURRENT_NETWORK_KEY){
+                if(p_key->keyStruct.type == EmberKeyTypeEnum::EMBER_CURRENT_NETWORK_KEY){
                     _key_network.copy_data(p_key->keyStruct);
 
                 if(is_trust_center() && !is_become_trust_center()){
@@ -243,7 +252,7 @@ void Ezsp::callback_eframe_received(const zb_uart::EFramePtr& efr_raw){
                 }
 
                 }
-                else if(p_key->keyStruct.type == EmberKeyType::EMBER_TRUST_CENTER_LINK_KEY){
+                else if(p_key->keyStruct.type == EmberKeyTypeEnum::EMBER_TRUST_CENTER_LINK_KEY){
                     _key_trust_center_link.copy_data(p_key->keyStruct);
                 }
             }

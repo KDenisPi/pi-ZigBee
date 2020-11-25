@@ -18,6 +18,7 @@ std::map<id_type, std::string> Ezsp::_frameId2String = {
     {ID_callback, std::string("Callback")},
     {ID_noCallbacks, std::string("No Callback")},
     {ID_getMfgToken, std::string("getMfgToken")},
+    {ID_stackTokenChangedHandler, std::string("stackTokenChangedHandler")},
     {ID_networkInit, std::string("networkInit")},
 
     {ID_networkState, std::string("networkState")},
@@ -33,6 +34,7 @@ std::map<id_type, std::string> Ezsp::_frameId2String = {
     {ID_permitJoining, std::string("permitJoining")},
     {ID_childJoinHandler, std::string("childJoinHandler")},
     {ID_trustCenterJoinHandler, std::string("trustCenterJoinHandler")},
+
     {ID_getEui64, std::string("getEui64")},
     {ID_getNodeId, std::string("getNodeId")},
     {ID_getNetworkParameters, std::string("getNetworkParameters")},

@@ -36,17 +36,25 @@ public:
 
 };
 
-using EZSP_Bool = uint8_t;
+using EZSP_Bool         = uint8_t;
 using EZSP_EzspConfigId = uint8_t;
-using EmberNodeId = uint16_t;       // 16-bit ZigBee network address.
-using EmberEUI64 = uint8_t[8];      // EUI 64-bit ID (an IEEE address)
-using EmberKeyData = uint8_t[16];   // A 128-bit key contents EmberCertificateData
+using EmberNodeId       = uint16_t;                 // 16-bit ZigBee network address.
+using EmberEUI64        = uint8_t[8];               // EUI 64-bit ID (an IEEE address)
+using EmberKeyData      = uint8_t[16];              // A 128-bit key contents EmberCertificateData
+
+using EmberSecurityBitmask  = uint16_t;
+using EmberKeyStructBitmask = uint16_t;
+using EmberKeyType          = uint8_t;
+
+//The default value for the centralized security global trust center link key shall have a value of 5A 69 67 42 65 65 41 6C 6C 69 61 6E 63 65 30 39 (ZigBeeAlliance09).
+//EmberKeyData GlobalTrustCenterLinkKey = {0x5A, 0x69, 0x67, 0x42, 0x65, 0x65, 0x41, 0x6C, 0x6C, 0x69, 0x61, 0x6E, 0x63, 0x65, 0x30, 0x39};
 
 using EId = enum EFrame_ID : id_type {
     ID_version = 0x00,
     ID_callback = 0x06,                     //Allows the NCP to respond with a pending callback.
     ID_noCallbacks = 0x07,                  //Indicates that there are currently no pending callbacks.
     ID_getMfgToken = 0x0B,                  //Retrieves a manufacturing token from the Flash Information Area of the NCP (except for EZSP_STACK_CAL_DATA which is managed by the stack).
+    ID_stackTokenChangedHandler = 0x0D,     //A callback invoked to inform the application that a stack token has changed.
     ID_networkInit = 0x17,                  //Resume network operation after a reboot. The node retains its original type. This should be called on startup whether or
                                             //not the node was previously part of a network. EMBER_NOT_JOINED is returned if the node is not part of a network.
     ID_networkState = 0x18,                 //Returns a value indicating whether the node is joining, joined to, or leaving a network.
@@ -506,12 +514,32 @@ enum EmberNodeType : uint8_t {
     EMBER_MOBILE_END_DEVICE = 0x05  // A sleepy end device that can move through the network.
 };
 
-enum EmberCurrentSecurityBitmask : uint16_t {
-    EMBER_STANDARD_SECURITY_MODE = 0x0000,              // This denotes that the device is running in a network with ZigBee Standard Security.
-    EMBER_DISTRIBUTED_TRUST_CENTER_MODE = 0x0002,       //  This denotes that the device is running in a network without a centralized Trust Center.
-    EMBER_GLOBAL_LINK_KEY = 0x0004,                     //  This denotes that the device has a Global Link Key. The Trust Center Link Key is the same across multiple nodes.
-    EMBER_HAVE_TRUST_CENTER_LINK_KEY = 0x0010,          //  This denotes that the node has a Trust Center Link Key.
-    EMBER_TRUST_CENTER_USES_HASHED_LINK_KEY = 0x0084    //  This denotes that the Trust Center is using a Hashed Link Key.
+enum EmberSecurityBitmaskMode : uint16_t {
+    EMBER_STANDARD_SECURITY_MODE            = 0x0000,       // This denotes that the device is running in a network with ZigBee Standard Security.
+    EMBER_DISTRIBUTED_TRUST_CENTER_MODE     = 0x0002,       // This denotes that the device is running in a network without a centralized Trust Center.
+    EMBER_GLOBAL_LINK_KEY                   = 0x0004,       // This denotes that the device has a Global Link Key. The Trust Center Link Key is the same across multiple nodes.
+    EMBER_HAVE_TRUST_CENTER_LINK_KEY        = 0x0010,       // This denotes that the node has a Trust Center Link Key.
+    EMBER_TRUST_CENTER_USES_HASHED_LINK_KEY = 0x0084,       // This denotes that the Trust Center is using a Hashed Link Key.
+    EMBER_HAVE_PRECONFIGURED_KEY            = 0x0100,       // This denotes that the preconfiguredKey element has valid data that should be used to configure the initial security state.
+    EMBER_HAVE_NETWORK_KEY                  = 0x0200,       // This denotes that the networkKey element has valid data that should be used to configure the initial security state.
+    EMBER_GET_LINK_KEY_WHEN_JOINING         = 0x0400,       // This denotes to a joining node that it should attempt to acquire a Trust Center Link Key during joining. This is only
+                                                            //  necessary if the device does not have a pre-configured key.
+    EMBER_REQUIRE_ENCRYPTED_KEY             = 0x0800,       // This denotes that a joining device should only accept an encrypted network key from the Trust Center (using its pre-
+                                                            //  configured key). A key sent in-the-clear by the Trust Center will be rejected and the join will fail. This option is only valid
+                                                            //  when utilizing a pre-configured key.
+    EMBER_NO_FRAME_COUNTER_RESET            = 0x1000,       // This denotes whether the device should NOT reset its outgoing frame counters (both NWK and APS) when
+                                                            //  ::emberSetInitialSecurityState() is called. Normally it is advised to reset the frame counter before joining a new
+                                                            //  network. However in cases where a device is joining to the same network a again (but not using
+                                                            //  ::emberRejoinNetwork()) it should keep the NWK and APS frame counters stored in its tokens.
+    EMBER_GET_PRECONFIGURED_KEY_FROM_INSTALL_CODE   = 0x2000,   // This denotes that the device should obtain its preconfigured key from an installation code stored in the
+                                                                //  manufacturing token. The token contains a value that will be hashed to obtain the actual preconfigured key. If that
+                                                                //  token is not valid, then the call to emberSetInitialSecurityState() will fail.
+    EMBER_HAVE_TRUST_CENTER_EUI64           = 0x0040,       // This denotes that the ::EmberInitialSecurityState::preconfiguredTrustCenterEui64
+                                                            //  has a value in it containing the trust center EUI64. The device will only join a network and accept commands from
+                                                            //  a trust center with that EUI64. Normally this bit is NOT set, and the EUI64 of the trust center is learned during the join
+                                                            //  process. When commissioning a device to join onto an existing network, which is using a trust center, and without
+                                                            //  sending any messages, this bit must be set and the field ::EmberInitialSecurityState::preconfiguredTrustCenterEui64
+                                                            //  must be populated with the appropriate EUI64.
 };
 
 enum EmberDeviceUpdate : uint8_t {
@@ -594,35 +622,35 @@ enum EmberZdoConfigurationFlags : uint8_t {
 };
 
 enum EzspMfgTokenId : uint8_t {
-    EZSP_MFG_CUSTOM_VERSION = 0x00, //Custom version (2 bytes).
-    EZSP_MFG_STRING = 0x01,     // Manufacturing string (16 bytes).
-    EZSP_MFG_BOARD_NAME = 0x02, // Board name (16 bytes).
-    EZSP_MFG_MANUF_ID = 0x03,   // Manufacturing ID (2 bytes).
-    EZSP_MFG_PHY_CONFIG = 0x04, // Radio configuration (2 bytes).
-    EZSP_MFG_BOOTLOAD_AES_KEY = 0x05, // Bootload AES key (16 bytes).
-    EZSP_MFG_ASH_CONFIG = 0x06, // ASH configuration (40 bytes).
-    EZSP_MFG_EZSP_STORAGE = 0x07, // EZSP storage (8 bytes).
-    EZSP_STACK_CAL_DATA = 0x08, // Radio calibration data (64 bytes). 4 bytes are stored for each of the 16 channels. This token is not stored in the Flash
-                                //Information Area. It is updated by the stack each time a calibration is performed.
-    EZSP_MFG_CBKE_DATA = 0x09,  // Certificate Based Key Exchange (CBKE) data (92 bytes).
-    EZSP_MFG_INSTALLATION_CODE = 0x0A, // Installation code (20 bytes).
-    EZSP_STACK_CAL_FILTER = 0x0B, // Radio channel filter calibration data (1 byte). This token is not
-                                //stored in the Flash Information Area. It is updated by the stack each time a calibration is performed.
-    EZSP_MFG_CUSTOM_EUI_64 = 0x0C, // Custom EUI64 MAC address (8 bytes).
-    EZSP_MFG_CTUNE = 0x0D       // CTUNE value (2 byte).
+    EZSP_MFG_CUSTOM_VERSION     = 0x00, //Custom version (2 bytes).
+    EZSP_MFG_STRING             = 0x01, // Manufacturing string (16 bytes).
+    EZSP_MFG_BOARD_NAME         = 0x02, // Board name (16 bytes).
+    EZSP_MFG_MANUF_ID           = 0x03, // Manufacturing ID (2 bytes).
+    EZSP_MFG_PHY_CONFIG         = 0x04, // Radio configuration (2 bytes).
+    EZSP_MFG_BOOTLOAD_AES_KEY   = 0x05, // Bootload AES key (16 bytes).
+    EZSP_MFG_ASH_CONFIG         = 0x06, // ASH configuration (40 bytes).
+    EZSP_MFG_EZSP_STORAGE       = 0x07, // EZSP storage (8 bytes).
+    EZSP_STACK_CAL_DATA         = 0x08, // Radio calibration data (64 bytes). 4 bytes are stored for each of the 16 channels. This token is not stored in the Flash
+                                        //  Information Area. It is updated by the stack each time a calibration is performed.
+    EZSP_MFG_CBKE_DATA          = 0x09, // Certificate Based Key Exchange (CBKE) data (92 bytes).
+    EZSP_MFG_INSTALLATION_CODE  = 0x0A, // Installation code (20 bytes).
+    EZSP_STACK_CAL_FILTER       = 0x0B, // Radio channel filter calibration data (1 byte). This token is not
+                                        //  stored in the Flash Information Area. It is updated by the stack each time a calibration is performed.
+    EZSP_MFG_CUSTOM_EUI_64      = 0x0C, // Custom EUI64 MAC address (8 bytes).
+    EZSP_MFG_CTUNE              = 0x0D  // CTUNE value (2 byte).
 };
 
-enum EmberKeyType : uint8_t {
+enum EmberKeyTypeEnum : uint8_t {
     EMBER_TRUST_CENTER_LINK_KEY = 0x01, // A shared key between the Trust Center and a device.
-    EMBER_CURRENT_NETWORK_KEY = 0x03,   // The current active Network Key used by all devices in the network.
-    EMBER_NEXT_NETWORK_KEY = 0x04,      // The alternate Network Key that was previously in use, or the newer key that will be switched to.
-    EMBER_APPLICATION_LINK_KEY = 0x05   // An Application Link Key shared with another (non-Trust Center) device.
+    EMBER_CURRENT_NETWORK_KEY   = 0x03, // The current active Network Key used by all devices in the network.
+    EMBER_NEXT_NETWORK_KEY      = 0x04, // The alternate Network Key that was previously in use, or the newer key that will be switched to.
+    EMBER_APPLICATION_LINK_KEY  = 0x05  // An Application Link Key shared with another (non-Trust Center) device.
 };
 
 /**
  * Describes the presence of valid data within the EmberKeyStruct structure.
  */
-enum EmberKeyStructBitmask : uint16_t {
+enum EmberKeyStructBitmaskMode : uint16_t {
     EMBER_KEY_HAS_SEQUENCE_NUMBER        = 0x0001, // The key has a sequence number associated with it.
     EMBER_KEY_HAS_OUTGOING_FRAME_COUNTER = 0x0002, // The key has an outgoing frame counter associated with it.
     EMBER_KEY_HAS_INCOMING_FRAME_COUNTER = 0x0004, // The key has an incoming frame counter associated with it.

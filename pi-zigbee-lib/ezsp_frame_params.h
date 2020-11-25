@@ -187,7 +187,7 @@ using value_get_resp = struct ezsp_ncp_value_get_resp {
 
     const std::string to_string() const {
         char buff[40];
-        std::sprintf(buff, "Status: 0x%02X Length: %d", status, valueLength);
+        std::sprintf(buff, "Ezsp Status: 0x%02X Length: %d", status, valueLength);
         return std::string(buff);
     }
 };
@@ -313,9 +313,48 @@ struct permitJoining {
     uint8_t duration;   //A value of 0x00 disables joining. A value of 0xFF enables joining. Any other value enables joining for that number of seconds.
 };
 
+/**
+ * Initial security State
+ */
+struct EmberInitialSecurityState {
+    EmberSecurityBitmask bitmask;               // A bitmask indicating the security options currently in use by a device joined in the network.
+    EmberKeyData preconfiguredKey;              // The pre-configured Key data that should be used when forming or joining the network. The security
+                                                //  bitmask must be set with the EMBER_HAVE_PRECONFIGURED_KEY bit to indicate that the key contains valid data.
+    EmberKeyData networkKey;                    // The Network Key that should be used by the Trust Center when it forms the network, or the Network
+                                                // Key currently in use by a joined device. The security bitmask must be set with EMBER_HAVE_NETWORK_KEY to indicate that
+                                                //  the key contains valid data.
+    uint8_t networkKeySequenceNumber;           // The sequence number associated with the network key. This is only valid if the EMBER_HAVE_NETWORK_KEY has been set in the security bitmask.
+    EmberEUI64 preconfiguredTrustCenterEui64;   // This is the long address of the trust center on the network that will be joined. It is usually NOT set prior
+                                                //  to joining the network and instead it is learned during the joining message exchange. This field is only
+                                                //  examined if EMBER_HAVE_TRUST_CENTER_EUI64 is set in the EmberInitialSecurityState::bitmask. Most devices
+                                                //  should clear that bit and leave this field alone. This field must be set when using commissioning mode.
 
+    void clear() {
+        bitmask = 0;
+        memset(preconfiguredKey, 0x00, sizeof(preconfiguredKey));
+        memset(networkKey, 0x00, sizeof(networkKey));
+        networkKeySequenceNumber = 0;
+        memset(preconfiguredTrustCenterEui64, 0x00, sizeof(preconfiguredTrustCenterEui64));
+    }
+
+    const std::string to_string() const {
+        char buff[128];
+        std::sprintf(buff, "Security state: Bitmask:%04X SeqNum:%d",
+            bitmask,
+            networkKeySequenceNumber
+        );
+        return std::string(buff)
+            + " Preconfigured " + Conv::KeyData_to_string(preconfiguredKey)
+            + " Net " + Conv::KeyData_to_string(networkKey)
+            + " Trust center:" + Conv::Eui64_to_string(preconfiguredTrustCenterEui64);
+    }
+};
+
+/**
+ * Current Secure State
+ */
 struct EmberCurrentSecurityState {
-    EmberCurrentSecurityBitmask bitmask;    //A bitmask indicating the security options currently in use by a device joined in the network.
+    EmberSecurityBitmask bitmask;           //A bitmask indicating the security options currently in use by a device joined in the network.
     EmberEUI64 trustCenterLongAddress;      // The IEEE Address of the Trust Center device.
 
     const std::string to_string() const {
@@ -325,7 +364,6 @@ struct EmberCurrentSecurityState {
         );
         return std::string(buff) + " Trust center:" + Conv::Eui64_to_string(trustCenterLongAddress);
     }
-
 };
 
 struct getCurrentSecurityState {
@@ -642,22 +680,22 @@ struct EmberKeyStruct {
         bitmask = other.bitmask;
         memcpy((void*)other.key, key, sizeof(other.key));
 
-        if(other.bitmask&EmberKeyStructBitmask::EMBER_KEY_HAS_INCOMING_FRAME_COUNTER)
+        if(other.bitmask&EmberKeyStructBitmaskMode::EMBER_KEY_HAS_INCOMING_FRAME_COUNTER)
             incomingFrameCounter = other.incomingFrameCounter;
         else
             incomingFrameCounter = 0;
 
-        if(other.bitmask&EmberKeyStructBitmask::EMBER_KEY_HAS_OUTGOING_FRAME_COUNTER)
+        if(other.bitmask&EmberKeyStructBitmaskMode::EMBER_KEY_HAS_OUTGOING_FRAME_COUNTER)
             outgoingFrameCounter = other.outgoingFrameCounter;
         else
             outgoingFrameCounter = 0;
 
-        if(other.bitmask&EmberKeyStructBitmask::EMBER_KEY_HAS_PARTNER_EUI64)
+        if(other.bitmask&EmberKeyStructBitmaskMode::EMBER_KEY_HAS_PARTNER_EUI64)
             memcpy((void*)other.partnerEUI64, partnerEUI64, sizeof(other.partnerEUI64));
         else
            memset(partnerEUI64, 0x00, sizeof(partnerEUI64));
 
-        if(other.bitmask&EmberKeyStructBitmask::EMBER_KEY_HAS_SEQUENCE_NUMBER)
+        if(other.bitmask&EmberKeyStructBitmaskMode::EMBER_KEY_HAS_SEQUENCE_NUMBER)
             sequenceNumber = other.sequenceNumber;
         else
             sequenceNumber = 0;
@@ -675,7 +713,7 @@ struct EmberKeyStruct {
         incomingFrameCounter,
         sequenceNumber
         );
-        return std::string(buff) + " Partner: " + Conv::Eui64_to_string(partnerEUI64);
+        return std::string(buff) + " Key" + Conv::KeyData_to_string(key) + " Partner: " + Conv::Eui64_to_string(partnerEUI64);
     }
 };
 
@@ -695,6 +733,19 @@ struct getKey {
 
 struct BecomeTrustCenter {
     EmberKeyData key;               // The actual key data.
+};
+
+/**
+ *
+ */
+struct stackTokenChangedHandler {
+    uint16_t tokenAddress;  // The address of the stack token that has changed.
+
+    const std::string to_string() const {
+        char buff[64];
+        std::sprintf(buff, " stackTokenChangedHandler tokenAddress:%04X ", tokenAddress);
+        return std::string(buff);
+    }
 };
 
 }

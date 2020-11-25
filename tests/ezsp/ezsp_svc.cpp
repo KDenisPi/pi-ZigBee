@@ -14,6 +14,12 @@ void ezsp_callback(const zb_ezsp::EId id, const std::string info){
     std::cout << logger::get_time_ms() << " ID:" << std::hex << (uint16_t)id << " " << zb_ezsp::Ezsp::get_id_name(id) << " "<< info << std::endl;
 }
 
+std::string& trim(std::string& str){
+    str.erase(0, str.find_first_not_of(" \n\r\t"));
+    str.erase(str.find_last_not_of(" \n\r\t")+1);
+    return str;
+}
+
 /**
 *
 */
@@ -21,6 +27,7 @@ int main (int argc, char* argv[])
 {
     bool success = false;
     std::string cmd;
+    std::string param;
 
     logger::log_init("/var/log/logs/zigbee_log");
 
@@ -45,8 +52,13 @@ int main (int argc, char* argv[])
             sleep(5);
             break;
         }
-        if(cmd == "getvalue"){
-            ezsp->getValue(zb_ezsp::EzspValueId::EZSP_VALUE_NODE_SHORT_ID);
+        if(cmd == "getValue"){
+            std::cin >> param;
+            uint8_t valId = (uint8_t)std::stoi(param);
+            std::cout << "parameter " << param << " Conv " << std::to_string(valId) << std::endl;
+            if( valId <= zb_ezsp::EzspValueId::EZSP_VALUE_RF4CE_SUPPORTED_PROFILES_LIST_){
+                ezsp->getValue((zb_ezsp::EzspValueId)valId); //zb_ezsp::EzspValueId::EZSP_VALUE_NODE_SHORT_ID);
+            }
         }
         else if(cmd == "getcfg"){
             ezsp->getCinfigurationValue(zb_ezsp::EzspConfigId::EZSP_CONFIG_PACKET_BUFFER_COUNT);
@@ -94,7 +106,26 @@ int main (int argc, char* argv[])
             ezsp->clearBindingTable();
         }
         else if(cmd == "help"){
-            std::cout << "Commands: exit, getvalue, getcfg, startscana, startscane, stopscan, echo, getnetparams, getsecstate, neighbors, neighborCount, sendZcl, getchild, getDeviceInfo, bind, clearBind" << std::endl;
+            std::cout << "Commands: exit, getcfg, startscana, startscane, stopscan, echo, getnetparams, getsecstate, neighbors, neighborCount, sendZcl, getchild, getDeviceInfo, bind, clearBind,\n\
+            getKey [Trust|Net|NextNet|AppLink]\n\
+            getValue ValueID [11 - The node short ID]" << std::endl;
+        }
+        else if(cmd == "getKey"){
+            std::cin >> param;
+            std::cout << "parameter " << param << std::endl;
+
+                if(param == "Net" || param.empty()){
+                    ezsp->getKey(zb_ezsp::EmberKeyTypeEnum::EMBER_CURRENT_NETWORK_KEY);
+                }
+                else if(param == "Trust"){
+                    ezsp->getKey(zb_ezsp::EmberKeyTypeEnum::EMBER_TRUST_CENTER_LINK_KEY);
+                }
+                else if(param == "NextNet"){
+                    ezsp->getKey(zb_ezsp::EmberKeyTypeEnum::EMBER_NEXT_NETWORK_KEY);
+                }
+                else if(param == "AppLink"){
+                    ezsp->getKey(zb_ezsp::EmberKeyTypeEnum::EMBER_APPLICATION_LINK_KEY);
+                }
         }
     }
 

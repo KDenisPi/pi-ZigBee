@@ -239,7 +239,7 @@ public:
     size_t get_param(zb_ezsp::getNetworkParameters_resp& param, const uint8_t* buff, size_t pos);
     size_t get_param(zb_ezsp::childJoinHandler& param, const uint8_t* buff, size_t pos);
     size_t get_param(zb_ezsp::trustCenterJoinHandler& param, const uint8_t* buff, size_t pos);
-
+    size_t get_param(zb_ezsp::stackTokenChangedHandler& param, const uint8_t* buff, size_t pos);
     size_t get_param(zb_ezsp::getParentChildParameters& param, const uint8_t* buff, size_t pos);
 
     /**
@@ -260,6 +260,7 @@ public:
     /**
      * Security
      */
+    size_t put_param(const zb_ezsp::EmberInitialSecurityState& param, uint8_t* buff, size_t pos);
     size_t put_param(const zb_ezsp::EmberCurrentSecurityState& param, uint8_t* buff, size_t pos);
     size_t get_param(zb_ezsp::EmberCurrentSecurityState& param, const uint8_t* buff, size_t& pos);
     size_t get_param(zb_ezsp::getCurrentSecurityState& param, const uint8_t* buff, size_t& pos);

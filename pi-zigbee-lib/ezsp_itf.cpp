@@ -94,6 +94,9 @@ void Ezsp::getValue(const EzspValueId id){
     add2output<zb_ezsp::value_get_req>(zb_ezsp::EId::ID_getValue, v_id);
 }
 
+void Ezsp::getValueTokenStackNodeData(){
+    getValue(EFrame_EzspValueId::EZSP_VALUE_TOKEN_STACK_NODE_DATA);
+}
 
 /**
  * Configuration value get/set
@@ -183,13 +186,27 @@ void Ezsp::getNetworkParameters(){
 /**
  * Security
  */
-void Ezsp::setInitialSecurityState(EmberCurrentSecurityBitmask bitmask/* = EmberCurrentSecurityBitmask::EMBER_STANDARD_SECURITY_MODE*/){
+
+/*
+* Set Initial Security State
+* Will set:
+*   EMBER_GLOBAL_LINK_KEY, EMBER_HAVE_NETWORK_KEY
+*
+*/
+void Ezsp::setInitialSecurityState(){
     logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__));
 
-    EmberCurrentSecurityState secSt;
-    secSt.bitmask = bitmask;
-    memset(secSt.trustCenterLongAddress, 0x00, sizeof(secSt.trustCenterLongAddress));
-    add2output<zb_ezsp::EmberCurrentSecurityState>(zb_ezsp::EId::ID_setInitialSecurityState, secSt);
+    EmberKeyData defKey = {0x3A, 0x49, 0x47, 0x22, 0x45, 0x45, 0x21, 0x4C, 0x4C, 0x49, 0x41, 0x4E, 0x43, 0x45, 0x10, 0x19};
+
+    EmberInitialSecurityState secSt;
+    secSt.clear();
+    secSt.bitmask =  EmberSecurityBitmaskMode::EMBER_HAVE_NETWORK_KEY | EmberSecurityBitmaskMode::EMBER_GLOBAL_LINK_KEY;
+    //temporary let's use some hardcode
+    memcpy(secSt.networkKey, defKey, sizeof(EmberKeyData));
+
+    logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__) + " " + secSt.to_string());
+
+    add2output<zb_ezsp::EmberInitialSecurityState>(zb_ezsp::EId::ID_setInitialSecurityState, secSt);
 }
 
 void Ezsp::getCurrentSecurityState(){
