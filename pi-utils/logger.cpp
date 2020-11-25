@@ -59,7 +59,7 @@ const std::string get_time_ms(){
 *
 */
 Logger::Logger(const std::string& filename, const LLOG level) : m_flush(false), _level(level){
-    async_file = spdlog::daily_logger_st("async_file_logger", filename);
+    async_file =  spdlog::daily_logger_st("async_file_logger", filename);
     async_file->set_level(spdlog::level::debug);
     async_file->set_pattern("%H:%M:%S.%e %z|%t|%L|%v");
 
