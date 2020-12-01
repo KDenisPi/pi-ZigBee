@@ -102,6 +102,7 @@ using EId = enum EFrame_ID : id_type {
     ID_getExtendedTimeout = 0x7F,           //
     ID_incomingRouteErrorHandler = 0x80,
     ID_Echo = 0x81,
+    ID_unicastNwkKeyUpdate = 0xA9,          // This command will send a unicast transport key message with a new NWK key to the specified device. APS encryption using the device's existing link key will be used.
     ID_getValue = 0xAA,
     ID_setValue = 0xAB
 };
@@ -546,7 +547,8 @@ enum EmberDeviceUpdate : uint8_t {
     EMBER_STANDARD_SECURITY_SECURED_REJOIN = 0x0,
     EMBER_STANDARD_SECURITY_UNSECURED_JOIN = 0x1,
     EMBER_DEVICE_LEFT = 0x2,
-    EMBER_STANDARD_SECURITY_UNSECURED_REJOIN = 0x3
+    EMBER_STANDARD_SECURITY_UNSECURED_REJOIN = 0x3,
+    EMBER_UNDEFINED = 0xFF
 };
 
 enum EmberJoinDecision : uint8_t {

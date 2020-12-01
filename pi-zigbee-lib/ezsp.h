@@ -15,6 +15,7 @@
 
 #include "Threaded.h"
 
+#include "ezsp_childs.h"
 #include "ezsp_zcl.h"
 #include "ezsp_frame.h"
 #include "ezsp_sm.h"
@@ -35,6 +36,7 @@ public:
 
         _uart = std::make_shared<zb_uart::ZBUart>(debug_mode);
         _events = std::make_shared<EventBuff>(20);
+        _childs = std::make_shared<childs::Childs>();
 
         load_config();
 
@@ -182,11 +184,29 @@ public:
     }
 
     void BecomeTrustCenter(){
-        logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__));
+        logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__) + " " + _key_network.to_string());
         zb_ezsp::BecomeTrustCenter trCenter;
 
-        memcpy(_key_network.key, trCenter.key, sizeof(trCenter.key));
+        memcpy(trCenter.key, _key_network.key, sizeof(trCenter.key));
         add2output<zb_ezsp::BecomeTrustCenter>(zb_ezsp::EId::ID_becomeTrustCenter, trCenter);
+    }
+
+    void send_unicastNwkKeyUpdate(const EmberNodeId nodeId){
+        logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__));
+
+        zb_ezsp::unicastNwkKeyUpdate keyUpdate;
+        auto child = _childs->get_child_obj(nodeId);
+        if(child){
+            logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__) + " " + child->to_string());
+
+            child->copy_id(keyUpdate.destShort);
+            child->copy_Eui64(keyUpdate.destLong);
+            _key_network.copy_key(keyUpdate.key);
+        }
+
+        logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__) + keyUpdate.to_string());
+
+        add2output<zb_ezsp::unicastNwkKeyUpdate>(zb_ezsp::EId::ID_unicastNwkKeyUpdate, keyUpdate);
     }
 
     /**
@@ -202,7 +222,7 @@ public:
      *
      */
     const std::string neighbors() {
-        return list_childs();
+        return _childs->list_childs();
     }
 
     void get_childData(const uint8_t index = 0){
@@ -402,58 +422,6 @@ protected:
         _become_trust_center = become_trust;
     }
 
-    /**
-     * Child operations (Add, Delete, Print, Get)
-     */
-    void add_child(const std::shared_ptr<childJoinHandler> child) {
-        if(_childs.find(child->childId) == _childs.end()){
-            _childs[child->childId] = child;
-        }
-    }
-
-    void del_child(const EmberNodeId child_id){
-        auto child = _childs.find(child_id);
-        if(child != _childs.end()){
-            _childs.erase(child);
-        }
-    }
-
-    const std::string list_childs() {
-        std::string result;
-        for (auto it = _childs.begin(); it != _childs.end(); ++it) {
-            result += it->second->to_string() + "\n";
-        }
-        return result;
-    }
-
-    const EmberNodeId get_child() {
-        if(_childs.empty())
-            return 0;
-        auto it = _childs.begin();
-        return it->first;
-    }
-
-    const std::shared_ptr<childJoinHandler> get_child_obj(const EmberNodeId childId = 0x0000) {
-        if(_childs.empty())
-            return std::shared_ptr<childJoinHandler>();
-
-        if(childId == 0x0000){
-            auto it = _childs.begin();
-            return it->second;
-        }
-
-        auto child = _childs.find(childId);
-        if(child != _childs.end()){
-            return child->second;
-        }
-
-        return std::shared_ptr<childJoinHandler>();
-    }
-
-    const size_t count_child() {
-        return _childs.size();
-    }
-
 
 private:
     uint8_t _seq;
@@ -479,7 +447,7 @@ private:
     EmberKeyStruct _key_trust_center_link;    // A shared key between the Trust Center and a device.
 
     net_array _networks;
-    child_map _childs;
+    std::shared_ptr<childs::Childs> _childs;
 
     std::string _config_prm; //config parameters (file name for JSON)
     EzspDbJson _config;

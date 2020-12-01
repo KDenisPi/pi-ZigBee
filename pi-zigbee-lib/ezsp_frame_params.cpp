@@ -283,6 +283,14 @@ size_t EFrame::put_param(const zb_ezsp::BecomeTrustCenter& param, uint8_t* buff,
     return pos;
 }
 
+size_t EFrame::put_param(const zb_ezsp::unicastNwkKeyUpdate& param, uint8_t* buff, size_t pos){
+    pos = Conv::put(buff, pos, param.destShort);
+    pos = Conv::put(buff, pos, param.destLong);
+    pos = Conv::put(buff, pos, param.key, sizeof(param.key), sizeof(param.key));
+    return pos;
+}
+
+
 size_t EFrame::get_param(zb_ezsp::EmberCurrentSecurityState& param, const uint8_t* buff, size_t& pos){
     pos = Conv::get_word<EmberSecurityBitmask>(buff, pos, param.bitmask);
     pos = Conv::get(buff, pos, param.trustCenterLongAddress, sizeof(param.trustCenterLongAddress), sizeof(param.trustCenterLongAddress));

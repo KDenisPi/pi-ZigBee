@@ -267,6 +267,7 @@ public:
     size_t get_param(zb_ezsp::EmberKeyStruct& param, const uint8_t* buff, size_t& pos);
     size_t get_param(zb_ezsp::getKey& param, const uint8_t* buff, size_t& pos);
     size_t put_param(const zb_ezsp::BecomeTrustCenter& param, uint8_t* buff, size_t pos);
+    size_t put_param(const zb_ezsp::unicastNwkKeyUpdate& param, uint8_t* buff, size_t pos);
 
     /**
      * APS Frame & messaging

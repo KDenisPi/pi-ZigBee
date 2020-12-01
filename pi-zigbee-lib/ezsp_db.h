@@ -17,9 +17,6 @@ namespace zb_ezsp {
 using net_info = std::shared_ptr<EmberNetworkParameters>;
 using net_array = std::array<net_info, 20>;
 
-using child_info = std::shared_ptr<childJoinHandler>;
-using child_map = std::map<EmberNodeId, child_info>;
-
 class  EzspDb {
 public:
     EzspDb() {}
@@ -30,7 +27,7 @@ public:
      */
     virtual bool load() = 0;
     virtual bool load_networks(net_array& nets) = 0;
-    virtual bool load_childs(child_map& nets) = 0;
+    virtual bool load_childs(std::shared_ptr<childs::Childs>& childs) = 0;
 
     /**
      * Add data to storage

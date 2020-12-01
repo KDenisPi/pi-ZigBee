@@ -196,13 +196,16 @@ void Ezsp::getNetworkParameters(){
 void Ezsp::setInitialSecurityState(){
     logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__));
 
+    //temporary let's use some hardcode
     EmberKeyData defKey = {0x3A, 0x49, 0x47, 0x22, 0x45, 0x45, 0x21, 0x4C, 0x4C, 0x49, 0x41, 0x4E, 0x43, 0x45, 0x10, 0x19};
-
     EmberInitialSecurityState secSt;
+
+    if(_key_network.is_empty())
+        memcpy(_key_network.key, defKey, sizeof(EmberKeyData));
+
     secSt.clear();
     secSt.bitmask =  EmberSecurityBitmaskMode::EMBER_HAVE_NETWORK_KEY | EmberSecurityBitmaskMode::EMBER_GLOBAL_LINK_KEY;
-    //temporary let's use some hardcode
-    memcpy(secSt.networkKey, defKey, sizeof(EmberKeyData));
+    memcpy(secSt.networkKey, _key_network.key, sizeof(EmberKeyData));
 
     logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__) + " " + secSt.to_string());
 
@@ -222,7 +225,7 @@ void Ezsp::getCurrentSecurityState(){
 void Ezsp::sendUnicast(){
     logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__));
 
-    if(count_child() == 0){
+    if(_childs->count_child() == 0){
         logger::log(logger::LLOG::NECECCARY, "ezsp", std::string(__func__) + " No neighbors found");
         return;
     }
@@ -232,7 +235,7 @@ void Ezsp::sendUnicast(){
     /**
      * Try to send packet to the first connected device
      */
-    EmberNodeId node_id = get_child();
+    EmberNodeId node_id = _childs->get_child();
     send_uni.type = EmberOutgoingMessageType::EMBER_OUTGOING_DIRECT;
     send_uni.indexOrDestination = node_id;
     send_uni.messageTag = 1;
@@ -255,7 +258,7 @@ void Ezsp::sendUnicast(){
 void Ezsp::sendZcl(){
     logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__));
 
-    if(count_child() == 0){
+    if(_childs->count_child() == 0){
         logger::log(logger::LLOG::NECECCARY, "ezsp", std::string(__func__) + " No neighbors found");
         return;
     }
@@ -263,40 +266,37 @@ void Ezsp::sendZcl(){
     /**
      * Try to send packet to the first connected device
      */
-    for (auto it = _childs.begin(); it != _childs.end(); ++it) {
-        const std::shared_ptr<childJoinHandler> cld = it->second;
+    const childs::child_info cld = _childs->get_child_obj();
+    uint8_t tag = 1;
+    if(cld){
+        logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__) + cld->to_string());
 
-        uint8_t tag = 1;
-        if(cld){
-            logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__) + cld->to_string());
+        zb_ezsp::sendUnicast send_uni;
+        send_uni.type = EmberOutgoingMessageType::EMBER_OUTGOING_DIRECT;
+        send_uni.indexOrDestination = cld->childId;
+        send_uni.messageTag = tag++;
+        send_uni.messageLength = 0;
 
-            zb_ezsp::sendUnicast send_uni;
-            send_uni.type = EmberOutgoingMessageType::EMBER_OUTGOING_DIRECT;
-            send_uni.indexOrDestination = cld->childId;
-            send_uni.messageTag = tag++;
-            send_uni.messageLength = 0;
+        send_uni.apsFrame.profileId = 0x0104;   //Home automation
+        send_uni.apsFrame.clusterId = 0x0402;
+        send_uni.apsFrame.sourceEndpoint = 0x01;
+        send_uni.apsFrame.destinationEndpoint = 0x01;
+        send_uni.apsFrame.options = EmberApsOption::EMBER_APS_OPTION_NONE;
+        send_uni.apsFrame.groupId = 0;
+        send_uni.apsFrame.sequence = 0x01;
 
-            send_uni.apsFrame.profileId = 0x0104;   //Home automation
-            send_uni.apsFrame.clusterId = 0x0402;
-            send_uni.apsFrame.sourceEndpoint = 0x01;
-            send_uni.apsFrame.destinationEndpoint = 0x01;
-            send_uni.apsFrame.options = EmberApsOption::EMBER_APS_OPTION_NONE;
-            send_uni.apsFrame.groupId = 0;
-            send_uni.apsFrame.sequence = 0x01;
+        /**
+         * ZCL
+         */
+        zb_ezsp::zcl::ZclFrame fzcl(zb_ezsp::zcl::GeneralCmd::DiscoverAttr);
+        fzcl.Serv2Cln();
+        send_uni.messageLength = fzcl.put(send_uni.messageContents, sizeof(send_uni.messageContents));
 
-            /**
-             * ZCL
-             */
-            zb_ezsp::zcl::ZclFrame fzcl(zb_ezsp::zcl::GeneralCmd::DiscoverAttr);
-            fzcl.Serv2Cln();
-            send_uni.messageLength = fzcl.put(send_uni.messageContents, sizeof(send_uni.messageContents));
+        //Debug only
+        logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__) + send_uni.to_string());
+        logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__) + " ZCL " + Conv::print_buff(send_uni.messageContents, send_uni.messageLength));
 
-            //Debug only
-            logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__) + send_uni.to_string());
-            logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__) + " ZCL " + Conv::print_buff(send_uni.messageContents, send_uni.messageLength));
-
-            add2output<zb_ezsp::sendUnicast>(zb_ezsp::EId::ID_sendUnicast, send_uni);
-        }
+        add2output<zb_ezsp::sendUnicast>(zb_ezsp::EId::ID_sendUnicast, send_uni);
     }
 }
 
@@ -306,7 +306,7 @@ void Ezsp::sendZcl(){
 void Ezsp::setExtendedTimeout(const EmberNodeId remoteNodeId, bool extTimeout /*= true*/){
     logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__));
 
-    auto child = get_child_obj(remoteNodeId);
+    auto child = _childs->get_child_obj(remoteNodeId);
     if(child){
         struct setExtendedTimeout extTm;
         memcpy(extTm.remoteEui64 , child->childEui64, sizeof(extTm.remoteEui64));
@@ -319,7 +319,7 @@ void Ezsp::setExtendedTimeout(const EmberNodeId remoteNodeId, bool extTimeout /*
 void Ezsp::getExtendedTimeout(const EmberNodeId remoteNodeId){
     logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__));
 
-    auto child = get_child_obj(remoteNodeId);
+    auto child = _childs->get_child_obj(remoteNodeId);
     if(child){
         struct getExtendedTimeout extTm;
         memcpy(extTm.remoteEui64 , child->childEui64, sizeof(extTm.remoteEui64));
@@ -338,31 +338,27 @@ void Ezsp::setBinding(){
     zb_ezsp::setBinding_req set_bnd;
     uint8_t bnd_idx = 0;
 
-    for (auto it = _childs.begin(); it != _childs.end(); ++it) {
-        const std::shared_ptr<childJoinHandler> cld = it->second;
-
-        if(cld){
-            logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__) + cld->to_string());
+    const childs::child_info cld = _childs->get_child_obj();
+    if(cld){
+        logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__) + cld->to_string());
 
 
-            set_bnd.index = bnd_idx++;
-            set_bnd.value.type = EmberBindingType::EMBER_UNICAST_BINDING;
-            set_bnd.value.local = 0x01; //0x00;
-            set_bnd.value.clusterId = 0x0402;
-            set_bnd.value.remote = 0x01; //0x00;
-            memcpy(set_bnd.value.identifier, cld->childEui64, sizeof(set_bnd.value.identifier));
-            set_bnd.value.networkIndex = 0x00; //TODO: get network index
+        set_bnd.index = bnd_idx++;
+        set_bnd.value.type = EmberBindingType::EMBER_UNICAST_BINDING;
+        set_bnd.value.local = 0x01; //0x00;
+        set_bnd.value.clusterId = 0x0402;
+        set_bnd.value.remote = 0x01; //0x00;
+        memcpy(set_bnd.value.identifier, cld->childEui64, sizeof(set_bnd.value.identifier));
+        set_bnd.value.networkIndex = 0x00; //TODO: get network index
 
-            logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__) + " Bind: " + set_bnd.to_string());
+        logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__) + " Bind: " + set_bnd.to_string());
 
-            add2output<zb_ezsp::setBinding_req>(zb_ezsp::EId::ID_setBinding, set_bnd);
-        }
-        else {
-            logger::log(logger::LLOG::ERROR, "ezsp", std::string(__func__) + " No child");
-            return;
-        }
+        add2output<zb_ezsp::setBinding_req>(zb_ezsp::EId::ID_setBinding, set_bnd);
     }
-
+    else {
+        logger::log(logger::LLOG::ERROR, "ezsp", std::string(__func__) + " No child");
+        return;
+    }
 }
 
-}
+}//namespace zb_ezsp

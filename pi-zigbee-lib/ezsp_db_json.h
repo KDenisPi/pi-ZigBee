@@ -106,7 +106,7 @@ public:
     /**
      *
      */
-    virtual bool load_childs(child_map& nets){
+    virtual bool load_childs(std::shared_ptr<childs::Childs>& childs){
         return true;
     }
 

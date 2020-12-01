@@ -386,7 +386,7 @@ struct childJoinHandler {
 
     const std::string to_string() const {
         char buff[128];
-        std::sprintf(buff, "Child: Index:%d Joining:%d ID:%04X Type:%02X",
+        std::sprintf(buff, "Child: Index:%d Joining:%d ID:%04X Type:%02X ",
         index,
         joining,
         childId,
@@ -425,6 +425,24 @@ struct trustCenterJoinHandler {
         );
         return std::string(buff) + Conv::Eui64_to_string(newNodeEui64);
     }
+};
+
+/**
+ * Send a unicast transport key message with a new NWK key to the specified device.
+ */
+struct unicastNwkKeyUpdate {
+    EmberNodeId destShort;  // The node ID of the device that will receive the message
+    EmberEUI64 destLong;    // The long address (EUI64) of the device that will receive the message.
+    EmberKeyData key;       // The NWK key to send to the new device.
+
+    const std::string to_string() const {
+        char buff[128];
+        std::sprintf(buff, "unicastNwkKeyUpdate: ID:%04X ",
+        destShort
+        );
+        return std::string(buff) + Conv::Eui64_to_string(destLong) + Conv::KeyData_to_string(key);
+    }
+
 };
 
 /**
@@ -675,6 +693,21 @@ struct EmberKeyStruct {
     /**
      *
      */
+    bool is_empty(){
+        for(int i = 0; i < sizeof(EmberKeyData); i++){
+            if(key[i] > 0x00) return false;
+        }
+
+        return true;
+    }
+
+    void copy_key(EmberKeyData& toKey){
+        memcpy((void*)toKey, key, sizeof(EmberKeyData));
+    }
+
+    /**
+     *
+     */
     void copy_data(const EmberKeyStruct& other){
         type = other.type;
         bitmask = other.bitmask;
@@ -713,7 +746,7 @@ struct EmberKeyStruct {
         incomingFrameCounter,
         sequenceNumber
         );
-        return std::string(buff) + " Key" + Conv::KeyData_to_string(key) + " Partner: " + Conv::Eui64_to_string(partnerEUI64);
+        return std::string(buff) + " Key " + Conv::KeyData_to_string(key) + " Partner: " + Conv::Eui64_to_string(partnerEUI64);
     }
 };
 

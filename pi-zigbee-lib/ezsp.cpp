@@ -64,6 +64,7 @@ std::map<id_type, std::string> Ezsp::_frameId2String = {
     {ID_getExtendedTimeout, std::string("getExtendedTimeout")},
     {ID_incomingRouteErrorHandler, std::string("incomingRouteErrorHandler")},
     {ID_Echo, std::string("Echo")},
+    {ID_unicastNwkKeyUpdate, std::string("unicastNwkKeyUpdate")},
     {ID_getValue , std::string("getValue")},
     {ID_setValue, std::string("setValue")}
 };

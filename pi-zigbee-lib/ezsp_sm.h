@@ -27,11 +27,11 @@ enum Ezsp_State : uint8_t {
 
 enum Ezsp_SM_Event : uint16_t {
     EVT_Start           = 0,
-    EVT_UART_UP         = 1,
-    EVT_NET_STATUS      = 2,
-    EVT_NEIGHBOR_CONN   = 3,
-    EVT_ERROR           = 4,
-    EVT_TRUST_CENTER    = 5     //I am trust center now
+    EVT_UART_UP         ,
+    EVT_NET_STATUS      ,
+    EVT_NEIGHBOR_CONN   ,
+    EVT_ERROR           ,
+    EVT_TRUST_CENTER         //I am trust center now
 };
 
 /**
