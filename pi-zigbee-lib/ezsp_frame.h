@@ -268,6 +268,7 @@ public:
     size_t get_param(zb_ezsp::getKey& param, const uint8_t* buff, size_t& pos);
     size_t put_param(const zb_ezsp::BecomeTrustCenter& param, uint8_t* buff, size_t pos);
     size_t put_param(const zb_ezsp::unicastNwkKeyUpdate& param, uint8_t* buff, size_t pos);
+    size_t put_param(const zb_ezsp::keyData& param, uint8_t* buff, size_t pos);
 
     /**
      * APS Frame & messaging
@@ -343,10 +344,12 @@ public:
         result = buffer;
         result += "Sequence: " + std::to_string(seq());
         if(is_respose()){
-            result += " [Response] Overflow: " + std::to_string(is_overflow()) + " Truncated: " +
-                std::to_string(is_truncated()) + " Callback Pending: " +
-                std::to_string(is_callback_pending()) + " Type: " +
-                std::to_string(callback_type()) + " Net Index: " + std::to_string(network_index());
+            result += " [Response] ID: " + std::to_string(id()) +
+                " Overflow: " + std::to_string(is_overflow()) +
+                " Truncated: " + std::to_string(is_truncated()) +
+                " Callback Pending: " + std::to_string(is_callback_pending()) +
+                " Type: " + std::to_string(callback_type()) +
+                " Net Index: " + std::to_string(network_index());
         }
         else{
             result += " [Command] ID: " + std::to_string(id()) + " Sleep Mode: " + std::to_string(sleep_mode()) +  " Net Index: " + std::to_string(network_index());

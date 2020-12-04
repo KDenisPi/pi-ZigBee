@@ -66,7 +66,10 @@ std::map<id_type, std::string> Ezsp::_frameId2String = {
     {ID_Echo, std::string("Echo")},
     {ID_unicastNwkKeyUpdate, std::string("unicastNwkKeyUpdate")},
     {ID_getValue , std::string("getValue")},
-    {ID_setValue, std::string("setValue")}
+    {ID_setValue, std::string("setValue")},
+    {ID_broadcastNextNetworkKey, std::string("broadcastNextNetworkKey")},
+    {ID_broadcastNetworkKeySwitch, std::string("broadcastNetworkKeySwitch")},
+    {ID_clearKeyTable, std::string("ID_clearKeyTable")}
 };
 
 }

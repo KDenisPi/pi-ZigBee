@@ -70,8 +70,11 @@ void Ezsp::worker(Ezsp* p_ezsp){
                     /**
                      * Get/Set some configuration values
                      */
-                    p_ezsp->setCinfigurationValue(EzspConfigId::EZSP_CONFIG_INDIRECT_TRANSMISSION_TIMEOUT, 6000);
-                    p_ezsp->getCinfigurationValue(EzspConfigId::EZSP_CONFIG_INDIRECT_TRANSMISSION_TIMEOUT);
+                    //p_ezsp->setCinfigurationValue(zb_ezsp::EzspConfigId::EZSP_CONFIG_PACKET_BUFFER_COUNT, 24);
+                    //p_ezsp->setCinfigurationValue(EzspConfigId::EZSP_CONFIG_INDIRECT_TRANSMISSION_TIMEOUT, 6000);
+                    //p_ezsp->getCinfigurationValue(EzspConfigId::EZSP_CONFIG_INDIRECT_TRANSMISSION_TIMEOUT);
+                    p_ezsp->setCinfigurationValue(EzspConfigId::EZSP_CONFIG_TRUST_CENTER_ADDRESS_CACHE_SIZE, 4);
+                    p_ezsp->setCinfigurationValue(EzspConfigId::EZSP_CONFIG_KEY_TABLE_SIZE, 6);
 
                     //Low level is UP
                     p_ezsp->set_state(Ezsp_State::SM_Init_Network);

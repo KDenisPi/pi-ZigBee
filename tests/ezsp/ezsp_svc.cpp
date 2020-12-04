@@ -28,6 +28,7 @@ int main (int argc, char* argv[])
     bool success = false;
     std::string cmd;
     std::string param;
+    std::string value;
 
     logger::log_init("/var/log/logs/zigbee_log");
 
@@ -43,9 +44,18 @@ int main (int argc, char* argv[])
         std::cout << "command> " << std::endl;
         std::cin >> cmd;
 
+        if(cmd == "getValue"|| cmd == "getKey" || cmd == "setcfg" | cmd == "getcfg"){
+            std::cin >> param;
+            std::cout << "parameter " << param << std::endl;
+
+            if(cmd == "setcfg"){
+                std::cin >> value;
+                std::cout << "parameter " << value << std::endl;
+            }
+        }
+
         std::cout << "process command " << cmd << std::endl;
         if(cmd == "exit"){
-
             logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__) + "Exit command");
 
             ezsp->stop();
@@ -53,7 +63,6 @@ int main (int argc, char* argv[])
             break;
         }
         if(cmd == "getValue"){
-            std::cin >> param;
             uint8_t valId = (uint8_t)std::stoi(param);
             std::cout << "parameter " << param << " Conv " << std::to_string(valId) << std::endl;
             if( valId <= zb_ezsp::EzspValueId::EZSP_VALUE_RF4CE_SUPPORTED_PROFILES_LIST_){
@@ -61,7 +70,13 @@ int main (int argc, char* argv[])
             }
         }
         else if(cmd == "getcfg"){
-            ezsp->getCinfigurationValue(zb_ezsp::EzspConfigId::EZSP_CONFIG_PACKET_BUFFER_COUNT);
+            uint8_t confId = (param.empty() ? zb_ezsp::EzspConfigId::EZSP_CONFIG_PACKET_BUFFER_COUNT : (uint8_t)std::stoi(param));
+            ezsp->getCinfigurationValue(confId);
+        }
+        else if(cmd == "setcfg"){
+            uint8_t confId = (param.empty() ? zb_ezsp::EzspConfigId::EZSP_CONFIG_PACKET_BUFFER_COUNT : (uint8_t)std::stoi(param));
+            uint16_t value_d = (uint16_t)(value.empty() ? 0 : std::stoi(value));
+            ezsp->setCinfigurationValue(confId, value_d);
         }
         else if(cmd == "startscana"){
             uint8_t channels[1] = {11};
@@ -105,15 +120,21 @@ int main (int argc, char* argv[])
         else if(cmd == "clearBind"){
             ezsp->clearBindingTable();
         }
+        else if(cmd == "clearKeyTable"){
+            ezsp->clearKeyTable();
+        }
+        else if(cmd == "nextNetKey"){
+            ezsp->broadcastNextNetworkKey();
+        }
         else if(cmd == "help"){
-            std::cout << "Commands: exit, getcfg, startscana, startscane, stopscan, echo, getnetparams, getsecstate, neighbors, neighborCount, sendZcl, getchild, getDeviceInfo, bind, clearBind,\n\
+            std::cout << "Commands: exit, startscana, startscane, stopscan, echo, getnetparams,\n getsecstate, neighbors, neighborCount, sendZcl, getchild, getDeviceInfo,\n\
+            bind, clearBind, clearKeyTable, nextNetKey\n\
             getKey [Trust|Net|NextNet|AppLink]\n\
+            getcfg ConfigurationValueId\n\
+            setcfg ConfigurationValueId Value\n\
             getValue ValueID [11 - The node short ID]" << std::endl;
         }
         else if(cmd == "getKey"){
-            std::cin >> param;
-            std::cout << "parameter " << param << std::endl;
-
                 if(param == "Net" || param.empty()){
                     ezsp->getKey(zb_ezsp::EmberKeyTypeEnum::EMBER_CURRENT_NETWORK_KEY);
                 }

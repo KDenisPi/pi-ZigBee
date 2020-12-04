@@ -290,6 +290,12 @@ size_t EFrame::put_param(const zb_ezsp::unicastNwkKeyUpdate& param, uint8_t* buf
     return pos;
 }
 
+size_t EFrame::put_param(const zb_ezsp::keyData& param, uint8_t* buff, size_t pos){
+    pos = Conv::put(buff, pos, param.key, sizeof(param.key), sizeof(param.key));
+    return pos;
+}
+
+
 
 size_t EFrame::get_param(zb_ezsp::EmberCurrentSecurityState& param, const uint8_t* buff, size_t& pos){
     pos = Conv::get_word<EmberSecurityBitmask>(buff, pos, param.bitmask);

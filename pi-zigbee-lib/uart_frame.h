@@ -280,7 +280,6 @@ public:
         logger::log(logger::LLOG::DEBUG, "uframe", std::string(__func__) + " Control byte: " + std::to_string(_cb));
     }
 
-protected:
     //
     UFrame() : _len(0), _cb(0x00) {
     }
@@ -290,6 +289,7 @@ protected:
         set_type(ft);
     }
 
+protected:
     /**
      * Set frame type
      */

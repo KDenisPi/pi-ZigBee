@@ -94,6 +94,10 @@ using EId = enum EFrame_ID : id_type {
     ID_getKey = 0x6a,                       //Gets a Security Key based on the passed key type.
 
     ID_networkInitExtended  = 0x70,         //Similar to ezspNetworkInit(). Resume network operation after a reboot. This command is different in that it accepts options to control the network initialization.
+    ID_broadcastNextNetworkKey = 0x73,      //This function broadcasts a new encryption key, but does not tell the nodes in the network to start using it. To tell nodes to
+                                            //switch to the new key, use emberSendNetworkKeySwitch(). This is only valid for the Trust Center/Coordinator. It is up to the application
+                                            //to determine how quickly to send the Switch Key after sending the alternate encryption key.
+    ID_broadcastNetworkKeySwitch =0x74,     //This function broadcasts a switch key message to tell all nodes to change to the sequence number of the previously sent Alternate Encryption Key.
 
     ID_becomeTrustCenter = 0x77,            //This function causes a coordinator to become the Trust Center when it is operating in a network that is not using one.
 
@@ -103,8 +107,9 @@ using EId = enum EFrame_ID : id_type {
     ID_incomingRouteErrorHandler = 0x80,
     ID_Echo = 0x81,
     ID_unicastNwkKeyUpdate = 0xA9,          // This command will send a unicast transport key message with a new NWK key to the specified device. APS encryption using the device's existing link key will be used.
-    ID_getValue = 0xAA,
-    ID_setValue = 0xAB
+    ID_getValue = 0xAA,                     // Reads a value from the NCP.
+    ID_setValue = 0xAB,                     // Writes a value to the NCP.
+    ID_clearKeyTable = 0xB1                 // This function clears the key table of the current network.
 };
 
 using EzspNetworkScanType = enum EFrame_EzspNetworkScanType : uint8_t {

@@ -56,6 +56,9 @@ void Ezsp::callback_eframe_received(const zb_uart::EFramePtr& efr_raw){
         case EId::ID_setBinding:
         case EId::ID_becomeTrustCenter:
         case EId::ID_unicastNwkKeyUpdate:
+        case EId::ID_clearKeyTable:
+        case EId::ID_broadcastNextNetworkKey:
+        case EId::ID_broadcastNetworkKeySwitch:
         {
             auto p_status = ef->load<zb_ezsp::ember_status>(efr_raw->data(), efr_raw->len());
             notify((EId)id, p_status->to_string());
@@ -89,6 +92,9 @@ void Ezsp::callback_eframe_received(const zb_uart::EFramePtr& efr_raw){
                     become_trust_center(true);
                     add_event(std::make_shared<EzspEvent>(EVT_TRUST_CENTER));
                 }
+                else if(id == EId::ID_broadcastNextNetworkKey){
+                    broadcastNetworkKeySwitch();
+                }
             }
         }
         break;
@@ -109,6 +115,7 @@ void Ezsp::callback_eframe_received(const zb_uart::EFramePtr& efr_raw){
         case EId::ID_noCallbacks:
         case EId::ID_setExtendedTimeout:
         {
+            ef->load<zb_ezsp::no_params>(efr_raw->data(), efr_raw->len());
             notify((EId)id, std::string());
         }
         break;
@@ -137,9 +144,10 @@ void Ezsp::callback_eframe_received(const zb_uart::EFramePtr& efr_raw){
                 _childs->add_child(p_child);
 
                 if(p_child->childType == EmberNodeType::EMBER_SLEEPY_END_DEVICE){
-                    getExtendedTimeout(p_child->childId);
-                    setExtendedTimeout(p_child->childId, true);
-                    getExtendedTimeout(p_child->childId);
+                    //TODO: Later
+                    //getExtendedTimeout(p_child->childId);
+                    //setExtendedTimeout(p_child->childId, true);
+                    //getExtendedTimeout(p_child->childId);
                 }
             }
             else
@@ -168,6 +176,7 @@ void Ezsp::callback_eframe_received(const zb_uart::EFramePtr& efr_raw){
                 //If child joined to Trust center send him NETWORK Key
                 if(p_trust->status == EmberDeviceUpdate::EMBER_STANDARD_SECURITY_UNSECURED_JOIN){
                     send_unicastNwkKeyUpdate(child->childId);
+                    //broadcastNextNetworkKey();
                 }
             }
         }
@@ -313,6 +322,8 @@ void Ezsp::callback_eframe_received(const zb_uart::EFramePtr& efr_raw){
         default:
             notify((EId)id, std::string("Not supported yet"));
     }
+
+    logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__) + " --- EFRAME --" + ef->to_string());
 }
 
 }

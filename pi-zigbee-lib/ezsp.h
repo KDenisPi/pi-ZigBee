@@ -134,8 +134,8 @@ public:
     /**
      * Configuration value get/set
      */
-    void getCinfigurationValue(const EzspConfigId id);
-    void setCinfigurationValue(const EzspConfigId id, const uint16_t value);
+    void getCinfigurationValue(const uint8_t id);
+    void setCinfigurationValue(const uint8_t id, const uint16_t value);
     /**
      * Init network
      */
@@ -207,6 +207,27 @@ public:
         logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__) + keyUpdate.to_string());
 
         add2output<zb_ezsp::unicastNwkKeyUpdate>(zb_ezsp::EId::ID_unicastNwkKeyUpdate, keyUpdate);
+    }
+
+    void broadcastNextNetworkKey(){
+        logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__));
+
+        keyData key;   //An optional pointer to a 16-byte encryption key (EMBER_ENCRYPTION_KEY_SIZE). An all zero key may be passed in, which
+                            // will cause the stack to randomly generate a new key.
+        memset(key.key, 0x00, sizeof(EmberKeyData));
+        add2output<zb_ezsp::keyData>(zb_ezsp::EId::ID_broadcastNextNetworkKey, key);
+    }
+
+    void broadcastNetworkKeySwitch(){
+        logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__));
+        zb_ezsp::no_params no_prm;
+        add2output<zb_ezsp::no_params>(zb_ezsp::EId::ID_broadcastNetworkKeySwitch, no_prm);
+    }
+
+    void clearKeyTable(){
+        logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__));
+        zb_ezsp::no_params no_prm;
+        add2output<zb_ezsp::no_params>(zb_ezsp::EId::ID_clearKeyTable, no_prm);
     }
 
     /**

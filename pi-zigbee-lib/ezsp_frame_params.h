@@ -445,6 +445,14 @@ struct unicastNwkKeyUpdate {
 
 };
 
+struct keyData {
+    EmberKeyData key;
+
+    const std::string to_string() const {
+        return Conv::KeyData_to_string(key);
+    }
+};
+
 /**
  * ZigBee APS frame parameters.
  */

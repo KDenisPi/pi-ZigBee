@@ -72,6 +72,14 @@ public:
         return _frmNum;
     }
 
+    uint8_t get_frmNum(const bool retry){
+        if(retry)
+            return get_current_frmNum();
+
+        return get_next_frmNum();
+    }
+
+
     void set_ackNum(const uint8_t ackNum){
         logger::log(logger::LLOG::DEBUG, "uart", std::string(__func__) + " Current: " + std::to_string(_ackNum) + " Received: " + std::to_string(ackNum));
 
@@ -336,10 +344,8 @@ public:
     std::shared_ptr<UFrame> compose_data(const uint8_t* data, const size_t len){
         logger::log(logger::LLOG::DEBUG, "uart", std::string(__func__));
 
-        std::shared_ptr<UFrame> frame = std::shared_ptr<UFrame>(new UFrame(ftype::DATA));
-        //copy data
-        frame->set_data(data, len);
-
+        std::shared_ptr<UFrame> frame = std::make_shared<UFrame>(ftype::DATA);
+        frame->set_data(data, len); //copy data
         return frame;
     }
 
@@ -502,11 +508,7 @@ public:
          4.1.0 for DATA
         */
        if(frame->is_DATA()){
-            if(retry)//if retry do no increase frmNum
-                frame->set_frmNum(_info->get_current_frmNum());
-            else
-                frame->set_frmNum(_info->get_next_frmNum());
-
+            frame->set_frmNum(_info->get_frmNum(retry));
             frame->set_ackNum(_info->get_ackNum());
        }
        else if(frame->is_ACK() || frame->is_NAK()){

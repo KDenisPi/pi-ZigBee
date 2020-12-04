@@ -101,19 +101,19 @@ void Ezsp::getValueTokenStackNodeData(){
 /**
  * Configuration value get/set
  */
-void Ezsp::getCinfigurationValue(const EzspConfigId id){
+void Ezsp::getCinfigurationValue(const uint8_t id){
     logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__));
 
     zb_ezsp::configid_get_req v_cfg;
-    v_cfg.configId = id;
+    v_cfg.configId = (EzspConfigId)id;
     add2output<zb_ezsp::configid_get_req>(zb_ezsp::EId::ID_getConfigurationValue, v_cfg);
 }
 
-void Ezsp::setCinfigurationValue(const EzspConfigId id, const uint16_t value){
+void Ezsp::setCinfigurationValue(const uint8_t id, const uint16_t value){
     logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__));
 
     zb_ezsp::configid_set_req v_cfg;
-    v_cfg.configId = id;
+    v_cfg.configId = (EzspConfigId)id;
     v_cfg.value = value;
     add2output<zb_ezsp::configid_set_req>(zb_ezsp::EId::ID_setConfigurationValue, v_cfg);
 }
