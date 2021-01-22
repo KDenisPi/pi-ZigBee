@@ -374,14 +374,14 @@ public:
         std::shared_ptr<UFrame> frame = std::shared_ptr<UFrame>(new UFrame());
 
         if(_debug){
-            logger::log(logger::LLOG::DEBUG, "uart", std::string(__func__) + " " + zb_ezsp::Conv::print_buff(buffer, len));
+            logger::log(logger::LLOG::DEBUG, "uart", std::string(__func__) + " Original " + std::to_string(len) + " "+ zb_ezsp::Conv::print_buff(buffer, len));
         }
 
         uint8_t tmp_buff[140];
         size_t r_len = decode(buffer, len, tmp_buff, sizeof(tmp_buff));
 
         if(_debug){
-            logger::log(logger::LLOG::DEBUG, "uart", std::string(__func__) + " " + zb_ezsp::Conv::print_buff(tmp_buff, r_len));
+            logger::log(logger::LLOG::DEBUG, "uart", std::string(__func__) + " Decoded  " + std::to_string(r_len) + " " + zb_ezsp::Conv::print_buff(tmp_buff, r_len));
         }
 
         //incorrect length or error data decoding
@@ -444,6 +444,10 @@ public:
         //Un-randomize
         if(randm && frame->data_len() > 0){
             randomize(frame->raw_data(), frame->data_len());
+
+            if(_debug){
+                logger::log(logger::LLOG::DEBUG, "uart", std::string(__func__) + " Randomize " + std::to_string(frame->data_len()) + " " + zb_ezsp::Conv::print_buff(frame->raw_data(), frame->data_len()));
+            }
         }
 
         /**
@@ -527,7 +531,6 @@ public:
                 randomize(&tmp_buff[1], frame->data_len());
 
             out_len += frame->data_len();
-
         }
 
         //4.1.3
@@ -563,7 +566,7 @@ public:
 
         //4.1.5 Flag Byte
         out_buff[out_len++] = ashrvd::FlagByte;
-        logger::log(logger::LLOG::DEBUG, "uart", std::string(__func__) + " Frame prepared for sending Len: " + std::to_string(out_len));
+        logger::log(logger::LLOG::DEBUG, "uart", std::string(__func__) + " Frame prepared for sending Len: " + std::to_string(out_len) + " is_debug " + std::to_string(is_debug()));
 
         return out_len;
     }
@@ -780,8 +783,15 @@ public:
      * Send UART Frame
      */
     int send_frame(const std::shared_ptr<zb_uart::UFrame>& fr, const bool retry = false){
+        logger::log(logger::LLOG::DEBUG, "uart", std::string(__func__) + " is_debug " + std::to_string(is_debug()));
+
         uint8_t w_buff[140];
         memset(w_buff, 0x00, sizeof(w_buff));
+
+        if(is_debug() && fr->is_DATA()){
+            logger::log(logger::LLOG::DEBUG, "uart", std::string(__func__) + " UART Frame : " + zb_ezsp::Conv::print_buff(fr->data(), fr->data_len()));
+        }
+
 
         size_t wr_len = encode(fr, w_buff, sizeof(w_buff), retry);
 

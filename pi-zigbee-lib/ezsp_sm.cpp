@@ -70,24 +70,34 @@ void Ezsp::worker(Ezsp* p_ezsp){
                     /**
                      * Get/Set some configuration values
                      */
-                    //p_ezsp->setCinfigurationValue(zb_ezsp::EzspConfigId::EZSP_CONFIG_PACKET_BUFFER_COUNT, 24);
-                    //p_ezsp->setCinfigurationValue(EzspConfigId::EZSP_CONFIG_INDIRECT_TRANSMISSION_TIMEOUT, 6000);
-                    //p_ezsp->getCinfigurationValue(EzspConfigId::EZSP_CONFIG_INDIRECT_TRANSMISSION_TIMEOUT);
-                    p_ezsp->setCinfigurationValue(EzspConfigId::EZSP_CONFIG_TRUST_CENTER_ADDRESS_CACHE_SIZE, 4);
-                    p_ezsp->setCinfigurationValue(EzspConfigId::EZSP_CONFIG_KEY_TABLE_SIZE, 6);
+                    p_ezsp->setCinfigurationValue(EzspConfigId::EZSP_CONFIG_STACK_PROFILE, 2);
+                    p_ezsp->setCinfigurationValue(EzspConfigId::EZSP_CONFIG_SECURITY_LEVEL, 5);
+                    p_ezsp->setCinfigurationValue(EzspConfigId::EZSP_CONFIG_SUPPORTED_NETWORKS, 1);
+                    p_ezsp->setCinfigurationValue(EzspConfigId::EZSP_CONFIG_PACKET_BUFFER_COUNT, 64);
 
-                    //Low level is UP
-                    p_ezsp->set_state(Ezsp_State::SM_Init_Network);
+                    p_ezsp->getCinfigurationValue(EzspConfigId::EZSP_CONFIG_STACK_PROFILE);
+                    p_ezsp->getCinfigurationValue(EzspConfigId::EZSP_CONFIG_SECURITY_LEVEL);
+                    p_ezsp->getCinfigurationValue(EzspConfigId::EZSP_CONFIG_SUPPORTED_NETWORKS);
+                    p_ezsp->getCinfigurationValue(EzspConfigId::EZSP_CONFIG_PACKET_BUFFER_COUNT);
 
-                    /**
-                     * Create network
-                     */
-                    if(p_ezsp->is_coordinator()){
-                        p_ezsp->setInitialSecurityState();
-                    }
-                    else{
-                        //find network and join
-                    }
+                    p_ezsp->add_event(std::make_shared<EzspEvent>(Ezsp_SM_Event::EVT_CONF_FINISHED));
+                }
+            }
+            break;
+
+            case Ezsp_SM_Event::EVT_CONF_FINISHED:
+            {
+                //Low level is UP
+                p_ezsp->set_state(Ezsp_State::SM_Init_Network);
+
+                /**
+                 * Create network
+                 */
+                if(p_ezsp->is_coordinator()){
+                    p_ezsp->setInitialSecurityState();
+                }
+                else{
+                    //find network and join
                 }
             }
             break;

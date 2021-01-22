@@ -28,6 +28,7 @@ enum Ezsp_State : uint8_t {
 enum Ezsp_SM_Event : uint16_t {
     EVT_Start           = 0,
     EVT_UART_UP         ,
+    EVT_CONF_FINISHED   ,
     EVT_NET_STATUS      ,
     EVT_NEIGHBOR_CONN   ,
     EVT_ERROR           ,

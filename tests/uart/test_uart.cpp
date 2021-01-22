@@ -26,7 +26,7 @@ int main (int argc, char* argv[])
     bool success = false;
     uint8_t w_buff[140], r_buff[140];
     zb_ezsp::ver_req ver;
-    ver._ver = 4;
+    ver._ver = 7;
 
     logger::log_init("/var/log/logs/zigbee_log");
 
@@ -44,6 +44,7 @@ int main (int argc, char* argv[])
 
             std::shared_ptr<zb_uart::UFrame> fr = uart->compose_data(w_buff, wr_len);
             memset(w_buff, 0x00, sizeof(w_buff));
+            std::cout << "For send: " << print_buff(fr->data(), fr->data_len()) << std::endl;
             wr_len = uart->encode(fr, w_buff, sizeof(w_buff));
             std::cout << "For send: " << print_buff(w_buff, wr_len) << std::endl;
             std::cout << fr->to_string() << std::endl;
@@ -63,6 +64,7 @@ int main (int argc, char* argv[])
                 std::shared_ptr<zb_ezsp::EFrame> ef_ver_resp = std::make_shared<zb_ezsp::EFrame>();
                 auto param = ef_ver_resp->load<zb_ezsp::ver_resp>(fr_rsv->data(), fr_rsv->data_len());
                 std::cout << ef_ver_resp->to_string() << std::endl;
+                std::cout << param->to_string() << std::endl;
             }
 
             success = true;

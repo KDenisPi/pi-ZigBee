@@ -115,7 +115,7 @@ public:
         if(sizeof(EId)==1)
             return (EId)get_byte(buff, pos);
 
-        return (EId)get_word(buff, pos);
+        return (EId)get_short(buff, pos);
     }
 
     static uint8_t get_byte(const uint8_t* buff, size_t& pos){
@@ -188,11 +188,15 @@ public:
     /**
      * Print buffer. Debug purposes only
      */
-    static const std::string print_buff(const std::uint8_t* buff, const size_t len) {
+    static const std::string print_buff(const std::uint8_t* buff, const size_t len, bool alnum = false) {
         std::string result;
         char dec[10];
         for(int i=0; i<len; i++){
-            sprintf(dec, "0x%02X ", buff[i]);
+            int aln = isalnum(buff[i]);
+            if(alnum && aln)
+                sprintf(dec, "%c ", buff[i]);
+            else
+                sprintf(dec, "0x%02X ", buff[i]);
             result += dec;
         }
         return result;
@@ -241,7 +245,7 @@ public:
      */
     static const std::string to_string(const uint16_t ui16){
         char buff[10];
-        std::sprintf(buff, "%04X", ui16);
+        std::sprintf(buff, "0x%04X", ui16);
         return std::string(buff);
     }
 };

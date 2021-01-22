@@ -87,7 +87,7 @@ void Ezsp::allowCallback(){
  * Value get/set
  */
 void Ezsp::getValue(const EzspValueId id){
-    logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__));
+    logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__) + " id:" + std::to_string(id));
 
     zb_ezsp::value_get_req v_id;
     v_id.valueId = id;
@@ -143,8 +143,8 @@ void Ezsp::formNetwork(){
     EmberNetworkParameters netPrm(_networks[0].get());
 
     netPrm.radioTxPower = 8;  //dBm
-    netPrm.radioChannel = 11;
-    netPrm.joinMethod = EmberJoinMethod::EMBER_USE_MAC_ASSOCIATION;
+    netPrm.radioChannel = 15; //25;//12;
+    netPrm.joinMethod = EmberJoinMethod::EMBER_USE_MAC_ASSOCIATION; //EMBER_USE_NWK_REJOIN; //EMBER_USE_MAC_ASSOCIATION;
     netPrm.nwkManagerId = 0;
     netPrm.nwkUpdateId = 0;
     netPrm.channels = 0;
@@ -197,14 +197,14 @@ void Ezsp::setInitialSecurityState(){
     logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__));
 
     //temporary let's use some hardcode
-    EmberKeyData defKey = {0x3A, 0x49, 0x47, 0x22, 0x45, 0x45, 0x21, 0x4C, 0x4C, 0x49, 0x41, 0x4E, 0x43, 0x45, 0x10, 0x19};
+    EmberKeyData defKey = {0x01, 0x03, 0x05, 0x07, 0x09, 0x0B, 0x0D, 0x0F, 0x00, 0x02, 0x04, 0x06, 0x08, 0x0A, 0x0C, 0x0D};
     EmberInitialSecurityState secSt;
 
     if(_key_network.is_empty())
         memcpy(_key_network.key, defKey, sizeof(EmberKeyData));
 
     secSt.clear();
-    secSt.bitmask =  EmberSecurityBitmaskMode::EMBER_HAVE_NETWORK_KEY | EmberSecurityBitmaskMode::EMBER_GLOBAL_LINK_KEY;
+    secSt.bitmask =  EmberSecurityBitmaskMode::EMBER_HAVE_NETWORK_KEY | EmberSecurityBitmaskMode::EMBER_DISTRIBUTED_TRUST_CENTER_MODE; // EmberSecurityBitmaskMode::EMBER_GLOBAL_LINK_KEY;
     memcpy(secSt.networkKey, _key_network.key, sizeof(EmberKeyData));
 
     logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__) + " " + secSt.to_string());

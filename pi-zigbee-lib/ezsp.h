@@ -239,6 +239,13 @@ public:
     void setExtendedTimeout(const EmberNodeId remoteNodeId, bool extTimeout = true);
     void getExtendedTimeout(const EmberNodeId remoteNodeId);
 
+    void lookupEui64ByNodeId(const EmberNodeId nodeId){
+        logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__));
+        zb_ezsp::NodeId node_id;
+        node_id.nodeId = nodeId;
+        add2output<zb_ezsp::NodeId>(zb_ezsp::EId::ID_lookupEui64ByNodeId, node_id);
+    }
+
     /**
      *
      */
@@ -315,7 +322,9 @@ protected:
         std::shared_ptr<zb_ezsp::EFrame> efr = std::make_shared<zb_ezsp::EFrame>(id);
         efr->set_seq(seq_next());
 
-        logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__) + " Create frame ID:" + std::to_string((uint16_t)id) + " " + get_id_name(id) + " SEQ: " +  std::to_string((uint16_t)efr->seq()));
+        char buff[10];
+        std::sprintf(buff, "0x%04X", (uint16_t)id);
+        logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__) + " Create frame ID:" + std::string(buff) + " " + get_id_name(id) + " SEQ: " +  std::to_string((uint16_t)efr->seq()));
 
 
         if(is_debug()){
@@ -458,7 +467,7 @@ private:
     EmberNodeType _node_type = EmberNodeType::EMBER_COORDINATOR;
     EmberEUI64 _eui64;   // The 64-bit ID
     EmberNodeId _nodeId;  // The 16-bit ID
-    bool _trust_center = true;  //Is I would like to be trust center itself
+    bool _trust_center = false; //true;  //Is I would like to be trust center itself
     bool _become_trust_center = false; //If I belobe trust center already
 
     /**
@@ -480,7 +489,7 @@ private:
         id_type id = 0xFF; //fake code
         size_t pos = 2;
 
-        if(EzspVersion::ver() < 8){
+        if(EzspVersion::ver() > 5){
             id = Conv::get_byte(buff, pos);
             if(id == 0xFF && (EzspVersion::ver() >= 5 && EzspVersion::ver() < 8)){
                 pos++; //skip one byte

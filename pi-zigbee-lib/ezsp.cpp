@@ -11,7 +11,7 @@
 
 namespace zb_ezsp {
 
-uint8_t EzspVersion::_ver = 4;
+uint8_t EzspVersion::_ver = 7; //4;
 
 std::map<id_type, std::string> Ezsp::_frameId2String = {
     {ID_version, std::string("Version")},
@@ -52,6 +52,8 @@ std::map<id_type, std::string> Ezsp::_frameId2String = {
     {ID_getConfigurationValue, std::string("getConfigurationValue")},
     {ID_setConfigurationValue, std::string("setConfigurationValue")},
     {ID_invalidCommand, std::string("invalidCommand")},
+
+    {ID_lookupEui64ByNodeId, std::string("lookupEui64ByNodeId")},
 
     {ID_setInitialSecurityState, std::string("setInitialSecurityState")},
     {ID_getCurrentSecurityState, std::string("getCurrentSecurityState")},

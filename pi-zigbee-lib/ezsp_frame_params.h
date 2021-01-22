@@ -48,7 +48,7 @@ using data_array = struct ezsp_data_array { //__attribute__((packed, aligned(1))
     uint8_t data[120];         // The data to be echoed back.
 
     const std::string to_string() const {
-        std::string result = " Length: " + std::to_string(dataLength) + " Data: " + Conv::print_buff(data, dataLength);
+        std::string result = " Length: " + std::to_string(dataLength) + " Data: " + Conv::print_buff(data, dataLength, true);
         return result;
     }
 };
@@ -283,7 +283,7 @@ public:
 
     const std::string to_string() const {
         char buff[128];
-        std::sprintf(buff, "Network parameters: PAN:%d Pwr:%02X CH:%02X Join Method:%02x MgrID:%02X UpdID:%02X Chs:%08X",
+        std::sprintf(buff, "Network parameters: PAN:%04X Pwr:%02X CH:%02X Join Method:%02x MgrID:%02X UpdID:%02X Chs:%08X",
         panId,
         radioTxPower,
         radioChannel,
@@ -402,6 +402,19 @@ struct Eui64 {
 
 struct NodeId {
     EmberNodeId nodeId;
+};
+
+struct lookupEui64ByNodeId {
+    EmberStatus status; // EMBER_SUCCESS if the EUI64 was found, EMBER_ERR_FATAL if the EUI64 is not known.
+    EmberEUI64 eui64;   // The EUI64 of the node.
+
+    const std::string to_string() const {
+        char buff[128];
+        std::sprintf(buff, "lookupEui64ByNodeId: Status:%02X ",
+        status
+        );
+        return std::string(buff) + Conv::Eui64_to_string(eui64);
+    }
 };
 
 /**

@@ -161,6 +161,8 @@ public:
         return ((_data->_ctrl_high & EEnable::EFrame_Security_Enabled) > 0);
     }
 
+    const uint8_t legasyFrameID = 0xFF; //Legacy Frame ID
+
     /**
      * Prepare data for sendig
      */
@@ -168,7 +170,10 @@ public:
     size_t put(uint8_t* buff, size_t pos, const T& params){
         pos = Conv::put(buff, pos, _data->_seq);
         pos = Conv::put(buff, pos, _data->_ctrl_low);
-        //pos = Conv::put(buff, pos, _data->_ctrl_high);   //TODO: Set extended byte for ver 5
+        if(EzspVersion::ver() >= 5){ //version 5
+            pos = Conv::put(buff, pos, legasyFrameID);
+            pos = Conv::put(buff, pos, _data->_ctrl_high);
+        }
         pos = Conv::put(buff, pos, (id_type)_data->_id);
         pos = put_param(params, buff, pos);
         return pos;
@@ -179,12 +184,11 @@ public:
         size_t pos = 0;
         pos = Conv::get(buff, pos, _data->_seq);     //Sequence number
         pos = Conv::get(buff, pos, _data->_ctrl_low);    //Control low
-        if((EzspVersion::ver() >= 5 && EzspVersion::ver() < 8)){ //version 5
-            pos = Conv::get(buff, pos, _data->_ctrl_high);   //Control high
-            if(_data->_ctrl_high == 0xFF)
-                pos = Conv::get(buff, pos, _data->_ctrl_high);   //Control high, extended
-        }
 
+        if(EzspVersion::ver() >= 5 && buff[pos] == 0xFF){ //version 5
+            pos++;
+            pos = Conv::get(buff, pos, _data->_ctrl_high);   //Control high
+        }
         //Get Frame ID (uint8 for versions before 8, uint16 8 and higher)
         _data->_id = Conv::get_id(buff, pos);
 
@@ -197,6 +201,7 @@ public:
     size_t get_param(EmberEUI64& param, const uint8_t* buff, size_t& pos);
     size_t get_param(Eui64& param, const uint8_t* buff, size_t& pos);
     size_t get_param(NodeId& param, const uint8_t* buff, size_t& pos);
+    size_t put_param(const NodeId& param, uint8_t* buff, size_t pos);
     size_t get_param(uint8t_value& param, const uint8_t* buff, size_t& pos);
 
     /**
@@ -241,6 +246,7 @@ public:
     size_t get_param(zb_ezsp::trustCenterJoinHandler& param, const uint8_t* buff, size_t pos);
     size_t get_param(zb_ezsp::stackTokenChangedHandler& param, const uint8_t* buff, size_t pos);
     size_t get_param(zb_ezsp::getParentChildParameters& param, const uint8_t* buff, size_t pos);
+    size_t get_param(zb_ezsp::lookupEui64ByNodeId& param, const uint8_t* buff, size_t pos);
 
     /**
      * NCP Value

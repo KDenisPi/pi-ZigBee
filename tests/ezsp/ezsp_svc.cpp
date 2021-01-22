@@ -64,7 +64,6 @@ int main (int argc, char* argv[])
         }
         if(cmd == "getValue"){
             uint8_t valId = (uint8_t)std::stoi(param);
-            std::cout << "parameter " << param << " Conv " << std::to_string(valId) << std::endl;
             if( valId <= zb_ezsp::EzspValueId::EZSP_VALUE_RF4CE_SUPPORTED_PROFILES_LIST_){
                 ezsp->getValue((zb_ezsp::EzspValueId)valId); //zb_ezsp::EzspValueId::EZSP_VALUE_NODE_SHORT_ID);
             }

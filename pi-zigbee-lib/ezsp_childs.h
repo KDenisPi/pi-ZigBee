@@ -44,6 +44,12 @@ public:
     EmberNodeType childType;    // The node type of the child.
     EmberDeviceUpdate devUpdate;// Child device status
 
+    uint8_t addressTableIndex = 0xFF;
+
+    const bool added_to_address_table() const {
+        return (addressTableIndex != 0xFF);
+    }
+
     void copy_id(EmberNodeId& id){
         id = childId;
     }
@@ -54,15 +60,18 @@ public:
 
     const std::string to_string() const {
         char buff[128];
-        std::sprintf(buff, "Child: Index:%d Joining:%d ID:%04X Type:%02X DevUpdate:%02X ",
+        std::sprintf(buff, "Child: Index:%d Joining:%d ID:%04X Type:%02X DevUpdate:%02X AddrIdx:%02X",
         index,
         joining,
         childId,
         childType,
-        devUpdate
+        devUpdate,
+        addressTableIndex
         );
         return std::string(buff) + Conv::Eui64_to_string(childEui64);
     }
+
+    static const EmberNodeId NoChild = 0xFFFF;
 
 };
 
@@ -71,7 +80,7 @@ using child_map = std::map<EmberNodeId, child_info>;
 
 class Childs {
 public:
-    Childs() {
+    Childs() : _freeAddressTableIndex(0){
 
     }
 
@@ -91,6 +100,10 @@ public:
     void del_child(const EmberNodeId child_id){
         auto child = _childs.find(child_id);
         if(child != _childs.end()){
+            /**
+             * If child has address table
+             */
+
             _childs.erase(child);
         }
     }
@@ -101,6 +114,17 @@ public:
             result += it->second->to_string() + "\n";
         }
         return result;
+    }
+
+    const EmberNodeId get_next_for_address_table() const {
+        for (auto it = _childs.begin(); it != _childs.end(); ++it) {
+            if(!it->second->added_to_address_table()){
+                logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__) + " Current child Id: " + std::to_string(it->second->childId));
+                return it->second->childId;
+            }
+        }
+        logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__) + " No child");
+        return Child::NoChild;
     }
 
     const EmberNodeId get_child() {
@@ -128,6 +152,7 @@ public:
     }
 
     void set_child_join_status(const EmberNodeId childId, const bool joining){
+        logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__) + " Id: " + std::to_string(childId) + " Join:" + std::to_string(joining));
         auto child = get_child_obj(childId);
         if(child){
             child->joining = joining;
@@ -138,8 +163,16 @@ public:
         return _childs.size();
     }
 
+    void set_active_child(EmberNodeId childId){
+        logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__) + " From: " + std::to_string(_child_on_process) + " To:" + std::to_string(childId));
+        _child_on_process = childId;
+    }
+
 private:
     child_map _childs;
+
+    EmberNodeId _child_on_process;  //Node Id for child we have not finished actions
+    uint8_t _freeAddressTableIndex; //Address Table Index can be used for a new record (use stack here)
 
 };
 

@@ -89,6 +89,8 @@ using EId = enum EFrame_ID : id_type {
     ID_setConfigurationValue = 0x53,
     ID_invalidCommand = 0x58,
 
+    ID_lookupEui64ByNodeId = 0x61,          //Returns the EUI64 that corresponds to the specified node ID. The EUI64 is found by searching through all stack tables for the specified node ID.
+
     ID_setInitialSecurityState = 0x68,      //Sets the security state that will be used by the device when it forms or joins the network.
     ID_getCurrentSecurityState = 0x69,      //Gets the current security state that is being used by a device that is joined in the network.
     ID_getKey = 0x6a,                       //Gets a Security Key based on the passed key type.

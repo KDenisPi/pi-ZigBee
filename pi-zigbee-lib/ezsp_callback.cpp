@@ -20,7 +20,7 @@ void Ezsp::callback_eframe_received(const zb_uart::EFramePtr& efr_raw){
     std::shared_ptr<zb_ezsp::EFrame> ef = std::make_shared<zb_ezsp::EFrame>();
 
     auto id = detect_id(efr_raw->data(), efr_raw->len());
-    logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__) + " Detected ID " + std::to_string((uint16_t)id) + " " + get_id_name(id));
+    logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__) + " Detected ID " + Conv::to_string((uint16_t)id) + " " + get_id_name(id));
 
     switch(id){
         case EId::ID_version:
@@ -146,7 +146,7 @@ void Ezsp::callback_eframe_received(const zb_uart::EFramePtr& efr_raw){
                 if(p_child->childType == EmberNodeType::EMBER_SLEEPY_END_DEVICE){
                     //TODO: Later
                     //getExtendedTimeout(p_child->childId);
-                    //setExtendedTimeout(p_child->childId, true);
+                    setExtendedTimeout(p_child->childId, true);
                     //getExtendedTimeout(p_child->childId);
                 }
             }
@@ -173,12 +173,26 @@ void Ezsp::callback_eframe_received(const zb_uart::EFramePtr& efr_raw){
             if(child){
                 child->devUpdate = p_trust->status;
 
-                //If child joined to Trust center send him NETWORK Key
-                if(p_trust->status == EmberDeviceUpdate::EMBER_STANDARD_SECURITY_UNSECURED_JOIN){
-                    send_unicastNwkKeyUpdate(child->childId);
-                    //broadcastNextNetworkKey();
+                /**
+                 * Start procedure for Address Table
+                 */
+                const EmberNodeId active_child = _childs->get_next_for_address_table();
+                if(active_child == childs::Child::NoChild){
+                    _childs->set_active_child(child->childId);
+                }
+
+                if(active_child == child->childId){
+                    //Find child in address Table
+                    lookupEui64ByNodeId(child->childId);
                 }
             }
+        }
+        break;
+        case EId::ID_lookupEui64ByNodeId:
+        {
+            auto p_trust =  ef->load<zb_ezsp::lookupEui64ByNodeId>(efr_raw->data(), efr_raw->len());
+            notify((EId)id, p_trust->to_string());
+
         }
         break;
         case EId::ID_getEui64:
