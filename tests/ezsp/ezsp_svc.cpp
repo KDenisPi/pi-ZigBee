@@ -102,7 +102,7 @@ int main (int argc, char* argv[])
             std::cout <<  "List of neighbors: " << std::endl << (nlist.empty() ? "Empty" : nlist) << std::endl;
         }
         else if(cmd == "sendZcl"){
-            ezsp->sendZcl();
+            //ezsp->sendZcl();
         }
         else if(cmd == "getchild"){
             ezsp->get_childData();
@@ -114,7 +114,7 @@ int main (int argc, char* argv[])
             ezsp->getDeviceInfo();
         }
         else if(cmd == "bind"){
-            ezsp->setBinding();
+            //ezsp->setBinding();
         }
         else if(cmd == "clearBind"){
             ezsp->clearBindingTable();

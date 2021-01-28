@@ -76,7 +76,7 @@ public:
 };
 
 using child_info = std::shared_ptr<Child>;
-using child_map = std::map<EmberNodeId, child_info>;
+using child_map = std::map<uint64_t, child_info>;
 
 class Childs {
 public:
@@ -91,14 +91,23 @@ public:
     /**
      * Child operations (Add, Delete, Print, Get)
      */
-    void add_child(const std::shared_ptr<childJoinHandler> child) {
-        if(_childs.find(child->childId) == _childs.end()){
-            _childs[child->childId] = std::make_shared<Child>(child);
+    void add_child(const std::shared_ptr<childJoinHandler>& child) {
+        logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__) + " child: " + Conv::to_string(child->childId) + " EUI64: " + Conv::Eui64_to_string(child->childEui64) + " Status: " + std::to_string(child->childType));
+        const uint64_t eui64 = Conv::eui642u64(child->childEui64);
+        if(_childs.find(eui64) == _childs.end()){
+            _childs[eui64] = std::make_shared<Child>(child);
+        }
+        else {
+            if(_childs[eui64]->childId != child->childId){
+                logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__) + " Update ID from child: " + Conv::to_string(_childs[eui64]->childId) + " to: " + Conv::to_string(child->childId));
+                _childs[eui64]->childId = child->childId;
+            }
         }
     }
 
-    void del_child(const EmberNodeId child_id){
-        auto child = _childs.find(child_id);
+    void del_child(const EmberEUI64& childId){
+        const uint64_t eui64 = Conv::eui642u64(childId);
+        auto child = _childs.find(eui64);
         if(child != _childs.end()){
             /**
              * If child has address table
@@ -119,7 +128,7 @@ public:
     const EmberNodeId get_next_for_address_table() const {
         for (auto it = _childs.begin(); it != _childs.end(); ++it) {
             if(!it->second->added_to_address_table()){
-                logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__) + " Current child Id: " + std::to_string(it->second->childId));
+                logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__) + " Current child Id: " + Conv::to_string(it->second->childId));
                 return it->second->childId;
             }
         }
@@ -127,23 +136,13 @@ public:
         return Child::NoChild;
     }
 
-    const EmberNodeId get_child() {
-        if(_childs.empty())
-            return 0;
-        auto it = _childs.begin();
-        return it->first;
-    }
 
-    const child_info get_child_obj(const EmberNodeId childId = 0x0000) {
+    const child_info get_child_obj(const EmberEUI64& childId) {
         if(_childs.empty())
             return child_info();
 
-        if(childId == 0x0000){
-            auto it = _childs.begin();
-            return it->second;
-        }
-
-        auto child = _childs.find(childId);
+        const uint64_t eui64 = Conv::eui642u64(childId);
+        auto child = _childs.find(eui64);
         if(child != _childs.end()){
             return child->second;
         }
@@ -151,8 +150,8 @@ public:
         return child_info();
     }
 
-    void set_child_join_status(const EmberNodeId childId, const bool joining){
-        logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__) + " Id: " + std::to_string(childId) + " Join:" + std::to_string(joining));
+    void set_child_join_status(const EmberEUI64& childId, const bool joining){
+        logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__) + " Id: " + Conv::to_string(childId) + " Join:" + std::to_string(joining));
         auto child = get_child_obj(childId);
         if(child){
             child->joining = joining;
@@ -164,7 +163,7 @@ public:
     }
 
     void set_active_child(EmberNodeId childId){
-        logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__) + " From: " + std::to_string(_child_on_process) + " To:" + std::to_string(childId));
+        logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__) + " From: " + Conv::to_string(_child_on_process) + " To:" + Conv::to_string(childId));
         _child_on_process = childId;
     }
 

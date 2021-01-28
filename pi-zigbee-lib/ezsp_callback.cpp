@@ -146,14 +146,14 @@ void Ezsp::callback_eframe_received(const zb_uart::EFramePtr& efr_raw){
                 if(p_child->childType == EmberNodeType::EMBER_SLEEPY_END_DEVICE){
                     //TODO: Later
                     //getExtendedTimeout(p_child->childId);
-                    setExtendedTimeout(p_child->childId, true);
+                    setExtendedTimeout(p_child->childEui64, true);
                     //getExtendedTimeout(p_child->childId);
                 }
             }
             else
             {
                 //_childs->del_child(p_child->childId);
-                _childs->set_child_join_status(p_child->childId, false);
+                _childs->set_child_join_status(p_child->childEui64, false);
             }
 
         }
@@ -169,8 +169,9 @@ void Ezsp::callback_eframe_received(const zb_uart::EFramePtr& efr_raw){
             auto p_trust =  ef->load<zb_ezsp::trustCenterJoinHandler>(efr_raw->data(), efr_raw->len());
             notify((EId)id, p_trust->to_string());
 
-            auto child = _childs->get_child_obj(p_trust->newNodeId);
+            auto child = _childs->get_child_obj(p_trust->newNodeEui64);
             if(child){
+                logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__) + " child: " + Conv::to_string(child->childId) + " EUI64: " + Conv::to_string(child->childEui64) + " Status: " + std::to_string(p_trust->status));
                 child->devUpdate = p_trust->status;
 
                 /**
@@ -179,6 +180,7 @@ void Ezsp::callback_eframe_received(const zb_uart::EFramePtr& efr_raw){
                 const EmberNodeId active_child = _childs->get_next_for_address_table();
                 if(active_child == childs::Child::NoChild){
                     _childs->set_active_child(child->childId);
+                    logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__) + " set actice child: " + Conv::to_string(child->childId));
                 }
 
                 if(active_child == child->childId){
@@ -186,6 +188,11 @@ void Ezsp::callback_eframe_received(const zb_uart::EFramePtr& efr_raw){
                     lookupEui64ByNodeId(child->childId);
                 }
             }
+
+            if(p_trust->status == EmberDeviceUpdate::EMBER_STANDARD_SECURITY_UNSECURED_JOIN){
+                //send_unicastNwkKeyUpdate(p_trust->newNodeId, p_trust->newNodeEui64);
+            }
+
         }
         break;
         case EId::ID_lookupEui64ByNodeId:

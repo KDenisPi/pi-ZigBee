@@ -60,7 +60,9 @@ public:
         return put(buff, pos, val, sizeof(EmberEUI64), sizeof(EmberEUI64));
     }
 
-
+    static void copy(EmberEUI64& dest, const EmberEUI64& src){
+        memcpy(dest, src, sizeof(EmberEUI64));
+    }
 
     static size_t get(const uint8_t* buff, size_t& pos, uint8_t& res){
         res = buff[pos++];
@@ -202,7 +204,7 @@ public:
         return result;
     }
 
-    static const std::string Eui64_to_string(const EmberEUI64 eui64){
+    static const std::string Eui64_to_string(const EmberEUI64& eui64){
         char buff[128];
         std::sprintf(buff, "EUI64:%02X:%02X:%02X:%02X:%02X:%02X:%02X:%02X",
         eui64[0],
@@ -217,7 +219,7 @@ public:
         return std::string(buff);
     }
 
-    static const std::string KeyData_to_string(const EmberKeyData keyData){
+    static const std::string KeyData_to_string(const EmberKeyData& keyData){
         char buff[128];
         std::sprintf(buff, "Key:%02X:%02X:%02X:%02X:%02X:%02X:%02X:%02X:%02X:%02X:%02X:%02X:%02X:%02X:%02X:%02X",
         keyData[0],
@@ -248,6 +250,27 @@ public:
         std::sprintf(buff, "0x%04X", ui16);
         return std::string(buff);
     }
+
+    static const std::string to_string(const EmberEUI64& eui64){
+        return Eui64_to_string(eui64);
+    }
+
+    static const uint64_t eui642u64(const EmberEUI64& eui64){
+        uint64_t rs = 0L;
+        auto cnv = [&](uint8_t i)->uint64_t {return ((uint64_t)eui64[i])<<(8*i);};
+        rs = cnv(0)|cnv(1)|cnv(2)|cnv(3)|cnv(4)|cnv(5)|cnv(6)|cnv(7);
+        return rs;
+    }
+
+    static void u642eui64(const uint64_t ui64, EmberEUI64& eue64){
+        auto cnv = [&](uint8_t i)->uint8_t { return ((ui64>>(8*i))& 0xFF);};
+        for(int i = 0; i < 8; i++) eue64[i] = cnv(i);
+    }
+
+    static void clear(EmberEUI64& eui64){
+        memset(eui64, 0x00, sizeof(EmberEUI64));
+    }
+
 };
 
 }

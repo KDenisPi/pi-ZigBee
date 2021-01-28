@@ -75,11 +75,12 @@ void Ezsp::worker(Ezsp* p_ezsp){
                     p_ezsp->setCinfigurationValue(EzspConfigId::EZSP_CONFIG_SUPPORTED_NETWORKS, 1);
                     p_ezsp->setCinfigurationValue(EzspConfigId::EZSP_CONFIG_PACKET_BUFFER_COUNT, 64);
 
+                /*
                     p_ezsp->getCinfigurationValue(EzspConfigId::EZSP_CONFIG_STACK_PROFILE);
                     p_ezsp->getCinfigurationValue(EzspConfigId::EZSP_CONFIG_SECURITY_LEVEL);
                     p_ezsp->getCinfigurationValue(EzspConfigId::EZSP_CONFIG_SUPPORTED_NETWORKS);
                     p_ezsp->getCinfigurationValue(EzspConfigId::EZSP_CONFIG_PACKET_BUFFER_COUNT);
-
+                */
                     p_ezsp->add_event(std::make_shared<EzspEvent>(Ezsp_SM_Event::EVT_CONF_FINISHED));
                 }
             }

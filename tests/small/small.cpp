@@ -30,6 +30,8 @@ int main (int argc, char* argv[])
     uint16_t val16, val16_get = 0;
     uint32_t val32, val32_get = 0;
     uint8_t buff[132];
+    uint64_t val64 = 0;
+    zb_ezsp::EmberEUI64 eui = {0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88};
 
     uint8_t st_cnt = 1;
     uint8_t n_cnt = test(st_cnt);
@@ -58,6 +60,15 @@ int main (int argc, char* argv[])
     val32_get = zb_ezsp::Conv::get_word(buff, pos);
     printf("Val32:%X Pos:%lu\n", val32_get, pos);
 
+    val64 = zb_ezsp::Conv::eui642u64(eui);
+    std::cout << "EUI64: " << zb_ezsp::Conv::to_string(eui) << " UINT64: " <<  std::to_string(val64) << std::endl;
+    printf("0x%016lx\n", val64);
+
+    zb_ezsp::Conv::clear(eui);
+    std::cout << "EUI64: " << zb_ezsp::Conv::to_string(eui) << std::endl;
+
+    zb_ezsp::Conv::u642eui64(val64, eui);
+    std::cout << "EUI64: " << zb_ezsp::Conv::to_string(eui) << std::endl;
 
     std::cout << "Finished " << success << std::endl;
     exit( (success ? EXIT_SUCCESS : EXIT_FAILURE));

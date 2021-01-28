@@ -191,18 +191,14 @@ public:
         add2output<zb_ezsp::BecomeTrustCenter>(zb_ezsp::EId::ID_becomeTrustCenter, trCenter);
     }
 
-    void send_unicastNwkKeyUpdate(const EmberNodeId nodeId){
-        logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__));
+    void send_unicastNwkKeyUpdate(const EmberNodeId& nodeId, const EmberEUI64& node_eui64){
+        logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__) + " nodeId: " + Conv::to_string(nodeId) + " EUI64: " + Conv::Eui64_to_string(node_eui64));
 
         zb_ezsp::unicastNwkKeyUpdate keyUpdate;
-        auto child = _childs->get_child_obj(nodeId);
-        if(child){
-            logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__) + " " + child->to_string());
 
-            child->copy_id(keyUpdate.destShort);
-            child->copy_Eui64(keyUpdate.destLong);
-            _key_network.copy_key(keyUpdate.key);
-        }
+        keyUpdate.destShort = nodeId;
+        Conv::copy(keyUpdate.destLong, node_eui64);
+        _key_network.copy_key(keyUpdate.key);
 
         logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__) + keyUpdate.to_string());
 
@@ -233,11 +229,11 @@ public:
     /**
      * Messaging
      */
-    void sendUnicast();
-    void sendZcl();
+    void sendUnicast(const EmberNodeId node_id, const uint8_t cluster = 0, const uint8_t profile = 0, const uint8_t srcEp = 0, const uint8_t dstEp = 0, const uint8_t seq = 0);
+    void sendZcl(const EmberEUI64& childEui64);
 
-    void setExtendedTimeout(const EmberNodeId remoteNodeId, bool extTimeout = true);
-    void getExtendedTimeout(const EmberNodeId remoteNodeId);
+    void setExtendedTimeout(const EmberEUI64& remoteNodeId, bool extTimeout = true);
+    void getExtendedTimeout(const EmberEUI64& remoteNodeId);
 
     void lookupEui64ByNodeId(const EmberNodeId nodeId){
         logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__));
@@ -277,7 +273,7 @@ public:
         add2output<zb_ezsp::no_params>(zb_ezsp::EId::ID_clearBindingTable, no_prm);
     }
 
-    void setBinding();
+    void setBinding(const EmberEUI64& childEui64);
 
     void getBinding(const uint8_t index){
         logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__) + " Index: " + std::to_string(index));
@@ -465,10 +461,10 @@ private:
      * Network parameters
      */
     EmberNodeType _node_type = EmberNodeType::EMBER_COORDINATOR;
-    EmberEUI64 _eui64;   // The 64-bit ID
-    EmberNodeId _nodeId;  // The 16-bit ID
-    bool _trust_center = false; //true;  //Is I would like to be trust center itself
-    bool _become_trust_center = false; //If I belobe trust center already
+    EmberEUI64 _eui64;                      // The 64-bit ID
+    EmberNodeId _nodeId;                    // The 16-bit ID
+    bool _trust_center = true; //true;      //Is I would like to be trust center itself
+    bool _become_trust_center = false;      //If I am trust center already
 
     /**
      * Security. Keys.
