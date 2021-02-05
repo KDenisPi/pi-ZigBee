@@ -347,7 +347,7 @@ size_t EFrame::put_param(const zb_ezsp::EmberApsFrame& param, uint8_t* buff, siz
     pos = Conv::put(buff, pos, param.clusterId);
     pos = Conv::put(buff, pos, param.sourceEndpoint);
     pos = Conv::put(buff, pos, param.destinationEndpoint);
-    pos = Conv::put(buff, pos, (uint16_t)param.options);
+    pos = Conv::put(buff, pos, param.options);
     pos = Conv::put(buff, pos, param.groupId);
     pos = Conv::put(buff, pos, param.sequence);
     return pos;
@@ -358,7 +358,7 @@ size_t EFrame::get_param(zb_ezsp::EmberApsFrame& param, const uint8_t* buff, siz
     pos = Conv::get(buff, pos, param.clusterId);
     pos = Conv::get(buff, pos, param.sourceEndpoint);
     pos = Conv::get(buff, pos, param.destinationEndpoint);
-    pos = Conv::get_word<EmberApsOption>(buff, pos, param.options);
+    pos = Conv::get(buff, pos, param.options);
     pos = Conv::get(buff, pos, param.groupId);
     pos = Conv::get(buff, pos, param.sequence);
     return pos;

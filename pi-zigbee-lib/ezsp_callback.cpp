@@ -71,29 +71,39 @@ void Ezsp::callback_eframe_received(const zb_uart::EFramePtr& efr_raw){
                 add_event(evt);
             }
             else{
-                if(id == EId::ID_stackStatusHandler){
-                    if(p_status->status == EmberStatus::EMBER_NETWORK_UP || p_status->status == EmberStatus::EMBER_NETWORK_DOWN){
-                        logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__) + " EVT NET_STATUS " + std::to_string((uint16_t)id));
-                        add_event(std::make_shared<EzspEvent>(EVT_NET_STATUS, p_status->status, ef->network_index()));
-                    }
+                switch(id){
+                    case EId::ID_stackStatusHandler:
+                    {
+                        if(p_status->status == EmberStatus::EMBER_NETWORK_UP || p_status->status == EmberStatus::EMBER_NETWORK_DOWN){
+                            logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__) + " EVT NET_STATUS " + std::to_string((uint16_t)id));
+                            add_event(std::make_shared<EzspEvent>(EVT_NET_STATUS, p_status->status, ef->network_index()));
+                        }
 
-                    if(p_status->status == EmberStatus::EMBER_NETWORK_UP){
-                        getCurrentSecurityState();
+                        if(p_status->status == EmberStatus::EMBER_NETWORK_UP){
+                            getCurrentSecurityState();
+                        }
                     }
-                }
-                else if(id == EId::ID_setInitialSecurityState){
-
-                    if(is_coordinator()){
-                        formNetwork();
+                    break;
+                    case EId::ID_setInitialSecurityState:
+                    {
+                        if(is_coordinator()){
+                            formNetwork();
+                        }
                     }
-                }
-                else if(id == EId::ID_becomeTrustCenter){
-
-                    become_trust_center(true);
-                    add_event(std::make_shared<EzspEvent>(EVT_TRUST_CENTER));
-                }
-                else if(id == EId::ID_broadcastNextNetworkKey){
-                    broadcastNetworkKeySwitch();
+                    break;
+                    case EId::ID_formNetwork:
+                    break;
+                    case EId::ID_becomeTrustCenter:
+                    {
+                        become_trust_center(true);
+                        add_event(std::make_shared<EzspEvent>(EVT_TRUST_CENTER));
+                    }
+                    break;
+                    case EId::ID_broadcastNextNetworkKey:
+                    {
+                        broadcastNetworkKeySwitch();
+                    }
+                    break;
                 }
             }
         }
@@ -169,10 +179,9 @@ void Ezsp::callback_eframe_received(const zb_uart::EFramePtr& efr_raw){
             auto p_trust =  ef->load<zb_ezsp::trustCenterJoinHandler>(efr_raw->data(), efr_raw->len());
             notify((EId)id, p_trust->to_string());
 
-            auto child = _childs->get_child_obj(p_trust->newNodeEui64);
+            auto child = _childs->add_child(p_trust);
             if(child){
                 logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__) + " child: " + Conv::to_string(child->childId) + " EUI64: " + Conv::to_string(child->childEui64) + " Status: " + std::to_string(p_trust->status));
-                child->devUpdate = p_trust->status;
 
                 /**
                  * Start procedure for Address Table
@@ -187,11 +196,12 @@ void Ezsp::callback_eframe_received(const zb_uart::EFramePtr& efr_raw){
                     //Find child in address Table
                     lookupEui64ByNodeId(child->childId);
                 }
+
+                if(p_trust->status == EmberDeviceUpdate::EMBER_STANDARD_SECURITY_UNSECURED_JOIN){
+                    //sendApsTransportKey(child);
+                }
             }
 
-            if(p_trust->status == EmberDeviceUpdate::EMBER_STANDARD_SECURITY_UNSECURED_JOIN){
-                //send_unicastNwkKeyUpdate(p_trust->newNodeId, p_trust->newNodeEui64);
-            }
 
         }
         break;
@@ -206,7 +216,7 @@ void Ezsp::callback_eframe_received(const zb_uart::EFramePtr& efr_raw){
         {
             auto p_eui64 = ef->load<zb_ezsp::Eui64>(efr_raw->data(), efr_raw->len());
             memcpy(this->_eui64, p_eui64->eui64, sizeof(EmberEUI64));
-            notify((EId)id, Conv::Eui64_to_string(p_eui64->eui64));
+            notify((EId)id, Conv::to_string(p_eui64->eui64));
 
         }
         break;
@@ -245,6 +255,13 @@ void Ezsp::callback_eframe_received(const zb_uart::EFramePtr& efr_raw){
         {
             auto p_sentMsg = ef->load<zb_ezsp::messageSentHandler>(efr_raw->data(), efr_raw->len());
             logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__) + " messageSentHandler TAG: " + std::to_string((uint16_t)p_sentMsg->messageTag));
+
+            auto child = _childs->get_child_by_child_id(p_sentMsg->indexOrDestination);
+            if(child){
+                child->in_progress(false);
+                child->set_squence(p_sentMsg->apsFrame.sequence+1);
+            }
+
 
             notify((EId)id, p_sentMsg->to_string());
         }

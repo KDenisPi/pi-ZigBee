@@ -136,7 +136,7 @@ using  EmberZigbeeNetwork = struct ezsp_EmberZigbeeNetwork {
         stackProfile,
         nwkUpdateId
         );
-        return std::string(buff)+ " ExPan:" + Conv::Eui64_to_string(extendedPanId);
+        return std::string(buff)+ " ExPan:" + Conv::to_string(extendedPanId);
     }
 };
 
@@ -292,7 +292,7 @@ public:
         nwkUpdateId,
         channels
         );
-        return std::string(buff) + " ExPan:" + Conv::Eui64_to_string(extendedPanId);
+        return std::string(buff) + " ExPan:" + Conv::to_string(extendedPanId);
     }
 
 };
@@ -346,7 +346,7 @@ struct EmberInitialSecurityState {
         return std::string(buff)
             + " Preconfigured " + Conv::KeyData_to_string(preconfiguredKey)
             + " Net " + Conv::KeyData_to_string(networkKey)
-            + " Trust center:" + Conv::Eui64_to_string(preconfiguredTrustCenterEui64);
+            + " Trust center:" + Conv::to_string(preconfiguredTrustCenterEui64);
     }
 };
 
@@ -362,7 +362,7 @@ struct EmberCurrentSecurityState {
         std::sprintf(buff, "Security state: Bitmask:%04X",
         bitmask
         );
-        return std::string(buff) + " Trust center:" + Conv::Eui64_to_string(trustCenterLongAddress);
+        return std::string(buff) + " Trust center:" + Conv::to_string(trustCenterLongAddress);
     }
 };
 
@@ -392,7 +392,7 @@ struct childJoinHandler {
         childId,
         childType
         );
-        return std::string(buff) + Conv::Eui64_to_string(childEui64);
+        return std::string(buff) + Conv::to_string(childEui64);
     }
 };
 
@@ -413,7 +413,7 @@ struct lookupEui64ByNodeId {
         std::sprintf(buff, "lookupEui64ByNodeId: Status:%02X ",
         status
         );
-        return std::string(buff) + Conv::Eui64_to_string(eui64);
+        return std::string(buff) + Conv::to_string(eui64);
     }
 };
 
@@ -436,7 +436,7 @@ struct trustCenterJoinHandler {
         policyDecision,
         parentOfNewNodeId
         );
-        return std::string(buff) + Conv::Eui64_to_string(newNodeEui64);
+        return std::string(buff) + Conv::to_string(newNodeEui64);
     }
 };
 
@@ -453,7 +453,7 @@ struct unicastNwkKeyUpdate {
         std::sprintf(buff, "unicastNwkKeyUpdate: ID:%04X ",
         destShort
         );
-        return std::string(buff) + Conv::Eui64_to_string(destLong) + Conv::KeyData_to_string(key);
+        return std::string(buff) + Conv::to_string(destLong) + Conv::KeyData_to_string(key);
     }
 
 };
@@ -474,7 +474,7 @@ struct EmberApsFrame {
     uint16_t clusterId;         // The cluster ID for this message.
     uint8_t sourceEndpoint;     // The source endpoint.
     uint8_t destinationEndpoint;// The destination endpoint.
-    EmberApsOption options;     // A bitmask of options.
+    uint16_t options;           // A bitmask of options.
     uint16_t groupId;           // The group ID for this message, if it is multicast mode.
     uint8_t sequence;           // The sequence number.
 
@@ -510,7 +510,7 @@ struct sendUnicast {
         messageTag,
         messageLength
         );
-        return std::string(buff);
+        return std::string(buff) + " APS: " + apsFrame.to_string() + Conv::print_buff(messageContents, messageLength);
     }
 
 };
@@ -570,7 +570,7 @@ struct messageSentHandler {
 
     const std::string to_string() const {
         char buff[128];
-        std::sprintf(buff, " messageSent type:%02X indexOrDestination:%04X Tag:%02d Status:%02X messageLength:%02X",
+        std::sprintf(buff, " messageSent type:%02X indexOrDestination:%04X Tag:%02X Status:%02X messageLength:%02X",
         type,
         indexOrDestination,
         messageTag,
@@ -606,7 +606,7 @@ struct getParentChildParameters {
     const std::string to_string() const {
         char buff[128];
         std::sprintf(buff, " ParentChildParameters Count:%02X Parent: NodeID:%04X", childCount, parentNodeId);
-        return std::string(buff) + Conv::Eui64_to_string(parentEui64);
+        return std::string(buff) + Conv::to_string(parentEui64);
     }
 };
 
@@ -630,7 +630,7 @@ struct getChildData {
         childId,
         childType
         );
-        return std::string(buff) + Conv::Eui64_to_string(childEui64);
+        return std::string(buff) + Conv::to_string(childEui64);
     }
 };
 
@@ -656,7 +656,7 @@ struct EmberBindingTableEntry {
         remote,
         networkIndex
         );
-        return std::string(buff) + Conv::Eui64_to_string(identifier);
+        return std::string(buff) + Conv::to_string(identifier);
     }
 };
 
@@ -715,11 +715,11 @@ struct EmberKeyStruct {
      *
      */
     bool is_empty(){
-        for(int i = 0; i < sizeof(EmberKeyData); i++){
-            if(key[i] > 0x00) return false;
-        }
+        return Conv::is_empty<EmberKeyData>(key);
+    }
 
-        return true;
+    bool is_parent_empty(){
+        return Conv::is_empty<EmberEUI64>(partnerEUI64);
     }
 
     void copy_key(EmberKeyData& toKey){
@@ -767,7 +767,7 @@ struct EmberKeyStruct {
         incomingFrameCounter,
         sequenceNumber
         );
-        return std::string(buff) + " Key " + Conv::KeyData_to_string(key) + " Partner: " + Conv::Eui64_to_string(partnerEUI64);
+        return std::string(buff) + " Key " + Conv::KeyData_to_string(key) + " Partner: " + Conv::to_string(partnerEUI64);
     }
 };
 

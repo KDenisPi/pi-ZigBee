@@ -5,11 +5,12 @@
 #include "logger.h"
 #include "uart.h"
 #include "ezsp.h"
+#include "aps_defs.h"
 
 using namespace std;
 
 template<typename T>
-static void ezsp_frame_to_send(const std::shared_ptr<zb_uart::ZBUart>& uart, const std::shared_ptr<zb_ezsp::EFrame>& ef);
+static void ezsp_frame_to_send(const std::shared_ptr<zb_uart::ZBUart>& uart, const std::shared_ptr<zb_ezsp::EFrame>& ef, T& data);
 static void ezsp_frame_test(const std::shared_ptr<zb_uart::ZBUart>& uart, zb_ezsp::EId id);
 
 
@@ -37,13 +38,46 @@ static void ezsp_frame_test(const std::shared_ptr<zb_uart::ZBUart>& uart, zb_ezs
     std::cout << "---- frame ID " << id << " " << zb_ezsp::Ezsp::get_id_name(id) <<std::endl;
     switch(id){
         case zb_ezsp::EId::ID_version:
-            ezsp_frame_to_send<zb_ezsp::ver_req>(uart, ef);
+            zb_ezsp::ver_req ver;
+            ezsp_frame_to_send<zb_ezsp::ver_req>(uart, ef, ver);
             break;
         case zb_ezsp::EId::ID_Echo:
-            ezsp_frame_to_send<zb_ezsp::data_array>(uart, ef);
+            zb_ezsp::data_array data_arr;
+            ezsp_frame_to_send<zb_ezsp::data_array>(uart, ef, data_arr);
             break;
         case zb_ezsp::EId::ID_unicastNwkKeyUpdate:
-            ezsp_frame_to_send<zb_ezsp::unicastNwkKeyUpdate>(uart, ef);
+            zb_ezsp::unicastNwkKeyUpdate uni_key;
+            ezsp_frame_to_send<zb_ezsp::unicastNwkKeyUpdate>(uart, ef, uni_key);
+            break;
+        case zb_ezsp::EId::ID_sendUnicast:
+        {
+            zb_ezsp::EmberKeyStruct key_network;
+            zb_aps::ApsPayload data;
+            zb_ezsp::EmberKeyData key = {0xF0, 0x0F, 0x0F, 0x0F, 0x0F, 0x0F, 0x0F, 0x0F, 0x0F, 0x0F, 0x0F, 0x0F, 0x0F, 0x0F, 0x0F, 0x12};
+            memcpy(key_network.key, key, sizeof(zb_ezsp::EmberKeyData));
+            zb_ezsp::EmberEUI64 destAddress = {0x08, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x08};
+            data.TransportKey(destAddress, key_network);
+
+            zb_ezsp::sendUnicast send_uni;
+
+            /**
+             * Try to send packet to the first connected device
+             */
+            send_uni.type = zb_ezsp::EmberOutgoingMessageType::EMBER_OUTGOING_DIRECT;
+            send_uni.indexOrDestination = 0xFFFF;
+            send_uni.messageTag = 0;
+            send_uni.messageLength = data.put(send_uni.messageContents);
+
+            send_uni.apsFrame.profileId = 0; //0x0104;   //Home automation
+            send_uni.apsFrame.clusterId = 0; //0x0402;
+            send_uni.apsFrame.sourceEndpoint = 0;
+            send_uni.apsFrame.destinationEndpoint = 0;
+            send_uni.apsFrame.options = zb_ezsp::EmberApsOption::EMBER_APS_OPTION_ENABLE_ROUTE_DISCOVERY | zb_ezsp::EmberApsOption::EMBER_APS_OPTION_RETRY;
+            send_uni.apsFrame.groupId = 0;
+            send_uni.apsFrame.sequence = 1;
+
+            ezsp_frame_to_send<zb_ezsp::sendUnicast>(uart, ef, send_uni);
+        }
             break;
         default:
             std::cout << "***** Not supported!!! *****" <<std::endl;
@@ -51,10 +85,9 @@ static void ezsp_frame_test(const std::shared_ptr<zb_uart::ZBUart>& uart, zb_ezs
 }
 
 template<typename T>
-static void ezsp_frame_to_send(const std::shared_ptr<zb_uart::ZBUart>& uart, const std::shared_ptr<zb_ezsp::EFrame>& ef){
+static void ezsp_frame_to_send(const std::shared_ptr<zb_uart::ZBUart>& uart, const std::shared_ptr<zb_ezsp::EFrame>& ef, T& data){
     uint8_t buffer[128];
     uint8_t wr_buffer[128];
-    T data;
 
     memset(buffer, 0x00, sizeof(buffer));
     size_t len = ef->put<T>(buffer, 0, data);
@@ -101,8 +134,17 @@ int main (int argc, char* argv[])
     //std::cout << "*** Echo frame ***" << std::endl;
     //ezsp_frame_test(uart, zb_ezsp::EId::ID_Echo);
 
-    std::cout << "*** Echo frame ***" << std::endl;
-    ezsp_frame_test(uart, zb_ezsp::EId::ID_unicastNwkKeyUpdate);
+    /**
+     * Send Unicast Net Key frame
+     */
+    //std::cout << "*** unicastNwkKeyUpdate frame ***" << std::endl;
+    //ezsp_frame_test(uart, zb_ezsp::EId::ID_unicastNwkKeyUpdate);
+
+    /**
+     * Send Unicast frame
+     */
+    std::cout << "*** sendUnicast frame ***" << std::endl;
+    ezsp_frame_test(uart, zb_ezsp::EId::ID_sendUnicast);
 
 
     std::cout << "Finished " << success << std::endl;

@@ -132,6 +132,8 @@ void Ezsp::worker(Ezsp* p_ezsp){
                             p_ezsp->permitJoining(); //permanently
                         }
                     }
+                    p_ezsp->getNetworkParameters();
+
                 }
                 else if(evt->get_status() == EmberStatus::EMBER_NETWORK_DOWN){
                     p_ezsp->set_state(Ezsp_State::SM_Init_Network);

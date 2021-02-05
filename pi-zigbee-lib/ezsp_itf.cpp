@@ -200,13 +200,21 @@ void Ezsp::setInitialSecurityState(){
     EmberKeyData defKey = {0x01, 0x03, 0x05, 0x07, 0x09, 0x0B, 0x0D, 0x0F, 0x00, 0x02, 0x04, 0x06, 0x08, 0x0A, 0x0C, 0x0D};
     EmberInitialSecurityState secSt;
 
-    if(_key_network.is_empty())
+    if( _key_network.is_empty())
         memcpy(_key_network.key, defKey, sizeof(EmberKeyData));
 
-    secSt.clear();
-    secSt.bitmask =  EmberSecurityBitmaskMode::EMBER_HAVE_NETWORK_KEY | EmberSecurityBitmaskMode::EMBER_GLOBAL_LINK_KEY; //EmberSecurityBitmaskMode::EMBER_DISTRIBUTED_TRUST_CENTER_MODE; // EmberSecurityBitmaskMode::EMBER_GLOBAL_LINK_KEY;
-    memcpy(secSt.networkKey, _key_network.key, sizeof(EmberKeyData));
+    memset(secSt.networkKey, 0x00, sizeof(EmberKeyData));
 
+    secSt.clear();
+    secSt.bitmask = EmberSecurityBitmaskMode::EMBER_HAVE_PRECONFIGURED_KEY | EmberSecurityBitmaskMode::EMBER_REQUIRE_ENCRYPTED_KEY |
+                    EmberSecurityBitmaskMode::EMBER_TRUST_CENTER_GLOBAL_LINK_KEY | EmberSecurityBitmaskMode::EMBER_HAVE_NETWORK_KEY;
+    memcpy(secSt.preconfiguredKey, DefaultGlobalTrustCenterLinkKey, sizeof(EmberKeyData));
+    memcpy(secSt.networkKey, _key_network.key, sizeof(EmberKeyData));
+    secSt.networkKeySequenceNumber = 0;
+
+    //if(_key_network.is_empty()) //generate one
+    if( is_coordinator()){
+    }
     logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__) + " " + secSt.to_string());
 
     add2output<zb_ezsp::EmberInitialSecurityState>(zb_ezsp::EId::ID_setInitialSecurityState, secSt);
@@ -222,29 +230,58 @@ void Ezsp::getCurrentSecurityState(){
 /**
  * Messaging
  */
-void Ezsp::sendUnicast(const EmberNodeId node_id, const uint8_t cluster, const uint8_t profile, const uint8_t srcEp, const uint8_t dstEp, const uint8_t seq){
-    logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__));
+void Ezsp::sendUnicast(const EmberNodeId node_id,
+                    const zb_aps::ApsPayload& data,
+                    const uint8_t cluster,
+                    const uint8_t profile,
+                    const uint8_t srcEp,
+                    const uint8_t dstEp,
+                    const uint8_t seq,
+                    const uint8_t tag){
+
+    logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__) + " ID: " + Conv::to_string(node_id));
 
     zb_ezsp::sendUnicast send_uni;
 
     /**
      * Try to send packet to the first connected device
      */
+    send_uni.apsFrame.profileId = profile; //0x0104;   //Home automation
+    send_uni.apsFrame.clusterId = cluster; //0x0402;
+    send_uni.apsFrame.sourceEndpoint = srcEp;
+    send_uni.apsFrame.destinationEndpoint = dstEp;
+    send_uni.apsFrame.options = EmberApsOption::EMBER_APS_OPTION_RETRY | EmberApsOption::EMBER_APS_OPTION_DESTINATION_EUI64; //EmberApsOption::EMBER_APS_OPTION_ENABLE_ROUTE_DISCOVERY |
+    send_uni.apsFrame.groupId = 0;
+    send_uni.apsFrame.sequence = seq;
+
     send_uni.type = EmberOutgoingMessageType::EMBER_OUTGOING_DIRECT;
     send_uni.indexOrDestination = node_id;
-    send_uni.messageTag = 1;
-    send_uni.messageLength = 0;
+    send_uni.messageTag = tag;
+    send_uni.messageLength = data.put(send_uni.messageContents);
 
-    send_uni.apsFrame.profileId = 0x0104;   //Home automation
-    send_uni.apsFrame.clusterId = 0x0402;
-    send_uni.apsFrame.sourceEndpoint = 0x01;
-    send_uni.apsFrame.destinationEndpoint = 0x01;
-    send_uni.apsFrame.options = EmberApsOption::EMBER_APS_OPTION_NONE;
-    send_uni.apsFrame.groupId = 0;
-    send_uni.apsFrame.sequence = 0x01;
+    logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__) + " " + send_uni.to_string());
 
     add2output<zb_ezsp::sendUnicast>(zb_ezsp::EId::ID_sendUnicast, send_uni);
 }
+
+/**
+ *
+ */
+void Ezsp::sendApsTransportKey(const childs::child_info& child){
+    logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__) + " ID: " + Conv::to_string(child->childEui64));
+
+    zb_aps::ApsPayload data;
+
+    if(child->is_in_progress()){
+        logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__) + " ID: " + Conv::to_string(child->childEui64) + " Do not send. Is in progress");
+        return;
+    }
+    child->in_progress(true);
+    uint8_t seq = child->seq();
+    data.TransportKey(child->childEui64, _key_network);
+    sendUnicast(child->childId, data, 0, 0, 0, 0, seq, 0x05);
+}
+
 
 /**
  *

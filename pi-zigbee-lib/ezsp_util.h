@@ -271,6 +271,15 @@ public:
         memset(eui64, 0x00, sizeof(EmberEUI64));
     }
 
+
+    template<typename T>
+    static const bool is_empty(T& eui64){
+        for(int i = 0; i < sizeof(T); i++){
+            if(eui64[i] > 0x00) return false;
+        }
+        return true;
+    }
+
 };
 
 }

@@ -525,7 +525,7 @@ enum EmberNodeType : uint8_t {
 enum EmberSecurityBitmaskMode : uint16_t {
     EMBER_STANDARD_SECURITY_MODE            = 0x0000,       // This denotes that the device is running in a network with ZigBee Standard Security.
     EMBER_DISTRIBUTED_TRUST_CENTER_MODE     = 0x0002,       // This denotes that the device is running in a network without a centralized Trust Center.
-    EMBER_GLOBAL_LINK_KEY                   = 0x0004,       // This denotes that the device has a Global Link Key. The Trust Center Link Key is the same across multiple nodes.
+    EMBER_TRUST_CENTER_GLOBAL_LINK_KEY      = 0x0004,       // This denotes that the device has a Global Link Key. The Trust Center Link Key is the same across multiple nodes.
     EMBER_HAVE_TRUST_CENTER_LINK_KEY        = 0x0010,       // This denotes that the node has a Trust Center Link Key.
     EMBER_TRUST_CENTER_USES_HASHED_LINK_KEY = 0x0084,       // This denotes that the Trust Center is using a Hashed Link Key.
     EMBER_HAVE_PRECONFIGURED_KEY            = 0x0100,       // This denotes that the preconfiguredKey element has valid data that should be used to configure the initial security state.

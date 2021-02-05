@@ -21,14 +21,28 @@ namespace childs {
 
 class Child {
 public:
-    Child() {};
-    Child(const std::shared_ptr<zb_ezsp::childJoinHandler> childHnd){
+    Child() : addressTableIndex(0xFF), sequence(0), send_in_progress(false), joining(false),
+    childType(EmberNodeType::EMBER_UNKNOWN_DEVICE),
+    devUpdate(EmberDeviceUpdate::EMBER_UNDEFINED)
+    {
+
+    };
+
+    Child(const std::shared_ptr<zb_ezsp::childJoinHandler> childHnd) : Child() {
         index = childHnd->index;
         joining = childHnd->joining;
         childId = childHnd->childId;
         childType = childHnd->childType;
-        devUpdate = EmberDeviceUpdate::EMBER_UNDEFINED;
         memcpy(childEui64, childHnd->childEui64, sizeof(childEui64));
+
+        logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__) + " " + to_string());
+    }
+
+    Child(const std::shared_ptr<zb_ezsp::trustCenterJoinHandler> trustHnd) : Child() {
+        devUpdate = trustHnd->status;
+        childId = trustHnd->newNodeId;
+        memcpy(childEui64, trustHnd->newNodeEui64, sizeof(EmberEUI64));
+
 
         logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__) + " " + to_string());
     }
@@ -45,6 +59,24 @@ public:
     EmberDeviceUpdate devUpdate;// Child device status
 
     uint8_t addressTableIndex = 0xFF;
+    uint8_t sequence = 0;
+    bool    send_in_progress;
+
+    bool is_in_progress() const {
+        return send_in_progress;
+    }
+
+    void in_progress(bool progress){
+        send_in_progress = progress;
+    }
+
+    void set_squence(const uint8_t seq){
+        sequence = (seq%256);
+    }
+
+    const uint8_t seq() const {
+        return sequence;
+    }
 
     const bool added_to_address_table() const {
         return (addressTableIndex != 0xFF);
@@ -60,19 +92,20 @@ public:
 
     const std::string to_string() const {
         char buff[128];
-        std::sprintf(buff, "Child: Index:%d Joining:%d ID:%04X Type:%02X DevUpdate:%02X AddrIdx:%02X",
+        std::sprintf(buff, "Child: Index:%d Joining:%d ID:%04X Type:%02X DevUpdate:%02X AddrIdx:%02X Seq:%02X",
         index,
         joining,
         childId,
         childType,
         devUpdate,
-        addressTableIndex
+        addressTableIndex,
+        sequence
         );
-        return std::string(buff) + Conv::Eui64_to_string(childEui64);
+        return std::string(buff) + Conv::to_string(childEui64);
     }
 
-    static const EmberNodeId NoChild = 0xFFFF;
-
+    static const EmberNodeId NoChildId = 0xFFFF;
+    static const EmberNodeId NoChild = 0L;
 };
 
 using child_info = std::shared_ptr<Child>;
@@ -91,8 +124,8 @@ public:
     /**
      * Child operations (Add, Delete, Print, Get)
      */
-    void add_child(const std::shared_ptr<childJoinHandler>& child) {
-        logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__) + " child: " + Conv::to_string(child->childId) + " EUI64: " + Conv::Eui64_to_string(child->childEui64) + " Status: " + std::to_string(child->childType));
+    const child_info add_child(const std::shared_ptr<childJoinHandler>& child) {
+        logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__) + " child: " + Conv::to_string(child->childId) + " EUI64: " + Conv::to_string(child->childEui64) + " Type: " + std::to_string(child->childType));
         const uint64_t eui64 = Conv::eui642u64(child->childEui64);
         if(_childs.find(eui64) == _childs.end()){
             _childs[eui64] = std::make_shared<Child>(child);
@@ -103,7 +136,27 @@ public:
                 _childs[eui64]->childId = child->childId;
             }
         }
+
+        return _childs[eui64];
     }
+
+    const child_info add_child(const std::shared_ptr<trustCenterJoinHandler>& child) {
+        logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__) + " child: " + Conv::to_string(child->newNodeId) + " EUI64: " + Conv::to_string(child->newNodeEui64));
+        const uint64_t eui64 = Conv::eui642u64(child->newNodeEui64);
+        if(_childs.find(eui64) == _childs.end()){
+            _childs[eui64] = std::make_shared<Child>(child);
+        }
+        else {
+            _childs[eui64]->devUpdate = child->status;
+            if(_childs[eui64]->childId != child->newNodeId){
+                logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__) + " Update ID from child: " + Conv::to_string(_childs[eui64]->childId) + " to: " + Conv::to_string(child->newNodeId));
+                _childs[eui64]->childId = child->newNodeId;
+            }
+        }
+
+        return _childs[eui64];
+    }
+
 
     void del_child(const EmberEUI64& childId){
         const uint64_t eui64 = Conv::eui642u64(childId);
@@ -133,9 +186,18 @@ public:
             }
         }
         logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__) + " No child");
-        return Child::NoChild;
+        return Child::NoChildId;
     }
 
+    const child_info get_child_by_child_id(const EmberNodeId childId){
+        for (auto it = _childs.begin(); it != _childs.end(); ++it) {
+            if(childId == it->second->childId){
+                return it->second;
+            }
+        }
+
+        return child_info();
+    }
 
     const child_info get_child_obj(const EmberEUI64& childId) {
         if(_childs.empty())

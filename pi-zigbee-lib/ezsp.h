@@ -20,6 +20,7 @@
 #include "ezsp_frame.h"
 #include "ezsp_sm.h"
 #include "ezsp_db_json.h"
+#include "aps_defs.h"
 
 #include "uart.h"
 #include "uart_efr_buff.h"
@@ -192,7 +193,7 @@ public:
     }
 
     void send_unicastNwkKeyUpdate(const EmberNodeId& nodeId, const EmberEUI64& node_eui64){
-        logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__) + " nodeId: " + Conv::to_string(nodeId) + " EUI64: " + Conv::Eui64_to_string(node_eui64));
+        logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__) + " nodeId: " + Conv::to_string(nodeId) + " EUI64: " + Conv::to_string(node_eui64));
 
         zb_ezsp::unicastNwkKeyUpdate keyUpdate;
 
@@ -229,7 +230,15 @@ public:
     /**
      * Messaging
      */
-    void sendUnicast(const EmberNodeId node_id, const uint8_t cluster = 0, const uint8_t profile = 0, const uint8_t srcEp = 0, const uint8_t dstEp = 0, const uint8_t seq = 0);
+    void sendUnicast(const EmberNodeId node_id,
+                    const zb_aps::ApsPayload& data,
+                    const uint8_t cluster = 0,
+                    const uint8_t profile = 0,
+                    const uint8_t srcEp = 0,
+                    const uint8_t dstEp = 0,
+                    const uint8_t seq = 0,
+                    const uint8_t tag=0
+                    );
     void sendZcl(const EmberEUI64& childEui64);
 
     void setExtendedTimeout(const EmberEUI64& remoteNodeId, bool extTimeout = true);
@@ -241,6 +250,11 @@ public:
         node_id.nodeId = nodeId;
         add2output<zb_ezsp::NodeId>(zb_ezsp::EId::ID_lookupEui64ByNodeId, node_id);
     }
+
+    /**
+     * APS Messages payload
+     */
+    void sendApsTransportKey(const childs::child_info& child);
 
     /**
      *
@@ -449,6 +463,8 @@ protected:
     }
 
 
+    const EmberKeyData DefaultGlobalTrustCenterLinkKey = {'Z','i','g','B','e','e','A','l','l','i','a','n','c','e','0','9'};
+
 private:
     uint8_t _seq;
     bool _debug;
@@ -463,7 +479,7 @@ private:
     EmberNodeType _node_type = EmberNodeType::EMBER_COORDINATOR;
     EmberEUI64 _eui64;                      // The 64-bit ID
     EmberNodeId _nodeId;                    // The 16-bit ID
-    bool _trust_center = true; //true;      //Is I would like to be trust center itself
+    bool _trust_center = false; //true;      //Is I would like to be trust center itself
     bool _become_trust_center = false;      //If I am trust center already
 
     /**
