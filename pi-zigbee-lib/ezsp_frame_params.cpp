@@ -21,7 +21,6 @@ size_t EFrame::get_param(EmberEUI64& param, const uint8_t* buff, size_t& pos){
 }
 size_t EFrame::get_param(Eui64& param, const uint8_t* buff, size_t& pos){
     pos = Conv::get(buff, pos, param.eui64, sizeof(param.eui64), sizeof(param.eui64));
-    //pos = get_param(param, buff, pos);
     return pos;
 }
 
@@ -76,15 +75,18 @@ size_t EFrame::put_param(const zb_ezsp::ezsp_no_params& param, uint8_t* buff, si
     return pos;
 }
 
+size_t EFrame::get_param(zb_ezsp::ezsp_no_params& param, const uint8_t* buff, size_t& pos){
+    return pos;
+}
+
+/**
+ * Put uint8_t
+ */
 size_t EFrame::put_param(const zb_ezsp::uint8t_value& param, uint8_t* buff, size_t pos){
     pos = Conv::put(buff, pos, param.value);
     return pos;
 }
 
-
-size_t EFrame::get_param(zb_ezsp::ezsp_no_params& param, const uint8_t* buff, size_t& pos){
-    return pos;
-}
 
 /**
  * Ember status only
@@ -393,6 +395,26 @@ size_t EFrame::get_param(zb_ezsp::incomingMessageHandler& param, const uint8_t* 
     pos = Conv::get(buff, pos, param.messageContents, param.messageLength, sizeof(param.messageContents));
     return pos;
 }
+
+
+size_t EFrame::get_param(zb_ezsp::Route& param, const uint8_t* buff, size_t& pos){
+    pos = Conv::get(buff, pos, param.source);
+    pos = Conv::get(buff, pos, param.sourceEui, sizeof(param.sourceEui), sizeof(param.sourceEui));
+    pos = Conv::get(buff, pos, param.lastHopLqi);
+    pos = Conv::get(buff, pos, param.lastHopRssi);
+    pos = Conv::get(buff, pos, param.relayCount);
+    param.relayList.reset();
+    param.relayList = std::make_shared<std::vector<EmberNodeId>>(param.relayCount);
+
+    uint8_t relayCount = 0;
+    EmberNodeId node_id;
+    while(relayCount < param.relayCount){
+        pos = Conv::get(buff, pos, node_id);
+        param.relayList->at(relayCount++) = node_id;
+    }
+    return pos;
+}
+
 
 size_t EFrame::get_param(zb_ezsp::messageSentHandler& param, const uint8_t* buff, size_t& pos){
     pos = Conv::get_byte<EmberOutgoingMessageType>(buff, pos, param.type);

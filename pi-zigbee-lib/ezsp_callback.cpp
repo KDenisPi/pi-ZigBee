@@ -154,15 +154,11 @@ void Ezsp::callback_eframe_received(const zb_uart::EFramePtr& efr_raw){
                 _childs->add_child(p_child);
 
                 if(p_child->childType == EmberNodeType::EMBER_SLEEPY_END_DEVICE){
-                    //TODO: Later
-                    //getExtendedTimeout(p_child->childId);
                     setExtendedTimeout(p_child->childEui64, true);
-                    //getExtendedTimeout(p_child->childId);
                 }
             }
             else
             {
-                //_childs->del_child(p_child->childId);
                 _childs->set_child_join_status(p_child->childEui64, false);
             }
 
@@ -198,7 +194,7 @@ void Ezsp::callback_eframe_received(const zb_uart::EFramePtr& efr_raw){
                 }
 
                 if(p_trust->status == EmberDeviceUpdate::EMBER_STANDARD_SECURITY_UNSECURED_JOIN){
-                    //sendApsTransportKey(child);
+
                 }
             }
 
@@ -209,15 +205,14 @@ void Ezsp::callback_eframe_received(const zb_uart::EFramePtr& efr_raw){
         {
             auto p_trust =  ef->load<zb_ezsp::lookupEui64ByNodeId>(efr_raw->data(), efr_raw->len());
             notify((EId)id, p_trust->to_string());
-
         }
         break;
         case EId::ID_getEui64:
+        case EId::ID_incomingSenderEui64Handler:
         {
             auto p_eui64 = ef->load<zb_ezsp::Eui64>(efr_raw->data(), efr_raw->len());
             memcpy(this->_eui64, p_eui64->eui64, sizeof(EmberEUI64));
             notify((EId)id, Conv::to_string(p_eui64->eui64));
-
         }
         break;
         case EId::ID_getNodeId:
@@ -327,6 +322,12 @@ void Ezsp::callback_eframe_received(const zb_uart::EFramePtr& efr_raw){
         case EId::ID_incomingRouteErrorHandler:
         {
             auto p_sendUnicast = ef->load<zb_ezsp::incomingRouteErrorHandler>(efr_raw->data(), efr_raw->len());
+            notify((EId)id, p_sendUnicast->to_string());
+        }
+        break;
+        case EId::ID_incomingRouteRecordHandler:
+        {
+            auto p_sendUnicast = ef->load<zb_ezsp::Route>(efr_raw->data(), efr_raw->len());
             notify((EId)id, p_sendUnicast->to_string());
         }
         break;

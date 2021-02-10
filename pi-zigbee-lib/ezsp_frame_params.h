@@ -12,6 +12,9 @@
 #include <cstdint>
 #include <string>
 #include <cstring>
+#include <vector>
+#include <memory>
+
 #include "ezsp_defs.h"
 #include "ezsp_util.h"
 
@@ -73,8 +76,11 @@ using ember_status = struct ezsp_EmberStatus {
     }
 };
 
+/**
+ * Response with uint8_t only
+ */
 using uint8t_value = struct ezsp_8tValue {
-    uint value;
+    uint8_t value;
 
     const std::string to_string() const {
         char buff[20];
@@ -83,7 +89,9 @@ using uint8t_value = struct ezsp_8tValue {
     }
 };
 
-
+/**
+ * Response with EZSP Status only
+ */
 using ezsp_status = struct ezsp_EzspStatus {
     EzspStatus status;
 
@@ -235,7 +243,7 @@ public:
         memset(extendedPanId, 0x00, sizeof(extendedPanId));
         panId = 0;
         radioTxPower = 8;
-        radioChannel = 11;
+        radioChannel = 15;
         joinMethod = EmberJoinMethod::EMBER_USE_MAC_ASSOCIATION;
         nwkManagerId = 0;
         nwkUpdateId = 0;
@@ -553,7 +561,7 @@ struct incomingMessageHandler {
         addressIndex,
         messageLength
         );
-        return std::string(buff) + apsFrame.to_string();
+        return std::string(buff) + apsFrame.to_string() + " Msg: " + Conv::print_buff(messageContents, messageLength, true);
     }
 };
 
@@ -594,6 +602,42 @@ struct incomingRouteErrorHandler {
         return std::string(buff);
     }
 };
+
+
+class Route {
+public:
+    Route() {}
+    virtual ~Route() {}
+
+    const std::string to_string() const {
+        char buff[128];
+        std::sprintf(buff, " Route Src:%04X lastHopLqi:%02X lastHopRssi:%02d Relay count:%02X",
+        source,
+        lastHopLqi,
+        lastHopRssi,
+        relayCount
+        );
+
+        std::string relays;
+        if(relayList){
+            for(EmberNodeId node_id : (*relayList)){
+                relays += (Conv::to_string(node_id) + " ");
+            }
+        }
+        return std::string(buff) + " Src: " + Conv::to_string(sourceEui) + " Relays: " + relays;
+    }
+
+
+    EmberNodeId source;     //  The source of the route record.
+    EmberEUI64 sourceEui;   // The EUI64 of the source.
+    uint8_t lastHopLqi;     // The link quality from the node that last relayed the route record.
+    int8_t lastHopRssi;      // The energy level (in units of dBm) observed during the reception.
+    uint8_t relayCount;     // The number of relays in relayList.
+
+    // The route record. Each relay in the list is an uint16_t node ID. The list is passed as uint8_t * to avoid alignment problems.
+    std::shared_ptr<std::vector<EmberNodeId>> relayList;
+};
+
 
 /**
  * Returns information about the children of the local node and the parent of the local node.

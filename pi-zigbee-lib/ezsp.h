@@ -254,7 +254,7 @@ public:
     /**
      * APS Messages payload
      */
-    void sendApsTransportKey(const childs::child_info& child);
+    //void sendApsTransportKey(const childs::child_info& child);
 
     /**
      *

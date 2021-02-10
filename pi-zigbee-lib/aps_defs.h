@@ -78,6 +78,8 @@ public:
      *                                                          the destination device’s parent device; otherwise, this parameter is not used and need not be set.
      *
      */
+
+/*
     void TransportKey(const zb_ezsp::EmberEUI64& destAddress, zb_ezsp::EmberKeyStruct& key_info){
         _len = 0;
         _buff[_len++] = aps_cmd::Transport_Key;
@@ -99,7 +101,7 @@ public:
             _len += sizeof(zb_ezsp::EmberEUI64);
         }
     }
-
+*/
     aps_cmd _cmd;
     uint8_t _buff[100];
     uint8_t _len;

@@ -287,8 +287,9 @@ public:
 
     size_t get_param(zb_ezsp::messageSentHandler& param, const uint8_t* buff, size_t& pos);
     size_t get_param(zb_ezsp::incomingMessageHandler& param, const uint8_t* buff, size_t& pos);
-
     size_t get_param(zb_ezsp::incomingRouteErrorHandler& param, const uint8_t* buff, size_t& pos);
+
+    size_t get_param(zb_ezsp::Route& param, const uint8_t* buff, size_t& pos);
     size_t get_param(zb_ezsp::getChildData& param, const uint8_t* buff, size_t& pos);
 
     size_t put_param(const zb_ezsp::setExtendedTimeout& param, uint8_t* buff, size_t pos);

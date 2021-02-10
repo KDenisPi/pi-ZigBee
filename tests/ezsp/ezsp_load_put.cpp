@@ -56,7 +56,7 @@ static void ezsp_frame_test(const std::shared_ptr<zb_uart::ZBUart>& uart, zb_ezs
             zb_ezsp::EmberKeyData key = {0xF0, 0x0F, 0x0F, 0x0F, 0x0F, 0x0F, 0x0F, 0x0F, 0x0F, 0x0F, 0x0F, 0x0F, 0x0F, 0x0F, 0x0F, 0x12};
             memcpy(key_network.key, key, sizeof(zb_ezsp::EmberKeyData));
             zb_ezsp::EmberEUI64 destAddress = {0x08, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x08};
-            data.TransportKey(destAddress, key_network);
+            //data.TransportKey(destAddress, key_network);
 
             zb_ezsp::sendUnicast send_uni;
 

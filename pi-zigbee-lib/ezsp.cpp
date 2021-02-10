@@ -71,7 +71,9 @@ std::map<id_type, std::string> Ezsp::_frameId2String = {
     {ID_setValue, std::string("setValue")},
     {ID_broadcastNextNetworkKey, std::string("broadcastNextNetworkKey")},
     {ID_broadcastNetworkKeySwitch, std::string("broadcastNetworkKeySwitch")},
-    {ID_clearKeyTable, std::string("ID_clearKeyTable")}
+    {ID_clearKeyTable, std::string("clearKeyTable")},
+    {ID_incomingSenderEui64Handler, std::string("incomingSenderEui64Handler")},
+    {ID_incomingRouteRecordHandler, std::string("incomingRouteRecordHandler")}
 };
 
 }

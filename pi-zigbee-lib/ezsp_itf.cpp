@@ -144,7 +144,7 @@ void Ezsp::formNetwork(){
 
     netPrm.radioTxPower = 8;  //dBm
     netPrm.radioChannel = 15; //25;//12;
-    netPrm.joinMethod = EmberJoinMethod::EMBER_USE_MAC_ASSOCIATION; //EMBER_USE_NWK_REJOIN; //EMBER_USE_MAC_ASSOCIATION;
+    netPrm.joinMethod = EmberJoinMethod::EMBER_USE_MAC_ASSOCIATION;
     netPrm.nwkManagerId = 0;
     netPrm.nwkUpdateId = 0;
     netPrm.channels = 0;
@@ -196,25 +196,29 @@ void Ezsp::getNetworkParameters(){
 void Ezsp::setInitialSecurityState(){
     logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__));
 
-    //temporary let's use some hardcode
-    EmberKeyData defKey = {0x01, 0x03, 0x05, 0x07, 0x09, 0x0B, 0x0D, 0x0F, 0x00, 0x02, 0x04, 0x06, 0x08, 0x0A, 0x0C, 0x0D};
     EmberInitialSecurityState secSt;
 
-    if( _key_network.is_empty())
-        memcpy(_key_network.key, defKey, sizeof(EmberKeyData));
-
-    memset(secSt.networkKey, 0x00, sizeof(EmberKeyData));
-
     secSt.clear();
-    secSt.bitmask = EmberSecurityBitmaskMode::EMBER_HAVE_PRECONFIGURED_KEY | EmberSecurityBitmaskMode::EMBER_REQUIRE_ENCRYPTED_KEY |
-                    EmberSecurityBitmaskMode::EMBER_TRUST_CENTER_GLOBAL_LINK_KEY | EmberSecurityBitmaskMode::EMBER_HAVE_NETWORK_KEY;
+    secSt.bitmask = EmberSecurityBitmaskMode::EMBER_HAVE_PRECONFIGURED_KEY | EmberSecurityBitmaskMode::EMBER_REQUIRE_ENCRYPTED_KEY;
     memcpy(secSt.preconfiguredKey, DefaultGlobalTrustCenterLinkKey, sizeof(EmberKeyData));
-    memcpy(secSt.networkKey, _key_network.key, sizeof(EmberKeyData));
-    secSt.networkKeySequenceNumber = 0;
 
-    //if(_key_network.is_empty()) //generate one
     if( is_coordinator()){
+        secSt.bitmask |= (EmberSecurityBitmaskMode::EMBER_TRUST_CENTER_GLOBAL_LINK_KEY | EmberSecurityBitmaskMode::EMBER_HAVE_NETWORK_KEY);
+
+        //Network key
+        if( _key_network.is_empty()){
+            //temporary let's use some hardcode
+            //TODO: Add Key generator
+            EmberKeyData defKey = {0x01, 0x03, 0x05, 0x07, 0x09, 0x0B, 0x0D, 0x0F, 0x00, 0x02, 0x04, 0x06, 0x08, 0x0A, 0x0C, 0x0D};
+
+            logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__) + " No key generate new one");
+            memcpy(_key_network.key, defKey, sizeof(EmberKeyData));
+        }
+
+        memcpy(secSt.networkKey, _key_network.key, sizeof(EmberKeyData));
+        secSt.networkKeySequenceNumber = 0;
     }
+
     logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__) + " " + secSt.to_string());
 
     add2output<zb_ezsp::EmberInitialSecurityState>(zb_ezsp::EId::ID_setInitialSecurityState, secSt);
@@ -267,6 +271,7 @@ void Ezsp::sendUnicast(const EmberNodeId node_id,
 /**
  *
  */
+/*
 void Ezsp::sendApsTransportKey(const childs::child_info& child){
     logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__) + " ID: " + Conv::to_string(child->childEui64));
 
@@ -281,7 +286,7 @@ void Ezsp::sendApsTransportKey(const childs::child_info& child){
     data.TransportKey(child->childEui64, _key_network);
     sendUnicast(child->childId, data, 0, 0, 0, 0, seq, 0x05);
 }
-
+*/
 
 /**
  *
