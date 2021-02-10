@@ -433,6 +433,14 @@ size_t EFrame::get_param(zb_ezsp::incomingRouteErrorHandler& param, const uint8_
     return pos;
 }
 
+size_t EFrame::get_param(zb_ezsp::ZigbeeKeyEstablishmentHandler& param, const uint8_t* buff, size_t& pos){
+    pos = Conv::get(buff, pos, param.partner, sizeof(param.partner), sizeof(param.partner));
+    pos = Conv::get_byte<EmberKeyStatus>(buff, pos, param.status);
+    return pos;
+}
+
+
+
 size_t EFrame::get_param(zb_ezsp::getChildData& param, const uint8_t* buff, size_t& pos){
     pos = Conv::get_byte<EmberStatus>(buff, pos, param.status);
     pos = Conv::get(buff, pos, param.childId);

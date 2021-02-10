@@ -295,6 +295,8 @@ public:
     size_t put_param(const zb_ezsp::setExtendedTimeout& param, uint8_t* buff, size_t pos);
     size_t put_param(const zb_ezsp::getExtendedTimeout& param, uint8_t* buff, size_t pos);
 
+    size_t get_param(zb_ezsp::ZigbeeKeyEstablishmentHandler& param, const uint8_t* buff, size_t& pos);
+
 
     /**
      * Get data by Index

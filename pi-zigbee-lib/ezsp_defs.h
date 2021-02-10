@@ -112,6 +112,9 @@ using EId = enum EFrame_ID : id_type {
     ID_getExtendedTimeout = 0x7F,           //
     ID_incomingRouteErrorHandler = 0x80,
     ID_Echo = 0x81,
+
+    ID_zigbeeKeyEstablishmentHandler = 0x9B,    //This is a callback that indicates the success or failure of an attempt to establish a key with a partner device.
+
     ID_unicastNwkKeyUpdate = 0xA9,          // This command will send a unicast transport key message with a new NWK key to the specified device. APS encryption using the device's existing link key will be used.
     ID_getValue = 0xAA,                     // Reads a value from the NCP.
     ID_setValue = 0xAB,                     // Writes a value to the NCP.
@@ -668,6 +671,28 @@ enum EmberKeyStructBitmaskMode : uint16_t {
     EMBER_KEY_HAS_OUTGOING_FRAME_COUNTER = 0x0002, // The key has an outgoing frame counter associated with it.
     EMBER_KEY_HAS_INCOMING_FRAME_COUNTER = 0x0004, // The key has an incoming frame counter associated with it.
     EMBER_KEY_HAS_PARTNER_EUI64          = 0x0008  // The key has a Partner IEEE address associated with it.
+};
+
+/**
+ * The status of the attempt to establish a key.
+ */
+enum EmberKeyStatus : uint8_t {
+    EMBER_APP_LINK_KEY_ESTABLISHED                      = 0x01,
+    EMBER_TRUST_CENTER_LINK_KEY_ESTABLISHED             = 0x03,
+    EMBER_KEY_ESTABLISHMENT_TIMEOUT                     = 0x04,
+    EMBER_KEY_TABLE_FULL                                = 0x05,
+    EMBER_TC_RESPONDED_TO_KEY_REQUEST                   = 0x06,
+    EMBER_TC_APP_KEY_SENT_TO_REQUESTER                  = 0x07,
+    EMBER_TC_RESPONSE_TO_KEY_REQUEST_FAILED             = 0x08,
+    EMBER_TC_REQUEST_KEY_TYPE_NOT_SUPPORTED             = 0x09,
+    EMBER_TC_NO_LINK_KEY_FOR_REQUESTER                  = 0x0A,
+    EMBER_TC_REQUESTER_EUI64_UNKNOWN                    = 0x0B,
+    EMBER_TC_RECEIVED_FIRST_APP_KEY_REQUEST             = 0x0C,
+    EMBER_TC_TIMEOUT_WAITING_FOR_SECOND_APP_KEY_REQUEST = 0x0D,
+    EMBER_TC_NON_MATCHING_APP_KEY_REQUEST_RECEIVED      = 0x0E,
+    EMBER_TC_FAILED_TO_SEND_APP_KEYS                    = 0x0F,
+    EMBER_TC_FAILED_TO_STORE_APP_KEY_REQUEST            = 0x10,
+    EMBER_TC_REJECTED_APP_KEY_REQUEST                   = 0x11
 };
 
 }

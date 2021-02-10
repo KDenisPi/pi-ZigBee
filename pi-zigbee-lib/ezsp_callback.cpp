@@ -327,8 +327,22 @@ void Ezsp::callback_eframe_received(const zb_uart::EFramePtr& efr_raw){
         break;
         case EId::ID_incomingRouteRecordHandler:
         {
-            auto p_sendUnicast = ef->load<zb_ezsp::Route>(efr_raw->data(), efr_raw->len());
-            notify((EId)id, p_sendUnicast->to_string());
+            auto p_route = ef->load<zb_ezsp::Route>(efr_raw->data(), efr_raw->len());
+            notify((EId)id, p_route->to_string());
+
+            //TODO: Add route?
+        }
+        break;
+        case EId::ID_zigbeeKeyEstablishmentHandler:
+        {
+            auto p_zigbeeKey = ef->load<zb_ezsp::ZigbeeKeyEstablishmentHandler>(efr_raw->data(), efr_raw->len());
+            notify((EId)id, p_zigbeeKey->to_string());
+
+            //TODO: Find node and update status?
+            if( !Conv::is_empty<EmberEUI64>(p_zigbeeKey->partner)){
+
+            }
+
         }
         break;
         /**

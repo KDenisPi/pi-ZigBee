@@ -846,5 +846,21 @@ struct stackTokenChangedHandler {
     }
 };
 
+class ZigbeeKeyEstablishmentHandler {
+public:
+    ZigbeeKeyEstablishmentHandler() {}
+    ~ZigbeeKeyEstablishmentHandler() {}
+
+    const std::string to_string() const {
+        char buff[64];
+        std::sprintf(buff, " ZigbeeKeyEstablishmentHandler status:%02X ", status);
+        return std::string(buff) + " Partner: " + Conv::to_string(partner);
+    }
+
+    EmberEUI64 partner;     // This is the IEEE address of the partner that the device successfully established a key with. This value is all zeros on a failure.
+    EmberKeyStatus status;  // This is the status indicating what was established or why the key establishment failed.
+
+};
+
 }
 #endif
