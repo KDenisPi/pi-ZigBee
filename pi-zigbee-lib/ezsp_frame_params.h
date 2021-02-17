@@ -862,5 +862,36 @@ public:
 
 };
 
+/**
+ * A route table entry stores information about the next hop along the route to the destination.
+ */
+class EmberRouteTableEntry {
+public:
+    EmberRouteTableEntry() {}
+    ~EmberRouteTableEntry() {}
+
+    const std::string to_string() const {
+        char buff[128];
+        std::sprintf(buff, " EmberRouteTableEntry Dest:%04X nextHop:%04X Status:%02X Age:%02X ConcType:%02X State:%04X",
+            destination,
+            nextHop,
+            status,
+            age,
+            concentratorType,
+            routeRecordState);
+
+        return std::string(buff);
+    }
+
+    uint16_t destination;       // The short id of the destination. A value of 0xFFFF     indicates the entry is unused.
+    uint16_t nextHop;           // The short id of the next hop to this destination.
+    uint8_t status;             // Indicates whether this entry is active (0), being discovered (1), unused (3), or validating (4).
+    uint8_t age;                // The number of seconds since this route entry was last used to send a packet.
+    uint8_t concentratorType;   // Indicates whether this destination is a High RAM Concentrator (2), a Low RAM Concentrator (1), or not a concentrator (0).
+    uint8_t routeRecordState;   // For a High RAM Concentrator, indicates whether a route record is needed (2), has been sent (1), or is
+                                // no long needed (0) because a source routed message from the concentrator has been received.
+
+};
+
 }
 #endif

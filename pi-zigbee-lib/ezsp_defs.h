@@ -9,42 +9,9 @@
 #ifndef PI_ZIGBEE_LIB_EZSP_DEFS_H_
 #define PI_ZIGBEE_LIB_EZSP_DEFS_H_
 
-#include <cstdint>
+#include "ezsp_types.h"
 
 namespace zb_ezsp {
-
-/**
- * There is a new EZSP frame format in Release 6.7. Frame IDs have been expanded from 1 byte (8 bits) to 2 bytes (16 bits). Frame ID
- *   values are now shown with 4 hex digits to emphasize the larger Frame ID numbering space.
- */
-//#define VER_8 1
-#ifdef VER_8
-using id_type = uint16_t;
-#else
-using id_type = uint8_t;
-#endif
-
-class EzspVersion {
-public:
-    EzspVersion() {}
-    ~EzspVersion() {}
-
-    static uint8_t _ver;
-    static uint8_t ver(){
-        return _ver;
-    }
-
-};
-
-using EZSP_Bool         = uint8_t;
-using EZSP_EzspConfigId = uint8_t;
-using EmberNodeId       = uint16_t;                 // 16-bit ZigBee network address.
-using EmberEUI64        = uint8_t[8];               // EUI 64-bit ID (an IEEE address)
-using EmberKeyData      = uint8_t[16];              // A 128-bit key contents EmberCertificateData
-
-using EmberSecurityBitmask  = uint16_t;
-using EmberKeyStructBitmask = uint16_t;
-using EmberKeyType          = uint8_t;
 
 //The default value for the centralized security global trust center link key shall have a value of 5A 69 67 42 65 65 41 6C 6C 69 61 6E 63 65 30 39 (ZigBeeAlliance09).
 //EmberKeyData GlobalTrustCenterLinkKey = {0x5A, 0x69, 0x67, 0x42, 0x65, 0x65, 0x41, 0x6C, 0x6C, 0x69, 0x61, 0x6E, 0x63, 0x65, 0x30, 0x39};
@@ -108,8 +75,9 @@ using EId = enum EFrame_ID : id_type {
     ID_becomeTrustCenter = 0x77,            //This function causes a coordinator to become the Trust Center when it is operating in a network that is not using one.
 
     ID_neighborCount = 0x7A,                //Returns the number of active entries in the neighbor table.
-    ID_setExtendedTimeout = 0x7E,           //
-    ID_getExtendedTimeout = 0x7F,           //
+    ID_getRouteTableEntry = 0x7B,           //Returns the route table entry at the given index. The route table size can be obtained using the getConfigurationValue command.
+    ID_setExtendedTimeout = 0x7E,           //Tells the stack whether or not the normal interval between retransmissions of a retried unicast message should be increased by EMBER_INDIRECT_TRANSMISSION_TIMEOUT.
+    ID_getExtendedTimeout = 0x7F,           //Indicates whether or not the stack will extend the normal interval between retransmissions of a retried unicast message by EMBER_INDIRECT_TRANSMISSION_TIMEOUT.
     ID_incomingRouteErrorHandler = 0x80,
     ID_Echo = 0x81,
 

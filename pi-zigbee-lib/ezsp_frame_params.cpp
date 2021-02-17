@@ -232,6 +232,17 @@ size_t EFrame::get_param(zb_ezsp::lookupEui64ByNodeId& param, const uint8_t* buf
 }
 
 
+size_t EFrame::get_param(zb_ezsp::EmberRouteTableEntry& param, const uint8_t* buff, size_t pos){
+    pos = Conv::get(buff, pos, param.destination);
+    pos = Conv::get(buff, pos, param.nextHop);
+    pos = Conv::get(buff, pos, param.status);
+    pos = Conv::get(buff, pos, param.age);
+    pos = Conv::get(buff, pos, param.concentratorType);
+    pos = Conv::get(buff, pos, param.routeRecordState);
+    return pos;
+}
+
+
 size_t EFrame::get_param(zb_ezsp::trustCenterJoinHandler& param, const uint8_t* buff, size_t pos){
     pos = Conv::get(buff, pos, param.newNodeId);
     pos = Conv::get(buff, pos, param.newNodeEui64, sizeof(param.newNodeEui64), sizeof(param.newNodeEui64));

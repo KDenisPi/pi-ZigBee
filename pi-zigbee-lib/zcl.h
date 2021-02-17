@@ -1,5 +1,5 @@
 /**
- * ezsp_zcl.h
+ * zcl.h
  *
  *  ZigBee Cluster Library.  Data structure definition
  *

@@ -332,6 +332,19 @@ void Ezsp::sendZcl(const EmberEUI64& childEui64){
 }
 
 /**
+ * Get Route Table Entry
+ *
+ * @params index The index of the route table entry of interest.
+ */
+void Ezsp::getRouteTableEntry(const uint8_t& index){
+    logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__));
+
+    struct get_by_index info;
+    info.index = index;
+    add2output<zb_ezsp::get_by_index>(zb_ezsp::EId::ID_getRouteTableEntry, info);
+}
+
+/**
  *
  */
 void Ezsp::setExtendedTimeout(const EmberEUI64& remoteNodeId, bool extTimeout /*= true*/){

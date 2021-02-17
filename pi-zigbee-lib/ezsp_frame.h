@@ -247,6 +247,8 @@ public:
     size_t get_param(zb_ezsp::stackTokenChangedHandler& param, const uint8_t* buff, size_t pos);
     size_t get_param(zb_ezsp::getParentChildParameters& param, const uint8_t* buff, size_t pos);
     size_t get_param(zb_ezsp::lookupEui64ByNodeId& param, const uint8_t* buff, size_t pos);
+    size_t get_param(zb_ezsp::EmberRouteTableEntry& param, const uint8_t* buff, size_t pos);
+
 
     /**
      * NCP Value

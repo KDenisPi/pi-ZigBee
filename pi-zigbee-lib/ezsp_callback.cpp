@@ -331,6 +331,7 @@ void Ezsp::callback_eframe_received(const zb_uart::EFramePtr& efr_raw){
             notify((EId)id, p_route->to_string());
 
             //TODO: Add route?
+            getRouteTableEntry(0);
         }
         break;
         case EId::ID_zigbeeKeyEstablishmentHandler:

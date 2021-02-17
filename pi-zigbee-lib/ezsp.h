@@ -16,7 +16,8 @@
 #include "Threaded.h"
 
 #include "ezsp_childs.h"
-#include "ezsp_zcl.h"
+#include "zcl.h"
+#include "zdp.h"
 #include "ezsp_frame.h"
 #include "ezsp_sm.h"
 #include "ezsp_db_json.h"
@@ -250,6 +251,13 @@ public:
         node_id.nodeId = nodeId;
         add2output<zb_ezsp::NodeId>(zb_ezsp::EId::ID_lookupEui64ByNodeId, node_id);
     }
+
+    /**
+     * Get Route Table Entry
+     *
+     * @params index The index of the route table entry of interest.
+     */
+    void getRouteTableEntry(const uint8_t& index);
 
     /**
      * APS Messages payload
