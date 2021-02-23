@@ -52,7 +52,8 @@ using EmberKeyType          = uint8_t;
  */
 class MACCapabilityFlags {
 public:
-    MACCapabilityFlags(const uint8_t flags) : _flags(flags) {};
+    MACCapabilityFlags(const uint8_t flags = 0x00) : _flags(flags) {};
+    void set(const uint8_t flags) {_flags = flags;}
 
     /**
      * The alternate PAN coordinator sub-field is one bit in length and shall be set to 1 if this node is capable of becoming a PAN coordinator. Otherwise, the alternative PAN coordinator sub-field shall be set to 0.

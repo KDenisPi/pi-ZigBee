@@ -175,30 +175,29 @@ void Ezsp::callback_eframe_received(const zb_uart::EFramePtr& efr_raw){
             auto p_trust =  ef->load<zb_ezsp::trustCenterJoinHandler>(efr_raw->data(), efr_raw->len());
             notify((EId)id, p_trust->to_string());
 
-            auto child = _childs->add_child(p_trust);
-            if(child){
-                logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__) + " child: " + Conv::to_string(child->childId) + " EUI64: " + Conv::to_string(child->childEui64) + " Status: " + std::to_string(p_trust->status));
+            if(p_trust->status == EmberDeviceUpdate::EMBER_DEVICE_LEFT){
+                logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__) + " Device left: " + Conv::to_string(p_trust->newNodeEui64));
+                _childs->del_child(p_trust->newNodeEui64);
+            }
+            else{
+                auto child = _childs->add_child(p_trust);
+                if(child){
+                    logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__) + " child: " + Conv::to_string(child->nwkAddr) + " EUI64: " + Conv::to_string(child->ieeeAddr) + " Status: " + std::to_string(p_trust->status));
 
-                /**
-                 * Start procedure for Address Table
-                 */
-                const EmberNodeId active_child = _childs->get_next_for_address_table();
-                if(active_child == childs::Child::NoChild){
-                    _childs->set_active_child(child->childId);
-                    logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__) + " set actice child: " + Conv::to_string(child->childId));
-                }
+                    /**
+                     * Start procedure for Address Table
+                     */
+                    const EmberNodeId active_child = _childs->get_next_for_address_table();
+                    if(active_child == childs::Child::NoChild){
+                        _childs->set_active_child(child->nwkAddr);
+                        logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__) + " set active child: " + Conv::to_string(child->nwkAddr));
+                    }
 
-                if(active_child == child->childId){
-                    //Find child in address Table
-                    lookupEui64ByNodeId(child->childId);
-                }
+                    if(p_trust->status == EmberDeviceUpdate::EMBER_STANDARD_SECURITY_UNSECURED_JOIN){
 
-                if(p_trust->status == EmberDeviceUpdate::EMBER_STANDARD_SECURITY_UNSECURED_JOIN){
-
+                    }
                 }
             }
-
-
         }
         break;
         case EId::ID_lookupEui64ByNodeId:
@@ -271,6 +270,21 @@ void Ezsp::callback_eframe_received(const zb_uart::EFramePtr& efr_raw){
         {
             auto p_inMsg = ef->load<zb_ezsp::incomingMessageHandler>(efr_raw->data(), efr_raw->len());
             notify((EId)id, p_inMsg->to_string());
+
+            /**
+             * ZDP frame
+             */
+            if(zdp::is_zdp(p_inMsg->apsFrame.clusterId)){
+                size_t pos = 0;
+                auto zdp = zdp::Zdp::create(p_inMsg->apsFrame.clusterId, p_inMsg->messageContents, p_inMsg->messageLength, pos);
+
+                if(zdp){
+                    zdp->process(_childs);
+                }
+                else{
+                    print(" ZDP Not recognized. Cluster ID: " + Conv::to_string(p_inMsg->apsFrame.clusterId));
+                }
+            }
         }
         break;
         case EId::ID_energyScanResultHandler:

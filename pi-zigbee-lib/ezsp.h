@@ -97,6 +97,9 @@ public:
         }
     }
 
+    void print(const std::string& msg) const {
+        std::cout << msg << std::endl;
+    }
 
     /**
      * High level interface functions

@@ -304,7 +304,7 @@ void Ezsp::sendZcl(const EmberEUI64& childEui64){
 
         zb_ezsp::sendUnicast send_uni;
         send_uni.type = EmberOutgoingMessageType::EMBER_OUTGOING_DIRECT;
-        send_uni.indexOrDestination = cld->childId;
+        send_uni.indexOrDestination = cld->nwkAddr;
         send_uni.messageTag = tag++;
         send_uni.messageLength = 0;
 
@@ -353,7 +353,7 @@ void Ezsp::setExtendedTimeout(const EmberEUI64& remoteNodeId, bool extTimeout /*
     auto child = _childs->get_child_obj(remoteNodeId);
     if(child){
         struct setExtendedTimeout extTm;
-        memcpy(extTm.remoteEui64 , child->childEui64, sizeof(extTm.remoteEui64));
+        memcpy(extTm.remoteEui64 , child->ieeeAddr, sizeof(extTm.remoteEui64));
         extTm.extendedTimeout = extTimeout;
 
         add2output<zb_ezsp::setExtendedTimeout>(zb_ezsp::EId::ID_setExtendedTimeout, extTm);
@@ -366,7 +366,7 @@ void Ezsp::getExtendedTimeout(const EmberEUI64&  remoteNodeId){
     auto child = _childs->get_child_obj(remoteNodeId);
     if(child){
         struct getExtendedTimeout extTm;
-        memcpy(extTm.remoteEui64 , child->childEui64, sizeof(extTm.remoteEui64));
+        memcpy(extTm.remoteEui64 , child->ieeeAddr, sizeof(extTm.remoteEui64));
 
         add2output<zb_ezsp::getExtendedTimeout>(zb_ezsp::EId::ID_getExtendedTimeout, extTm);
     }
@@ -392,7 +392,7 @@ void Ezsp::setBinding(const EmberEUI64& childEui64){
         set_bnd.value.local = 0x01; //0x00;
         set_bnd.value.clusterId = 0x0402;
         set_bnd.value.remote = 0x01; //0x00;
-        memcpy(set_bnd.value.identifier, cld->childEui64, sizeof(set_bnd.value.identifier));
+        memcpy(set_bnd.value.identifier, cld->ieeeAddr, sizeof(EmberEUI64));
         set_bnd.value.networkIndex = 0x00; //TODO: get network index
 
         logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__) + " Bind: " + set_bnd.to_string());

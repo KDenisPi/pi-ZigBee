@@ -79,8 +79,11 @@ public:
      */
     static size_t get(const uint8_t* buff, size_t& pos, uint8_t* res, const size_t len, const size_t max_len){
         assert(len<=max_len);
-        for(int i=0; i<len && i<max_len; i++)
-            res[i] = buff[pos++];
+        //for(int i=0; i<len && i<max_len; i++)
+        //    res[i] = buff[pos++];
+        size_t rlen = (len<=max_len ? len : max_len);
+        memcpy(res, &buff[pos], rlen);
+        pos += rlen;
         return pos;
     }
 

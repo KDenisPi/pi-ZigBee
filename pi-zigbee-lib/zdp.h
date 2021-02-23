@@ -22,6 +22,7 @@
 #include <string.h>
 #include <algorithm>
 
+#include "logger.h"
 #include "ezsp_util.h"
 #include "ezsp_types.h"
 
@@ -62,10 +63,75 @@ enum Cluster_ID : uint16_t {
     Extended_Active_EP_req = 0x001E
 };
 
-static const bool is_client_ZDP(const uint16_t cluster_id){
+static const bool is_client_zdp(const uint16_t cluster_id){
     return (cluster_id >= Cluster_ID::NWK_addr_req && cluster_id <= Parent_annce);
 }
 
+static const bool is_zdp(const uint16_t cluster_id){
+    return is_client_zdp(cluster_id);
+}
+
+class Device_Annce;
+
+class Zdp{
+public:
+    Zdp(const Cluster_ID id) : _id(id) {}
+    ~Zdp() {}
+
+    static std::shared_ptr<Zdp> create(const uint16_t cluster_id, const uint8_t* buff, const size_t max_len, size_t& pos){
+        logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__) + " Cluster ID: " + Conv::to_string(cluster_id));
+
+        if( !is_client_zdp(cluster_id)){
+            return std::shared_ptr<Zdp>();
+        }
+
+        std::shared_ptr<Zdp> zdp_obj;
+        switch(cluster_id){
+            case Cluster_ID::Device_annce:
+            {
+                zdp_obj = std::static_pointer_cast<Zdp>(create_zdp<Device_Annce>());
+
+            }
+            break;
+            default:
+            {
+                logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__) + " Cluster ID: " + Conv::to_string(cluster_id) + " Not recognized");
+            }
+        }
+
+        if(zdp_obj){
+            if(zdp_obj->len() > max_len)
+                zdp_obj.reset();
+            else
+                pos = zdp_obj->load(buff, pos);
+        }
+
+        return zdp_obj;
+    }
+
+    virtual void process(std::shared_ptr<childs::Childs>& childs) {}
+
+    template<typename T>
+    static std::shared_ptr<T> create_zdp(){
+        return std::make_shared<T>();
+    }
+
+    virtual size_t load(const uint8_t* buff, size_t& pos) = 0;
+    virtual size_t len() const  = 0;
+
+    const Cluster_ID get_id() const {
+        return _id;
+    }
+
+    virtual const std::string to_string() const {
+        char buff[128];
+        std::sprintf(buff, " ZDP Cluster ID: %04X ", _id);
+        return std::string(buff);
+    }
+
+protected:
+    Cluster_ID _id;
+};
 /**
  * 2.4.3.1.11.1
  * When Generated
@@ -73,15 +139,37 @@ static const bool is_client_ZDP(const uint16_t cluster_id){
  * NWK address, and informing the Remote Devices of the capability of the ZigBee device. This command shall be invoked for all ZigBee end devices upon join or rejoin. This command may also be invoked by
  * ZigBee routers upon join or rejoin as part of NWK address conflict resolution. The destination addressing on this primitive is broadcast to all devices for which macRxOnWhenIdle = TRUE.
  */
-class Device_Annce {
+class Device_Annce : public Zdp {
 public:
-    Device_Annce() {}
+    Device_Annce() : Zdp(Cluster_ID::Device_annce) {}
     ~Device_Annce() {}
 
-    EmberNodeId NWKAddr;    // Device Address 16-bit NWK address NWK address for the Local Device
-    EmberEUI64  IEEEAddr;   // Device Address 64-bit IEEE address IEEE address for the Local Device
-    uint8_t Capability;     // Bitmap See Figure 2.17 Capability of the local device
+    virtual size_t load(const uint8_t* buff, size_t& pos) override {
+        pos = Conv::get(buff, pos, _NwkAddr);
+        pos = Conv::get(buff, pos, _IeeeAddr, sizeof(EmberEUI64), sizeof(EmberEUI64));
+        pos = Conv::get(buff, pos, _Capability);
+        return pos;
+    }
+
+    virtual size_t len() const override {
+        return sizeof(EmberNodeId) + sizeof(EmberEUI64) + sizeof(uint8_t);
+    }
+
+    virtual void process(std::shared_ptr<childs::Childs>& childs) override;
+
+    virtual const std::string to_string() const override {
+        char buff[128];
+        std::sprintf(buff, " NwkAddr: %04X Capability: %02X ", _NwkAddr, _Capability);
+        return Zdp::to_string() + std::string(buff) + Conv::to_string(_IeeeAddr);
+    }
+
+protected:
+    EmberNodeId _NwkAddr;    // Device Address 16-bit NWK address NWK address for the Local Device
+    EmberEUI64  _IeeeAddr;   // Device Address 64-bit IEEE address IEEE address for the Local Device
+    uint8_t _Capability;     // Bitmap See Figure 2.17 Capability of the local device (MACCapabilityFlags)
 };
+
+
 
 }//zdp
 }//zb_ezsp
