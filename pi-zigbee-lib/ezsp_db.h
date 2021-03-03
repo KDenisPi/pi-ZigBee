@@ -12,10 +12,12 @@
 #include <map>
 #include <array>
 
+#include "net.h"
+
 namespace zb_ezsp {
 
-using net_info = std::shared_ptr<EmberNetworkParameters>;
-using net_array = std::array<net_info, 20>;
+using net_info = std::shared_ptr<net::Network>;
+using net_array = std::shared_ptr<std::array<net_info, 20>>;
 
 class  EzspDb {
 public:

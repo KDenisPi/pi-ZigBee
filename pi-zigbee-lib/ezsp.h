@@ -34,11 +34,14 @@ namespace zb_ezsp {
 
 class Ezsp : public piutils::Threaded {
 public:
-    Ezsp(const bool debug_mode=true, const std::string config = "./config.json") : _seq(0), _debug(debug_mode), frame_received(nullptr), _config_prm(config) {
+    Ezsp(const bool debug_mode=true, const std::string& config = "./config.json") : _seq(0), _debug(debug_mode), frame_received(nullptr) {
 
         _uart = std::make_shared<zb_uart::ZBUart>(debug_mode);
         _events = std::make_shared<EventBuff>(20);
         _childs = std::make_shared<childs::Childs>();
+        _networks = std::make_shared<std::array<net_info, 20>>();
+
+        _config = std::make_shared<EzspDbJson>(config);
 
         load_config();
 
@@ -446,8 +449,8 @@ protected:
         /**
          * Network information
          */
-        _config.load(_config_prm);
-        _config.load_networks(_networks);
+        _config->load();
+        _config->load_networks(_networks);
     }
 
     /**
@@ -502,8 +505,7 @@ private:
     net_array _networks;
     std::shared_ptr<childs::Childs> _childs;
 
-    std::string _config_prm; //config parameters (file name for JSON)
-    EzspDbJson _config;
+    std::shared_ptr<EzspDbJson> _config;
 
     /**
      * Detect Frame ID

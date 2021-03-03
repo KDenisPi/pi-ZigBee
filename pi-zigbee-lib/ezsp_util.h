@@ -283,6 +283,10 @@ public:
         return true;
     }
 
+    static void copy_ext_pan(const ExtendedPanId& src, ExtendedPanId& dst){
+        memcpy(dst, src, sizeof(ExtendedPanId));
+    }
+
 };
 
 }

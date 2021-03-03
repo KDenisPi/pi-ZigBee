@@ -14,28 +14,30 @@
 
 #include "logger.h"
 #include "ezsp_db.h"
-
 namespace zb_ezsp {
 
 using json = nlohmann::json;
 
-class  EzspDbJson {
+class  EzspDbJson : public EzspDb {
 public:
+    EzspDbJson(const std::string& config_file) : _config_file(config_file) {}
     EzspDbJson() {}
     virtual ~EzspDbJson() {}
+
+    void set_config(const std::string& config_file){
+        _config_file = config_file;
+    }
 
     /**
      * Load data from storage
      */
-    virtual bool load(const std::string& config_file){
+    virtual bool load() override {
+        logger::log(logger::LLOG::INFO, "json", std::string(__func__) + " Loading: " + _config_file);
+
         bool result = false;
-
-        logger::log(logger::LLOG::INFO, "json", std::string(__func__) + " Loading: " + config_file);
-
-        _config_file = config_file;
         std::ifstream ijson(_config_file);
         if(!ijson){
-            logger::log(logger::LLOG::ERROR, "json", std::string(__func__) + " Could not load config file: " + config_file);
+            logger::log(logger::LLOG::ERROR, "json", std::string(__func__) + " Could not load config file: " + _config_file);
             return result;
         }
 
@@ -62,7 +64,7 @@ public:
     /**
      *
      */
-    virtual bool load_networks(net_array& networks){
+    virtual bool load_networks(net_array& networks) override{
         bool result = true;
         uint8_t ex_pan[8];
         int net_idx = 0;
@@ -71,7 +73,7 @@ public:
         {
             json::reference netws = _conf.at("networks");
             for(auto& item : netws.items()){
-                std::shared_ptr<EmberNetworkParameters> p_net = std::make_shared<EmberNetworkParameters>();
+                std::shared_ptr<net::Network> p_net = std::make_shared<net::Network>();
 
                 auto& net = item.value();
                 p_net->panId = get_mandatory<uint16_t>(net, "panId");
@@ -91,7 +93,7 @@ public:
                 p_net->set_ext_pan(ex_pan);
 
                 logger::log(logger::LLOG::INFO, "json", std::string(__func__) + " Index: " + std::to_string(net_idx) + " " + p_net->to_string());
-                networks[net_idx++] = p_net;
+                networks->at(net_idx++) = p_net;
             }
         }
         catch (json::out_of_range& e)
@@ -106,7 +108,7 @@ public:
     /**
      *
      */
-    virtual bool load_childs(std::shared_ptr<childs::Childs>& childs){
+    virtual bool load_childs(std::shared_ptr<childs::Childs>& childs) override{
         return true;
     }
 
@@ -140,7 +142,6 @@ private:
 public:
     json _conf;
     std::string _config_file;
-
 };
 
 }//namespace zb_ezsp

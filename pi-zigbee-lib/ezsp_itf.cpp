@@ -140,8 +140,10 @@ void Ezsp::networkInit(){
 void Ezsp::formNetwork(){
 
     //Use net 0
-    EmberNetworkParameters netPrm(_networks[0].get());
+    EmberNetworkParameters netPrm;
+    auto net = _networks->at(0).get();
 
+    Conv::copy_ext_pan(net->extendedPanId, netPrm.extendedPanId);
     netPrm.radioTxPower = 8;  //dBm
     netPrm.radioChannel = 15; //25;//12;
     netPrm.joinMethod = EmberJoinMethod::EMBER_USE_MAC_ASSOCIATION;

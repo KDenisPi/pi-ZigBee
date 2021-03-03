@@ -240,6 +240,13 @@ struct EmberNetworkInitStruct {
 class EmberNetworkParameters {
 public:
     EmberNetworkParameters() {
+        clear();
+    }
+    void set_ext_pan(const uint8_t* e_pan){
+        memcpy(extendedPanId, e_pan, sizeof(extendedPanId));
+    }
+
+    void clear() {
         memset(extendedPanId, 0x00, sizeof(extendedPanId));
         panId = 0;
         radioTxPower = 8;
@@ -250,36 +257,8 @@ public:
         channels = 0;
     }
 
-    EmberNetworkParameters(const EmberNetworkParameters& net){
-
-        memcpy(extendedPanId, net.extendedPanId, sizeof(extendedPanId));
-
-        panId = net.panId;
-        radioTxPower = net.radioTxPower;
-        radioChannel = net.radioChannel;
-        joinMethod = net.joinMethod;
-        nwkManagerId = net.nwkManagerId;
-        nwkUpdateId = net.nwkUpdateId;
-        channels = net.channels;
-    }
-
-    EmberNetworkParameters(const EmberNetworkParameters* net){
-        memcpy(extendedPanId, net->extendedPanId, sizeof(extendedPanId));
-        panId = net->panId;
-        radioTxPower = net->radioTxPower;
-        radioChannel = net->radioChannel;
-        joinMethod = net->joinMethod;
-        nwkManagerId = net->nwkManagerId;
-        nwkUpdateId = net->nwkUpdateId;
-        channels = net->channels;
-    }
-
-    void set_ext_pan(const uint8_t* e_pan){
-        memcpy(extendedPanId, e_pan, sizeof(extendedPanId));
-    }
-
     uint8_t extendedPanId[8];   // The network's extended PAN identifier.
-    uint16_t panId;             //The network's PAN identifier.
+    uint16_t panId;             // The network's PAN identifier.
     uint8_t radioTxPower;       // A power setting, in dBm.
     uint8_t radioChannel;       // A radio channel.
     EmberJoinMethod joinMethod; // The method used to initially join the network.

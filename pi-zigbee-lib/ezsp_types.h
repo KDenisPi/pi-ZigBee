@@ -41,6 +41,7 @@ using EZSP_EzspConfigId = uint8_t;
 using EmberNodeId       = uint16_t;                 // 16-bit ZigBee network address.
 using EmberEUI64        = uint8_t[8];               // EUI 64-bit ID (an IEEE address)
 using EmberKeyData      = uint8_t[16];              // A 128-bit key contents EmberCertificateData
+using ExtendedPanId     = uint8_t[8];               // The network's extended PAN identifier.
 
 using EmberSecurityBitmask  = uint16_t;
 using EmberKeyStructBitmask = uint16_t;
