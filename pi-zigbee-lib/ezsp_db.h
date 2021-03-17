@@ -12,7 +12,9 @@
 #include <map>
 #include <array>
 
+#include "config.h"
 #include "net.h"
+#include "ezsp_childs.h"
 
 namespace zb_ezsp {
 
@@ -27,9 +29,11 @@ public:
     /**
      * Load data from storage
      */
-    virtual bool load() = 0;
+    virtual bool load(Config& conf) = 0;
     virtual bool load_networks(net_array& nets) = 0;
-    virtual bool load_childs(std::shared_ptr<childs::Childs>& childs) = 0;
+    virtual bool load_childs(ChildsPtr& childs) = 0;
+
+    virtual bool save(const Config& conf, const net_array& nets, const ChildsPtr& childs) = 0;
 
     /**
      * Add data to storage

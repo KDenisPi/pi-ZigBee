@@ -28,9 +28,7 @@ public:
     }
 
     Network(const zb_ezsp::EmberNetworkParameters& net){
-
         memcpy(extendedPanId, net.extendedPanId, sizeof(extendedPanId));
-
         panId = net.panId;
         radioTxPower = net.radioTxPower;
         radioChannel = net.radioChannel;
@@ -67,13 +65,13 @@ public:
     }
 
     ExtendedPanId extendedPanId; // The network's extended PAN identifier.
-    uint16_t panId;              //The network's PAN identifier.
+    uint16_t panId;              // The network's PAN identifier.
     uint8_t radioTxPower;        // A power setting, in dBm.
     uint8_t radioChannel;        // A radio channel.
     EmberJoinMethod joinMethod;  // The method used to initially join the network.
     EmberNodeId nwkManagerId;    // NWK Manager ID. The ID of the network manager in the current network. This may only be set at joining when using EMBER_USE_NWK_COMMISSIONING as the join method.
     uint8_t nwkUpdateId;         // NWK Update ID. The value of the ZigBee nwkUpdateId known by the stack. This is used to determine the newest instance of the network after a
-                                 //PAN ID or channel change. This may only be set at joining when using EMBER_USE_NWK_COMMISSIONING as the join method.
+                                 // PAN ID or channel change. This may only be set at joining when using EMBER_USE_NWK_COMMISSIONING as the join method.
     uint32_t channels;           // NWK channel mask. The list of preferred channels that the NWK manager has told this device to use when searching for the network. This may only be
                                  //set at joining when using EMBER_USE_NWK_COMMISSIONING as the join method
 

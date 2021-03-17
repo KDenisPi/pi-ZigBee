@@ -9,6 +9,7 @@
 #ifndef PI_ZIGBEE_LIB_EZSP_DB_JSON_H_
 #define PI_ZIGBEE_LIB_EZSP_DB_JSON_H_
 
+#include <unistd.h>
 #include <fstream>
 #include <nlohmann/json.hpp>
 
@@ -31,7 +32,7 @@ public:
     /**
      * Load data from storage
      */
-    virtual bool load() override {
+    virtual bool load(Config& conf) override {
         logger::log(logger::LLOG::INFO, "json", std::string(__func__) + " Loading: " + _config_file);
 
         bool result = false;
@@ -43,9 +44,11 @@ public:
 
         try{
             _conf = json::parse(ijson);
-            std::string cfg_ver = _conf.at("version");
-            logger::log(logger::LLOG::INFO, "json", std::string(__func__) + " Config version: " + cfg_ver);
+            json::reference config = _conf.at("config");
 
+            conf._ver = config.at("version");
+
+            logger::log(logger::LLOG::INFO, "json", std::string(__func__) + " Config version: " + conf.ver());
             result = true;
         }
         catch (json::parse_error& e){
@@ -76,7 +79,7 @@ public:
                 std::shared_ptr<net::Network> p_net = std::make_shared<net::Network>();
 
                 auto& net = item.value();
-                p_net->panId = get_mandatory<uint16_t>(net, "panId");
+                p_net->panId = get_uint16_from_hex(net, "panId");
                 p_net->radioTxPower = get_optional<uint8_t>(net, "radioTxPower", 0);
                 p_net->radioChannel = get_mandatory<uint8_t>(net, "radioChannel");
                 p_net->joinMethod = static_cast<EmberJoinMethod>(get_optional<uint8_t>(net, "joinMethod", (uint8_t)EmberJoinMethod::EMBER_USE_MAC_ASSOCIATION));
@@ -86,10 +89,7 @@ public:
                 p_net->channels = get_optional<uint32_t>(net, "channels", 0);
 
                 json::reference extendedPanId = net.at("extendedPanId");
-                for(int i = 0; i < extendedPanId.size() && i < 8; i++){
-                    std::string bt = extendedPanId.at(i);
-                    ex_pan[i] = std::stoi(bt, nullptr, 16);
-                }
+                byte_array_to_Eui64(extendedPanId, ex_pan);
                 p_net->set_ext_pan(ex_pan);
 
                 logger::log(logger::LLOG::INFO, "json", std::string(__func__) + " Index: " + std::to_string(net_idx) + " " + p_net->to_string());
@@ -108,17 +108,74 @@ public:
     /**
      *
      */
-    virtual bool load_childs(std::shared_ptr<childs::Childs>& childs) override{
+    virtual bool load_childs(ChildsPtr& childs) override{
         return true;
     }
 
     /**
-     * Add data to storage
+     * Save data to json format
      */
-    virtual bool add_neighbor() {return true;}
-    virtual bool add_network() {return true;}
+    virtual bool save(const Config& conf, const net_array& nets, const ChildsPtr& childs) override {
+
+        /**
+         * File exist. Rename.
+         */
+        if(chkfile(_config_file)){
+            std::chrono::time_point<std::chrono::system_clock> tp;
+            tp = std::chrono::system_clock::now();
+            std::time_t time_now = std::chrono::system_clock::to_time_t(tp);
+            std::string backup = _config_file + "_" + std::to_string(time_now);
+
+            _config_file = backup;
+
+            //rename filename
+            /*
+            int res=rename(_config_file.c_str(), backup.c_str());
+            if(res != 0){
+                logger::log(logger::LLOG::INFO, "json", std::string(__func__) + " Failed to rename " + _config_file + " to: " + backup + " Err: " + std::to_string(res));
+                return false;
+            }
+            */
+        }
+
+        //clear JSON object
+        _conf.clear();
+
+        json cfg = conf2json(conf);
+        _conf["config"] = cfg;
+
+        json networks = networks2json(nets);
+        _conf["networks"] = networks;
+
+
+        std::ofstream ostrm(_config_file, std::ios::binary | std::ios::out);
+        if(!ostrm){
+            logger::log(logger::LLOG::ERROR, "json", std::string(__func__) + " Could not create config file: " + _config_file);
+            return false;
+        }
+
+        ostrm << _conf;
+
+        return true;
+    }
+
+    /**
+     * Export networks information
+     */
+    const std::string export_networks(net_array& networks){
+
+        return std::string();
+    }
 
 private:
+    /*
+    * Check if file exist and available
+    */
+    bool chkfile(const std::string& fname){
+        int res = access(fname.c_str(), F_OK);
+        return (res == 0);
+    }
+
     template<class T>
     T get_mandatory(json::const_reference obj, const std::string& key){
         return obj.at(key);
@@ -138,11 +195,77 @@ private:
         return result;
     }
 
+    uint16_t get_uint16_from_hex(json::const_reference obj, const std::string& item){
+        std::string str = get_mandatory<std::string>(obj, item);
+        return std::stoi(str, nullptr, 16);
+    }
 
-public:
+    /**
+     * Serialize config as JSON object
+     */
+    const json conf2json(const Config& conf) {
+        json cfg = json::object();
+
+        json version = conf.ver();
+        cfg["version"] = version;
+
+        return cfg;
+    }
+
+    /**
+     * Serialize Networks as JSON object
+     */
+    const json networks2json(const net_array& networks) {
+        json nets = json::array();
+
+        if(networks){
+            for(const auto& netp : *(networks)){
+                if(netp){
+                    json net = json::object();
+                    net["panId"] = uint16_t_to_string(netp->panId);
+                    net["extendedPanId"] = Eui64_to_byte_array(netp->extendedPanId);
+                    net["radioTxPower"] = netp->radioTxPower;
+                    net["radioChannel"] = netp->radioChannel;
+                    net["joinMethod"] = netp->joinMethod;
+                    net["nwkManagerId"] = netp->nwkManagerId;
+
+                    nets.insert(nets.end(), net);
+                }
+            }
+        }
+
+        return nets;
+    }
+
+    void byte_array_to_Eui64(const json::reference extendedPanId, uint8_t ex_pan[8]){
+        for(int i = 0; i < extendedPanId.size() && i < 8; i++){
+            std::string bt = extendedPanId.at(i);
+            ex_pan[i] = std::stoi(bt, nullptr, 16);
+        }
+    }
+
+    const json Eui64_to_byte_array(const ExtendedPanId eui64){
+        json bytes = json::array();
+        char buff[6];
+        for(int i = 0; i < sizeof(ExtendedPanId); i++){
+            std::sprintf(buff, "0x%02X", eui64[i]);
+            bytes.insert(bytes.end(), buff);
+        }
+
+        return bytes;
+    }
+
+    const std::string uint16_t_to_string(const uint16_t val){
+        char buff[16];
+        std::sprintf(buff, "0x%04X", val);
+        return std::string(buff);
+    }
+
     json _conf;
     std::string _config_file;
 };
+
+
 
 }//namespace zb_ezsp
 

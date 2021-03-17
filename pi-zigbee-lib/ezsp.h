@@ -36,12 +36,23 @@ class Ezsp : public piutils::Threaded {
 public:
     Ezsp(const bool debug_mode=true, const std::string& config = "./config.json") : _seq(0), _debug(debug_mode), frame_received(nullptr) {
 
+        /**
+         * UART object
+         */
         _uart = std::make_shared<zb_uart::ZBUart>(debug_mode);
+
+        /**
+         * Events buffer
+         */
         _events = std::make_shared<EventBuff>(20);
+
+        /**
+         * Environment information objects
+         */
+        _config = std::make_shared<EzspDbJson>(config);
         _childs = std::make_shared<childs::Childs>();
         _networks = std::make_shared<std::array<net_info, 20>>();
 
-        _config = std::make_shared<EzspDbJson>(config);
 
         load_config();
 
@@ -449,7 +460,7 @@ protected:
         /**
          * Network information
          */
-        _config->load();
+        _config->load(_cfg);
         _config->load_networks(_networks);
     }
 
@@ -502,6 +513,7 @@ private:
     EmberKeyStruct _key_network;              // The current active Network Key used by all devices in the network.
     EmberKeyStruct _key_trust_center_link;    // A shared key between the Trust Center and a device.
 
+    Config _cfg;
     net_array _networks;
     std::shared_ptr<childs::Childs> _childs;
 
