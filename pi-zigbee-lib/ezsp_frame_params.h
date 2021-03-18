@@ -757,22 +757,22 @@ struct EmberKeyStruct {
         bitmask = other.bitmask;
         memcpy((void*)other.key, key, sizeof(other.key));
 
-        if(other.bitmask&EmberKeyStructBitmaskMode::EMBER_KEY_HAS_INCOMING_FRAME_COUNTER)
+        if(other.bitmask & EmberKeyStructBitmaskMode::EMBER_KEY_HAS_INCOMING_FRAME_COUNTER)
             incomingFrameCounter = other.incomingFrameCounter;
         else
             incomingFrameCounter = 0;
 
-        if(other.bitmask&EmberKeyStructBitmaskMode::EMBER_KEY_HAS_OUTGOING_FRAME_COUNTER)
+        if(other.bitmask & EmberKeyStructBitmaskMode::EMBER_KEY_HAS_OUTGOING_FRAME_COUNTER)
             outgoingFrameCounter = other.outgoingFrameCounter;
         else
             outgoingFrameCounter = 0;
 
-        if(other.bitmask&EmberKeyStructBitmaskMode::EMBER_KEY_HAS_PARTNER_EUI64)
+        if(other.bitmask & EmberKeyStructBitmaskMode::EMBER_KEY_HAS_PARTNER_EUI64)
             memcpy((void*)other.partnerEUI64, partnerEUI64, sizeof(other.partnerEUI64));
         else
            memset(partnerEUI64, 0x00, sizeof(partnerEUI64));
 
-        if(other.bitmask&EmberKeyStructBitmaskMode::EMBER_KEY_HAS_SEQUENCE_NUMBER)
+        if(other.bitmask & EmberKeyStructBitmaskMode::EMBER_KEY_HAS_SEQUENCE_NUMBER)
             sequenceNumber = other.sequenceNumber;
         else
             sequenceNumber = 0;

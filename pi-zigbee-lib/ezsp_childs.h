@@ -68,6 +68,9 @@ public:
         return _childs[eui64];
     }
 
+    void add(const u_int64_t id, const child_info child){
+        _childs[id] = child;
+    }
 
     void del_child(const EmberEUI64& childId){
         logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__) + " child: " + Conv::to_string(childId));
@@ -152,6 +155,10 @@ public:
     void set_active_child(EmberNodeId childId){
         logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__) + " From: " + Conv::to_string(_child_on_process) + " To:" + Conv::to_string(childId));
         _child_on_process = childId;
+    }
+
+    const child_map& get_childs() const {
+        return _childs;
     }
 
 private:

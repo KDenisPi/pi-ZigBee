@@ -80,8 +80,8 @@ public:
 
                 auto& net = item.value();
                 p_net->panId = get_uint16_from_hex(net, "panId");
-                p_net->radioTxPower = get_optional<uint8_t>(net, "radioTxPower", 0);
-                p_net->radioChannel = get_mandatory<uint8_t>(net, "radioChannel");
+                p_net->radioTxPower = get_optional<uint8_t>(net, "radioTxPower", 8);
+                p_net->radioChannel = get_optional<uint8_t>(net, "radioChannel", 15);
                 p_net->joinMethod = static_cast<EmberJoinMethod>(get_optional<uint8_t>(net, "joinMethod", (uint8_t)EmberJoinMethod::EMBER_USE_MAC_ASSOCIATION));
 
                 p_net->nwkManagerId = get_optional<uint16_t>(net, "nwkManagerId", 0);
@@ -109,6 +109,35 @@ public:
      *
      */
     virtual bool load_childs(ChildsPtr& childs) override{
+        bool result = true;
+        uint8_t ex_pan[8];
+        int net_idx = 0;
+
+        try
+        {
+            json::reference j_childs = _conf.at("childs");
+            for(auto& item : j_childs.items()){
+                std::shared_ptr<childs::Child> p_child = std::make_shared<childs::Child>();
+                auto& j_child = item.value();
+
+                uint64_t id = get_mandatory<uint64_t>(j_child, "id");
+                p_child->nwkAddr = get_uint16_from_hex(j_child, "nwkAddr");
+                p_child->childType = static_cast<zb_ezsp::EmberNodeType>(get_mandatory<uint8_t>(j_child, "type"));
+                p_child->macCapability.set(get_mandatory<uint8_t>(j_child, "flags"));
+
+                json::reference ieeeAddr = j_child.at("ieeeAddr");
+                byte_array_to_Eui64(ieeeAddr, ex_pan);
+                p_child->set_ieeeAddr(ex_pan);
+
+                childs->add(id, p_child);
+            }
+        }
+        catch (json::out_of_range& e)
+        {
+            logger::log(logger::LLOG::ERROR, "json", std::string(__func__) + " Out of range Error: " + std::to_string(e.id) + " Description: " + std::string(e.what()));
+            result = false;
+        }
+
         return true;
     }
 
@@ -126,26 +155,25 @@ public:
             std::time_t time_now = std::chrono::system_clock::to_time_t(tp);
             std::string backup = _config_file + "_" + std::to_string(time_now);
 
-            _config_file = backup;
-
             //rename filename
-            /*
             int res=rename(_config_file.c_str(), backup.c_str());
             if(res != 0){
                 logger::log(logger::LLOG::INFO, "json", std::string(__func__) + " Failed to rename " + _config_file + " to: " + backup + " Err: " + std::to_string(res));
                 return false;
             }
-            */
         }
 
         //clear JSON object
         _conf.clear();
 
-        json cfg = conf2json(conf);
-        _conf["config"] = cfg;
+        json j_cfg = conf2json(conf);
+        _conf["config"] = j_cfg;
 
-        json networks = networks2json(nets);
-        _conf["networks"] = networks;
+        json j_networks = networks2json(nets);
+        _conf["networks"] = j_networks;
+
+        json j_childs = child2json(childs);
+        _conf["childs"] = j_childs;
 
 
         std::ofstream ostrm(_config_file, std::ios::binary | std::ios::out);
@@ -216,26 +244,52 @@ private:
      * Serialize Networks as JSON object
      */
     const json networks2json(const net_array& networks) {
-        json nets = json::array();
+        json j_nets = json::array();
 
         if(networks){
             for(const auto& netp : *(networks)){
                 if(netp){
-                    json net = json::object();
-                    net["panId"] = uint16_t_to_string(netp->panId);
-                    net["extendedPanId"] = Eui64_to_byte_array(netp->extendedPanId);
-                    net["radioTxPower"] = netp->radioTxPower;
-                    net["radioChannel"] = netp->radioChannel;
-                    net["joinMethod"] = netp->joinMethod;
-                    net["nwkManagerId"] = netp->nwkManagerId;
+                    json j_net = json::object();
+                    j_net["panId"] = uint16_t_to_string(netp->panId);
+                    j_net["extendedPanId"] = Eui64_to_byte_array(netp->extendedPanId);
+                    j_net["radioTxPower"] = netp->radioTxPower;
+                    j_net["radioChannel"] = netp->radioChannel;
+                    j_net["joinMethod"] = netp->joinMethod;
+                    j_net["nwkManagerId"] = netp->nwkManagerId;
 
-                    nets.insert(nets.end(), net);
+                    j_nets.insert(j_nets.end(), j_net);
                 }
             }
         }
 
-        return nets;
+        return j_nets;
     }
+
+    /**
+     * Serialize Child information as JSON object
+     */
+    const json child2json(const ChildsPtr& childs){
+        json j_childs = json::array();
+
+        if(childs){
+            for(const auto& child : childs->get_childs()){
+                json j_child = json::object();
+                j_child["id"] = child.first;
+                j_child["nwkAddr"] = uint16_t_to_string(child.second->nwkAddr);
+                j_child["ieeeAddr"] = Eui64_to_byte_array(child.second->ieeeAddr);
+                j_child["type"] = child.second->type();
+                j_child["flags"] = child.second->macCapability.flags();
+
+                j_childs.insert(j_childs.end(), j_child);
+            }
+        }
+
+        return j_childs;
+    }
+
+    /**
+     * Service functions
+     */
 
     void byte_array_to_Eui64(const json::reference extendedPanId, uint8_t ex_pan[8]){
         for(int i = 0; i < extendedPanId.size() && i < 8; i++){

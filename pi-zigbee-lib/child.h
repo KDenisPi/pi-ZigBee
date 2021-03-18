@@ -50,8 +50,8 @@ public:
 
     uint8_t index;                      // The index of the child of interest.
     EZSP_Bool joining;                  // True if the child is joining. False the child is leaving.
-    EmberNodeId nwkAddr;                     // The node ID of the child.
-    EmberEUI64 ieeeAddr;                   // The EUI64 of the child.
+    EmberNodeId nwkAddr;                // The node ID of the child.
+    EmberEUI64 ieeeAddr;                // The EUI64 of the child.
     EmberNodeType childType;            // The node type of the child.
     EmberDeviceUpdate devUpdate;        // Child device status
     MACCapabilityFlags macCapability;   // MAC Capability flags
@@ -59,6 +59,10 @@ public:
     uint8_t addressTableIndex = 0xFF;
     uint8_t sequence = 0;
     bool    send_in_progress;
+
+    const EmberNodeType type() const {
+        return childType;
+    }
 
     bool is_in_progress() const {
         return send_in_progress;
@@ -86,6 +90,10 @@ public:
 
     void copy_Eui64(EmberEUI64& eui64){
         memcpy(eui64, ieeeAddr, sizeof(EmberEUI64));
+    }
+
+    void set_ieeeAddr(const ExtendedPanId& addr){
+        memcpy(ieeeAddr, addr, sizeof(ExtendedPanId));
     }
 
     const bool is_has_valid_id() const {

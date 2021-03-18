@@ -113,6 +113,11 @@ public:
         return (_flags & Flag_Allocate_address) != 0;
     }
 
+    const uint8_t flags() const {
+        return _flags;
+    }
+
+protected:
     uint8_t _flags;
 };
 

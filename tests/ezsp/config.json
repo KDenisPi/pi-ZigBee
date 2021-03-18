@@ -7,7 +7,7 @@
             "panId" : "0x5F17",
             "extendedPanId" : ["0xC4","0x9D","0xF8","0x5C","0x57","0x01","0x6C","0xA7"],
             "radioTxPower" : 8,
-            "radioChannel": 25,
+            "radioChannel": 15,
             "joinMethod" : 0,
             "nwkManagerId" : 0
         }

@@ -144,12 +144,12 @@ void Ezsp::formNetwork(){
     auto net = _networks->at(0).get();
 
     Conv::copy_ext_pan(net->extendedPanId, netPrm.extendedPanId);
-    netPrm.radioTxPower = 8;  //dBm
-    netPrm.radioChannel = 15; //25;//12;
-    netPrm.joinMethod = EmberJoinMethod::EMBER_USE_MAC_ASSOCIATION;
-    netPrm.nwkManagerId = 0;
-    netPrm.nwkUpdateId = 0;
-    netPrm.channels = 0;
+    netPrm.radioTxPower = net->radioTxPower;  //dBm
+    netPrm.radioChannel = net->radioChannel;
+    netPrm.joinMethod = net->joinMethod;
+    netPrm.nwkManagerId = net->nwkManagerId;
+    netPrm.nwkUpdateId = net->nwkUpdateId;
+    netPrm.channels = net->channels;
 
     logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__) + " Net: " + netPrm.to_string());
 

@@ -54,8 +54,12 @@ public:
         _networks = std::make_shared<std::array<net_info, 20>>();
 
 
+        //Load configuration and previous session information
         load_config();
 
+        /**
+         * Callback functions
+         */
         _uart->callback_connected = std::bind(&Ezsp::callback_connected, this, std::placeholders::_1);
         _uart->callback_eframe_received = std::bind(&Ezsp::callback_eframe_received, this, std::placeholders::_1);
     }
@@ -64,7 +68,11 @@ public:
      *
      */
     ~Ezsp() {
+        //Stop working thread
         stop();
+
+        //Save session information
+        save_config();
     }
 
     Ezsp(Ezsp&) = delete;
@@ -462,6 +470,14 @@ protected:
          */
         _config->load(_cfg);
         _config->load_networks(_networks);
+        _config->load_childs(_childs);
+    }
+
+    /**
+     * Save configuration and another data detected during current session
+     */
+    void save_config(){
+        _config->save(_cfg, _networks, _childs);
     }
 
     /**
