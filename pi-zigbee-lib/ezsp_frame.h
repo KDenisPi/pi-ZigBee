@@ -222,6 +222,7 @@ public:
 
     size_t put_param(const zb_ezsp::ezsp_no_params& param, uint8_t* buff, size_t pos);
     size_t put_param(const zb_ezsp::uint8t_value& param, uint8_t* buff, size_t pos);
+    size_t put_param(const zb_ezsp::Eui64& param, uint8_t* buff, size_t pos);
     size_t get_param(zb_ezsp::ezsp_no_params& param, const uint8_t* buff, size_t& pos);
     size_t get_param(zb_ezsp::ezsp_EmberStatus& param, const uint8_t* buff, size_t& pos);
     size_t get_param(zb_ezsp::ezsp_EzspStatus& param, const uint8_t* buff, size_t& pos);
@@ -248,6 +249,7 @@ public:
     size_t get_param(zb_ezsp::getParentChildParameters& param, const uint8_t* buff, size_t pos);
     size_t get_param(zb_ezsp::lookupEui64ByNodeId& param, const uint8_t* buff, size_t pos);
     size_t get_param(zb_ezsp::EmberRouteTableEntry& param, const uint8_t* buff, size_t pos);
+    size_t get_param(zb_ezsp::GetRouteTableEntry& param, const uint8_t* buff, size_t pos);
 
 
     /**
@@ -277,6 +279,7 @@ public:
     size_t put_param(const zb_ezsp::BecomeTrustCenter& param, uint8_t* buff, size_t pos);
     size_t put_param(const zb_ezsp::unicastNwkKeyUpdate& param, uint8_t* buff, size_t pos);
     size_t put_param(const zb_ezsp::keyData& param, uint8_t* buff, size_t pos);
+    size_t put_param(const zb_ezsp::FindKeyTableEntry& param, uint8_t* buff, size_t pos);
 
     /**
      * APS Frame & messaging

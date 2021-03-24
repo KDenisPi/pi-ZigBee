@@ -24,6 +24,11 @@ using EId = enum EFrame_ID : id_type {
     ID_stackTokenChangedHandler = 0x0D,     //A callback invoked to inform the application that a stack token has changed.
     ID_networkInit = 0x17,                  //Resume network operation after a reboot. The node retains its original type. This should be called on startup whether or
                                             //not the node was previously part of a network. EMBER_NOT_JOINED is returned if the node is not part of a network.
+
+    ID_requestLinkKey = 0x14,               //A function to request a Link Key from the Trust Center with another device on the Network (which could be the Trust Center).
+                                            //A Link Key with the Trust Center is possible but the requesting device cannot be the Trust Center.
+                                            // Link Keys are optional in ZigBee Standard Security and thus the stack cannot know whether the other device supports them.
+
     ID_networkState = 0x18,                 //Returns a value indicating whether the node is joining, joined to, or leaving a network.
     ID_stackStatusHandler = 0x19,           //A callback invoked when the status of the stack changes. If the status parameter equals EMBER_NETWORK_UP, then the getNetworkParameters command
                                             //can be called to obtain the new network parameters. If any of the parameters are being stored in nonvolatile memory by the Host, the stored values should be updated.
@@ -70,7 +75,8 @@ using EId = enum EFrame_ID : id_type {
     ID_broadcastNextNetworkKey = 0x73,      //This function broadcasts a new encryption key, but does not tell the nodes in the network to start using it. To tell nodes to
                                             //switch to the new key, use emberSendNetworkKeySwitch(). This is only valid for the Trust Center/Coordinator. It is up to the application
                                             //to determine how quickly to send the Switch Key after sending the alternate encryption key.
-    ID_broadcastNetworkKeySwitch =0x74,     //This function broadcasts a switch key message to tell all nodes to change to the sequence number of the previously sent Alternate Encryption Key.
+    ID_broadcastNetworkKeySwitch = 0x74,    //This function broadcasts a switch key message to tell all nodes to change to the sequence number of the previously sent Alternate Encryption Key.
+    ID_findKeyTableEntry = 0x75,            //This function searches through the Key Table and tries to find the entry that matches the passed search criteria.
 
     ID_becomeTrustCenter = 0x77,            //This function causes a coordinator to become the Trust Center when it is operating in a network that is not using one.
 
@@ -244,7 +250,7 @@ using EmberStatus = enum EFrame_EmberStatus : uint8_t{
     EMBER_BINDING_INDEX_OUT_OF_RANGE = 0x69,    // This binding index is out of range of the current binding table.
     EMBER_ADDRESS_TABLE_INDEX_OUT_OF_RANGE = 0x6A,  // This address table index is out of range for the current address table.
     EMBER_INVALID_BINDING_INDEX = 0x6C,         // An invalid binding table index was given to a function.
-    EMBER_INVALID_CALL = 0x70,                  //The API call is not allowed given the current state of the stack.
+    EMBER_INVALID_CALL = 0x70,                  // The API call is not allowed given the current state of the stack.
     EMBER_COST_NOT_KNOWN = 0x71,                // The link cost to a node is not known.
     EMBER_MAX_MESSAGE_LIMIT_REACHED = 0x72,     // The maximum number of in-flight messages (i.e.EMBER_APS_UNICAST_MESSAGE_COUNT) hasbeen reached.
     EMBER_MESSAGE_TOO_LONG = 0x74,              // The message to be transmitted is too big to fit into a single over-the-air packet.

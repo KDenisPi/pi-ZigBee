@@ -19,6 +19,7 @@ std::map<id_type, std::string> Ezsp::_frameId2String = {
     {ID_noCallbacks, std::string("No Callback")},
     {ID_getMfgToken, std::string("getMfgToken")},
     {ID_stackTokenChangedHandler, std::string("stackTokenChangedHandler")},
+    {ID_requestLinkKey, std::string("requestLinkKey")},
     {ID_networkInit, std::string("networkInit")},
 
     {ID_networkState, std::string("networkState")},
@@ -75,7 +76,8 @@ std::map<id_type, std::string> Ezsp::_frameId2String = {
     {ID_incomingSenderEui64Handler, std::string("incomingSenderEui64Handler")},
     {ID_incomingRouteRecordHandler, std::string("incomingRouteRecordHandler")},
     {ID_zigbeeKeyEstablishmentHandler, std::string("zigbeeKeyEstablishmentHandler")},
-    {ID_getRouteTableEntry, std::string("getRouteTableEntry")}
+    {ID_getRouteTableEntry, std::string("getRouteTableEntry")},
+    {ID_findKeyTableEntry, std::string("findKeyTableEntry")}
 };
 
 }

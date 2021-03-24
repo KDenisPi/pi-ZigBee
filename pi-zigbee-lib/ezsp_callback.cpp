@@ -59,6 +59,7 @@ void Ezsp::callback_eframe_received(const zb_uart::EFramePtr& efr_raw){
         case EId::ID_clearKeyTable:
         case EId::ID_broadcastNextNetworkKey:
         case EId::ID_broadcastNetworkKeySwitch:
+        case EId::ID_requestLinkKey:
         {
             auto p_status = ef->load<zb_ezsp::ember_status>(efr_raw->data(), efr_raw->len());
             notify((EId)id, p_status->to_string());
@@ -79,6 +80,9 @@ void Ezsp::callback_eframe_received(const zb_uart::EFramePtr& efr_raw){
                             add_event(std::make_shared<EzspEvent>(EVT_NET_STATUS, p_status->status, ef->network_index()));
                         }
 
+                        /**
+                         * Network is UP. Initialize security.
+                         */
                         if(p_status->status == EmberStatus::EMBER_NETWORK_UP){
                             getCurrentSecurityState();
                         }
@@ -113,6 +117,7 @@ void Ezsp::callback_eframe_received(const zb_uart::EFramePtr& efr_raw){
          */
         case EId::ID_neighborCount:
         case EId::ID_getExtendedTimeout:
+        case EId::ID_findKeyTableEntry:
         {
             auto p_8t_value = ef->load<zb_ezsp::uint8t_value>(efr_raw->data(), efr_raw->len());
             notify((EId)id, p_8t_value->to_string());
@@ -130,7 +135,7 @@ void Ezsp::callback_eframe_received(const zb_uart::EFramePtr& efr_raw){
         }
         break;
         /**
-         * Reports that a network was found as a result of a prior call to startScan. Gives the network parameters useful for deciding which network to join.
+         * Reports that a network was found as a result of a prior call to startScanID_requestLinkKey. Gives the network parameters useful for deciding which network to join.
          */
         case EId::ID_networkFoundHandler:
         {
@@ -185,16 +190,9 @@ void Ezsp::callback_eframe_received(const zb_uart::EFramePtr& efr_raw){
                     logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__) + " child: " + Conv::to_string(child->nwkAddr) + " EUI64: " + Conv::to_string(child->ieeeAddr) + " Status: " + std::to_string(p_trust->status));
 
                     /**
-                     * Start procedure for Address Table
+                     *
                      */
-                    const EmberNodeId active_child = _childs->get_next_for_address_table();
-                    if(active_child == childs::Child::NoChild){
-                        _childs->set_active_child(child->nwkAddr);
-                        logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__) + " set active child: " + Conv::to_string(child->nwkAddr));
-                    }
-
                     if(p_trust->status == EmberDeviceUpdate::EMBER_STANDARD_SECURITY_UNSECURED_JOIN){
-
                     }
                 }
             }
@@ -309,6 +307,15 @@ void Ezsp::callback_eframe_received(const zb_uart::EFramePtr& efr_raw){
         {
             auto p_conf = ef->load<zb_ezsp::getCurrentSecurityState>(efr_raw->data(), efr_raw->len());
             notify((EId)id, p_conf->to_string());
+
+            /**
+             * Save Trust Center address
+             */
+            if(EmberStatus::EMBER_SUCCESS == p_conf->status){
+                Conv::copy(_trustCenterLongAddress, p_conf->state.trustCenterLongAddress);
+                logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__) + " ID_getCurrentSecurityState Tryst Center Addr: " + Conv::to_string(_trustCenterLongAddress));
+            }
+
         }
         break;
         case EId::ID_getKey:
@@ -324,7 +331,6 @@ void Ezsp::callback_eframe_received(const zb_uart::EFramePtr& efr_raw){
             }
 
             notify((EId)id, p_key->to_string());
-
         }
         break;
         case EId::ID_sendUnicast:
@@ -354,9 +360,16 @@ void Ezsp::callback_eframe_received(const zb_uart::EFramePtr& efr_raw){
             notify((EId)id, p_zigbeeKey->to_string());
 
             //TODO: Find node and update status?
-            if( !Conv::is_empty<EmberEUI64>(p_zigbeeKey->partner)){
-
+            if(p_zigbeeKey->status == EMBER_TC_REJECTED_APP_KEY_REQUEST && !Conv::is_empty<EmberEUI64>(p_zigbeeKey->partner)){
+                requestLinkKey(p_zigbeeKey->partner);
             }
+
+        }
+        break;
+        case EId::ID_getRouteTableEntry:
+        {
+            auto p_routeEntry = ef->load<zb_ezsp::EmberRouteTableEntry>(efr_raw->data(), efr_raw->len());
+            notify((EId)id, p_routeEntry->to_string());
 
         }
         break;

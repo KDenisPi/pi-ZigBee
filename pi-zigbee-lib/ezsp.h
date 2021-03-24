@@ -210,6 +210,28 @@ public:
         add2output<zb_ezsp::uint8t_value>(zb_ezsp::EId::ID_getKey, int8_value);
     }
 
+    void requestLinkKey(const EmberEUI64& partner){
+        logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__) + " Partner: " + Conv::to_string(partner));
+        struct Eui64 reqLinkKey;
+        Conv::copy(reqLinkKey.eui64, partner);
+
+        add2output<zb_ezsp::Eui64>(zb_ezsp::EId::ID_requestLinkKey, reqLinkKey);
+    }
+
+    /**
+     * EmberEUI64 address The address to search for. Alternatively, all zeros may be passed in to search for the first empty entry.
+     * bool linkKey This indicates whether to search for an entry that contains a link key or a master key. true means to search for an entry with a Link Key.
+     */
+    void findKeyTableEntry(const EmberEUI64& address, const bool linkKey = true){
+        logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__) + " Address: " + Conv::to_string(address) + " linkKey:" + std::to_string(linkKey));
+
+        FindKeyTableEntry fndKey;
+        Conv::copy(fndKey.address, address);
+        fndKey.linkKey = linkKey;
+
+        add2output<zb_ezsp::FindKeyTableEntry>(zb_ezsp::EId::ID_findKeyTableEntry, fndKey);
+    }
+
     void BecomeTrustCenter(){
         logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__) + " " + _key_network.to_string());
         zb_ezsp::BecomeTrustCenter trCenter;
@@ -520,8 +542,10 @@ private:
     EmberNodeType _node_type = EmberNodeType::EMBER_COORDINATOR;
     EmberEUI64 _eui64;                      // The 64-bit ID
     EmberNodeId _nodeId;                    // The 16-bit ID
-    bool _trust_center = false; //true;      //Is I would like to be trust center itself
-    bool _become_trust_center = false;      //If I am trust center already
+
+    EmberEUI64 _trustCenterLongAddress;     // Trust Center Network Address (mine if I am trust center)
+    bool _trust_center = false; //true;     // Is I would like to be trust center itself
+    bool _become_trust_center = false;      // If I am trust center already
 
     /**
      * Security. Keys.

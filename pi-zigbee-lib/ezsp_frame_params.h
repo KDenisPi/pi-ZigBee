@@ -784,11 +784,11 @@ struct EmberKeyStruct {
     const std::string to_string() const {
         char buff[128];
         std::sprintf(buff, " EmberKeyStruct bitmask:%04X Type:%02X Cntr Out:%08X In:%08X Seq:%02X",
-        bitmask,
-        type,
-        outgoingFrameCounter,
-        incomingFrameCounter,
-        sequenceNumber
+            bitmask,
+            type,
+            outgoingFrameCounter,
+            incomingFrameCounter,
+            sequenceNumber
         );
         return std::string(buff) + " Key " + Conv::KeyData_to_string(key) + " Partner: " + Conv::to_string(partnerEUI64);
     }
@@ -800,12 +800,9 @@ struct getKey {
 
     const std::string to_string() const {
         char buff[128];
-        std::sprintf(buff, " getKey status:%02X ",
-        status
-        );
+        std::sprintf(buff, " getKey status:%02X ", status);
         return std::string(buff) + keyStruct.to_string();
     }
-
 };
 
 struct BecomeTrustCenter {
@@ -838,8 +835,23 @@ public:
 
     EmberEUI64 partner;     // This is the IEEE address of the partner that the device successfully established a key with. This value is all zeros on a failure.
     EmberKeyStatus status;  // This is the status indicating what was established or why the key establishment failed.
-
 };
+
+class FindKeyTableEntry {
+public:
+    FindKeyTableEntry() {}
+    ~FindKeyTableEntry() {}
+
+    const std::string to_string() const {
+        char buff[64];
+        std::sprintf(buff, " FindKeyTableEntry LinkKey:%02X ", linkKey);
+        return std::string(buff) + " Address: " + Conv::to_string(address);
+    }
+
+    EmberEUI64 address;
+    EZSP_Bool linkKey;
+};
+
 
 /**
  * A route table entry stores information about the next hop along the route to the destination.
@@ -869,8 +881,22 @@ public:
     uint8_t concentratorType;   // Indicates whether this destination is a High RAM Concentrator (2), a Low RAM Concentrator (1), or not a concentrator (0).
     uint8_t routeRecordState;   // For a High RAM Concentrator, indicates whether a route record is needed (2), has been sent (1), or is
                                 // no long needed (0) because a source routed message from the concentrator has been received.
-
 };
+
+/**
+ *
+ */
+struct GetRouteTableEntry {
+    EmberStatus status;         // The success or failure code of the operation.
+    EmberRouteTableEntry value; // The contents of the route table entry.
+
+    const std::string to_string() const {
+        char buff[128];
+        std::sprintf(buff, " getRouteTableEntry status:%02X ", status);
+        return std::string(buff) + value.to_string();
+    }
+};
+
 
 }
 #endif

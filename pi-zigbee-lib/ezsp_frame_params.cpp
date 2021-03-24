@@ -87,6 +87,14 @@ size_t EFrame::put_param(const zb_ezsp::uint8t_value& param, uint8_t* buff, size
     return pos;
 }
 
+/**
+ * Put Eui64 only
+ */
+size_t EFrame::put_param(const zb_ezsp::Eui64& param, uint8_t* buff, size_t pos){
+    pos = Conv::put(buff, pos, param.eui64);
+    return pos;
+}
+
 
 /**
  * Ember status only
@@ -242,6 +250,12 @@ size_t EFrame::get_param(zb_ezsp::EmberRouteTableEntry& param, const uint8_t* bu
     return pos;
 }
 
+size_t EFrame::get_param(zb_ezsp::GetRouteTableEntry& param, const uint8_t* buff, size_t pos){
+    pos = Conv::get_byte<EmberStatus>(buff, pos, param.status);
+    pos = get_param(param.value, buff, pos);
+    return pos;
+}
+
 
 size_t EFrame::get_param(zb_ezsp::trustCenterJoinHandler& param, const uint8_t* buff, size_t pos){
     pos = Conv::get(buff, pos, param.newNodeId);
@@ -320,6 +334,11 @@ size_t EFrame::put_param(const zb_ezsp::keyData& param, uint8_t* buff, size_t po
     return pos;
 }
 
+size_t EFrame::put_param(const zb_ezsp::FindKeyTableEntry& param, uint8_t* buff, size_t pos){
+    pos = Conv::put(buff, pos, param.address);
+    pos = Conv::put(buff, pos, param.linkKey);
+    return pos;
+}
 
 
 size_t EFrame::get_param(zb_ezsp::EmberCurrentSecurityState& param, const uint8_t* buff, size_t& pos){
