@@ -77,7 +77,9 @@ std::map<id_type, std::string> Ezsp::_frameId2String = {
     {ID_incomingRouteRecordHandler, std::string("incomingRouteRecordHandler")},
     {ID_zigbeeKeyEstablishmentHandler, std::string("zigbeeKeyEstablishmentHandler")},
     {ID_getRouteTableEntry, std::string("getRouteTableEntry")},
-    {ID_findKeyTableEntry, std::string("findKeyTableEntry")}
+    {ID_findKeyTableEntry, std::string("findKeyTableEntry")},
+    {ID_setPolicy, std::string("setPolicy")},
+    {ID_getPolicy, std::string("getPolicy")}
 };
 
 }

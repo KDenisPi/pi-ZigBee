@@ -280,6 +280,22 @@ size_t EFrame::get_param(zb_ezsp::stackTokenChangedHandler& param, const uint8_t
 
 
 /**
+ * EZSP Policy
+ */
+size_t EFrame::put_param(const zb_ezsp::set_policy& param, uint8_t* buff, size_t pos){
+    pos = Conv::put(buff, pos, (uint8_t)param.policyId);
+    pos = Conv::put(buff, pos, (uint8_t)param.decisionId);
+    return pos;
+}
+
+size_t EFrame::get_param(zb_ezsp::get_policy& param, const uint8_t* buff, size_t pos){
+    pos = Conv::get_byte<EzspStatus>(buff, pos, param.status);
+    pos = Conv::get_byte<EzspDecisionId>(buff, pos, param.decisionId);
+    return pos;
+}
+
+
+/**
  * Configuration parameters
  */
 size_t EFrame::put_param(const zb_ezsp::configid_set_req& param, uint8_t* buff, size_t pos){

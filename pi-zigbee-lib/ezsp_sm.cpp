@@ -65,24 +65,31 @@ void Ezsp::worker(Ezsp* p_ezsp){
             break;
             case Ezsp_SM_Event::EVT_UART_UP:
             {
-                if(p_ezsp->state() == Ezsp_State::SM_Initial){
+                p_ezsp->set_state(Ezsp_State::SM_Config_Check);
 
-                    /**
-                     * Get/Set some configuration values
-                     */
-                    p_ezsp->setCinfigurationValue(EzspConfigId::EZSP_CONFIG_STACK_PROFILE, 2);
-                    p_ezsp->setCinfigurationValue(EzspConfigId::EZSP_CONFIG_SECURITY_LEVEL, 5);
-                    p_ezsp->setCinfigurationValue(EzspConfigId::EZSP_CONFIG_SUPPORTED_NETWORKS, 1);
-                    p_ezsp->setCinfigurationValue(EzspConfigId::EZSP_CONFIG_PACKET_BUFFER_COUNT, 64);
+
+                /**
+                 * Get/Set some configuration values
+                 */
 
                 /*
-                    p_ezsp->getCinfigurationValue(EzspConfigId::EZSP_CONFIG_STACK_PROFILE);
-                    p_ezsp->getCinfigurationValue(EzspConfigId::EZSP_CONFIG_SECURITY_LEVEL);
-                    p_ezsp->getCinfigurationValue(EzspConfigId::EZSP_CONFIG_SUPPORTED_NETWORKS);
-                    p_ezsp->getCinfigurationValue(EzspConfigId::EZSP_CONFIG_PACKET_BUFFER_COUNT);
+                p_ezsp->setConfigurationValue(EzspConfigId::EZSP_CONFIG_STACK_PROFILE, 2);
+                p_ezsp->setConfigurationValue(EzspConfigId::EZSP_CONFIG_SECURITY_LEVEL, 5);
+                p_ezsp->setConfigurationValue(EzspConfigId::EZSP_CONFIG_SUPPORTED_NETWORKS, 1);
+                p_ezsp->setConfigurationValue(EzspConfigId::EZSP_CONFIG_PACKET_BUFFER_COUNT, 64);
+
+
+                p_ezsp->getPolicy(EzspPolicyId::EZSP_TC_KEY_REQUEST_POLICY);
+                p_ezsp->getPolicy(EzspPolicyId::EZSP_APP_KEY_REQUEST_POLICY);
                 */
-                    p_ezsp->add_event(std::make_shared<EzspEvent>(Ezsp_SM_Event::EVT_CONF_FINISHED));
-                }
+
+            /*
+                p_ezsp->getConfigurationValue(EzspConfigId::EZSP_CONFIG_STACK_PROFILE);
+                p_ezsp->getConfigurationValue(EzspConfigId::EZSP_CONFIG_SECURITY_LEVEL);
+                p_ezsp->getConfigurationValue(EzspConfigId::EZSP_CONFIG_SUPPORTED_NETWORKS);
+                p_ezsp->getConfigurationValue(EzspConfigId::EZSP_CONFIG_PACKET_BUFFER_COUNT);
+            */
+                p_ezsp->add_event(std::make_shared<EzspEvent>(Ezsp_SM_Event::EVT_CONF_FINISHED));
             }
             break;
 

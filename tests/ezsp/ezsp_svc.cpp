@@ -69,12 +69,12 @@ int main (int argc, char* argv[])
         }
         else if(cmd == "getcfg"){
             uint8_t confId = (param.empty() ? zb_ezsp::EzspConfigId::EZSP_CONFIG_PACKET_BUFFER_COUNT : (uint8_t)std::stoi(param));
-            ezsp->getCinfigurationValue(confId);
+            ezsp->getConfigurationValue(confId);
         }
         else if(cmd == "setcfg"){
             uint8_t confId = (param.empty() ? zb_ezsp::EzspConfigId::EZSP_CONFIG_PACKET_BUFFER_COUNT : (uint8_t)std::stoi(param));
             uint16_t value_d = (uint16_t)(value.empty() ? 0 : std::stoi(value));
-            ezsp->setCinfigurationValue(confId, value_d);
+            ezsp->setConfigurationValue(confId, value_d);
         }
         else if(cmd == "startscana"){
             uint8_t channels[1] = {11};

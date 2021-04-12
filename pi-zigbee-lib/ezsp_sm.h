@@ -18,11 +18,13 @@
 namespace zb_ezsp {
 
 enum Ezsp_State : uint8_t {
-    SM_Initial              = 0,    //Not started yet
-    SM_UART_Connected       = 1,    //Starting UART
-    SM_Get_Device_Info      = 2,    //UART starter. Get device info
-    SM_Init_Network         = 3,    //Initialise network information (Form network or Join network)
-    SM_UP_and_Ready         = 4     //Network UP ready to work
+    SM_Initial          = 0,    // Not started yet
+    SM_UART_Connected      ,    // Starting UART
+    SM_Config_Check        ,    // Check necessary configuration
+    SM_Config_Update       ,    // Update configuration parameters
+    SM_Get_Device_Info     ,    // UART starter. Get device info
+    SM_Init_Network        ,    // Initialise network information (Form network or Join network)
+    SM_UP_and_Ready             // Network UP ready to work
 };
 
 enum Ezsp_SM_Event : uint16_t {

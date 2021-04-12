@@ -253,6 +253,13 @@ public:
 
 
     /**
+     * EZSP Policy
+     */
+    size_t put_param(const zb_ezsp::set_policy& param, uint8_t* buff, size_t pos);
+    size_t get_param(zb_ezsp::get_policy& param, const uint8_t* buff, size_t pos);
+
+
+    /**
      * NCP Value
      */
     size_t put_param(const zb_ezsp::value_set& param, uint8_t* buff, size_t pos);

@@ -101,7 +101,7 @@ void Ezsp::getValueTokenStackNodeData(){
 /**
  * Configuration value get/set
  */
-void Ezsp::getCinfigurationValue(const uint8_t id){
+void Ezsp::getConfigurationValue(const uint8_t id){
     logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__));
 
     zb_ezsp::configid_get_req v_cfg;
@@ -109,7 +109,7 @@ void Ezsp::getCinfigurationValue(const uint8_t id){
     add2output<zb_ezsp::configid_get_req>(zb_ezsp::EId::ID_getConfigurationValue, v_cfg);
 }
 
-void Ezsp::setCinfigurationValue(const uint8_t id, const uint16_t value){
+void Ezsp::setConfigurationValue(const uint8_t id, const uint16_t value){
     logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__));
 
     zb_ezsp::configid_set_req v_cfg;
@@ -144,6 +144,7 @@ void Ezsp::formNetwork(){
     auto net = _networks->at(0).get();
 
     Conv::copy_ext_pan(net->extendedPanId, netPrm.extendedPanId);
+    netPrm.panId = net->panId;
     netPrm.radioTxPower = net->radioTxPower;  //dBm
     netPrm.radioChannel = net->radioChannel;
     netPrm.joinMethod = net->joinMethod;

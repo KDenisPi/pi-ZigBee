@@ -394,12 +394,18 @@ void Ezsp::callback_eframe_received(const zb_uart::EFramePtr& efr_raw){
          */
         case EId::ID_setValue:
         case EId::ID_setConfigurationValue:
+        case EId::ID_setPolicy:
         {
             auto p_status = ef->load<zb_ezsp::ezsp_status>(efr_raw->data(), efr_raw->len());
             notify((EId)id, p_status->to_string());
         }
         break;
-
+        case EId::ID_getPolicy:
+        {
+            auto p_policy = ef->load<zb_ezsp::get_policy>(efr_raw->data(), efr_raw->len());
+            notify((EId)id, p_policy->to_string());
+        }
+        break;
         default:
             notify((EId)id, std::string("Not supported yet"));
     }

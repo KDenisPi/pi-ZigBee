@@ -161,8 +161,26 @@ public:
     /**
      * Configuration value get/set
      */
-    void getCinfigurationValue(const uint8_t id);
-    void setCinfigurationValue(const uint8_t id, const uint16_t value);
+    void getConfigurationValue(const uint8_t id);
+    void setConfigurationValue(const uint8_t id, const uint16_t value);
+
+    void getPolicy(const EzspPolicyId policyId){
+        logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__));
+
+        zb_ezsp::uint8t_value val;
+        val.value = policyId;
+        add2output<zb_ezsp::uint8t_value>(zb_ezsp::EId::ID_getPolicy, val);
+    }
+
+    void setPolicy(const EzspPolicyId policyId, const EzspDecisionId decisionId){
+        logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__));
+
+        zb_ezsp::set_policy policy;
+        policy.policyId = policyId;
+        policy.decisionId = decisionId;
+        add2output<zb_ezsp::set_policy>(zb_ezsp::EId::ID_setPolicy, policy);
+    }
+
     /**
      * Init network
      */
