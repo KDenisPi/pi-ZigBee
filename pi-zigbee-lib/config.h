@@ -23,8 +23,6 @@ enum ConfigType : uint8_t {
 };
 
 enum ConfigValueState : uint8_t {
-    not_verified    = 0,
-    verify_in_progress,
     need_update_value,
     update_in_progress,
     value_cofirmed,
@@ -34,7 +32,7 @@ enum ConfigValueState : uint8_t {
 template<typename T>
 class ConfigValue {
 public:
-    ConfigValue(const uint8_t id, const T value, const ConfigType ctype=ConfigType::ConfigurationValue) : _type(ctype), _value(value), _state(ConfigValueState::not_verified), _id(id) {}
+    ConfigValue(const uint8_t id, const T value, const ConfigType ctype=ConfigType::ConfigurationValue) : _type(ctype), _value(value), _state(ConfigValueState::need_update_value), _id(id) {}
     virtual ~ConfigValue() {}
 
     const uint8_t state() const {
@@ -73,6 +71,8 @@ class Config {
 public:
     /**
      * Add value for checking here
+     *
+     * Note!! Some values (at least EZSP_CONFIG_STACK_PROFILE, EZSP_CONFIG_SUPPORTED_NETWORKS) should be updated on any case even if Ezsp has correct current value
      */
     Config() {
 
@@ -116,7 +116,7 @@ public:
         _policy.push_back(policy);
     }
 
-    const ConfigV config_next(const ConfigValueState state = ConfigValueState::not_verified) const {
+    const ConfigV config_next(const ConfigValueState state) const {
         for(auto cfg : _configs){
             if(state == cfg->state())
                 return cfg;
@@ -128,7 +128,7 @@ public:
     /**
      *
      */
-    const PolicyV policy_next(const ConfigValueState state = ConfigValueState::not_verified) const {
+    const PolicyV policy_next(const ConfigValueState state) const {
         for(auto policy : _policy){
             if(state == policy->state())
                 return policy;

@@ -67,10 +67,10 @@ void Ezsp::worker(Ezsp* p_ezsp){
             {
                 p_ezsp->set_state(Ezsp_State::SM_Config_Check);
 
-                auto cfg_to_check = p_ezsp->_cfg.config_next(ConfigValueState::not_verified);
+                auto cfg_to_check = p_ezsp->_cfg.config_next(ConfigValueState::need_update_value);
                 if(cfg_to_check){
-                    cfg_to_check->set_state(ConfigValueState::verify_in_progress);
-                    p_ezsp->getConfigurationValue(cfg_to_check->id());
+                    cfg_to_check->set_state(ConfigValueState::update_in_progress);
+                    p_ezsp->setConfigurationValue(cfg_to_check->id(), cfg_to_check->value());
                 }
                 else
                     p_ezsp->add_event(std::make_shared<EzspEvent>(Ezsp_SM_Event::EVT_CONF_CHECKED));
@@ -82,10 +82,10 @@ void Ezsp::worker(Ezsp* p_ezsp){
             {
                 p_ezsp->set_state(Ezsp_State::SM_Policy_Check);
 
-                auto p_to_check = p_ezsp->_cfg.policy_next(ConfigValueState::not_verified);
+                auto p_to_check = p_ezsp->_cfg.policy_next(ConfigValueState::need_update_value);
                 if(p_to_check){
-                    p_to_check->set_state(ConfigValueState::verify_in_progress);
-                    p_ezsp->getPolicy(p_to_check->id());
+                    p_to_check->set_state(ConfigValueState::update_in_progress);
+                    p_ezsp->setPolicy(p_to_check->id(), p_to_check->value());
                 }
                 else
                     p_ezsp->add_event(std::make_shared<EzspEvent>(Ezsp_SM_Event::EVT_ALL_CONF_FINISHED));

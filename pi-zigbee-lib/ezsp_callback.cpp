@@ -301,40 +301,6 @@ void Ezsp::callback_eframe_received(const zb_uart::EFramePtr& efr_raw){
         {
             auto p_conf = ef->load<zb_ezsp::configid_get_resp>(efr_raw->data(), efr_raw->len());
             notify((EId)id, p_conf->to_string());
-
-            auto cfg = _cfg.config_next(ConfigValueState::verify_in_progress);
-            if(cfg){
-                if(EzspStatus::EZSP_SUCCESS == p_conf->status){
-                    if(cfg->value() == p_conf->value)
-                        cfg->set_state(ConfigValueState::value_cofirmed);
-                    else //mark value as needed for update
-                        cfg->set_state(ConfigValueState::need_update_value);
-
-                    logger::log(logger::LLOG::INFO, "ezsp", std::string(__func__) + " ID_getConfigurationValue Received " + p_conf->to_string() + " " + cfg->to_string());
-                }
-                else{
-                    cfg->set_state(ConfigValueState::update_failed);
-                    logger::log(logger::LLOG::ERROR, "ezsp", std::string(__func__) + " ID_getConfigurationValue Received " + p_conf->to_string() + " " + cfg->to_string());
-                }
-
-                //get next from list
-                auto cfg_to_check = _cfg.config_next(ConfigValueState::not_verified);
-                if(cfg_to_check){
-                    cfg_to_check->set_state(ConfigValueState::verify_in_progress);
-                    getConfigurationValue(cfg_to_check->id());
-                    logger::log(logger::LLOG::INFO, "ezsp", std::string(__func__) + " ID_getConfigurationValue " + " Next for check " + cfg_to_check->to_string());
-                }
-                else{ //all finished start to update
-                    auto cfg_to_update = _cfg.config_next(ConfigValueState::need_update_value);
-                    if(cfg_to_update){
-                        cfg_to_update->set_state(ConfigValueState::update_in_progress);
-                        setConfigurationValue(cfg_to_update->id(), cfg_to_update->value());
-                    logger::log(logger::LLOG::INFO, "ezsp", std::string(__func__) + " ID_getConfigurationValue " + " Next for update " + cfg_to_update->to_string());
-                    }
-                    else
-                        add_event(std::make_shared<EzspEvent>(Ezsp_SM_Event::EVT_CONF_CHECKED));
-                }
-            }
         }
         break;
         case EId::ID_getCurrentSecurityState:
@@ -484,44 +450,6 @@ void Ezsp::callback_eframe_received(const zb_uart::EFramePtr& efr_raw){
         {
             auto p_policy = ef->load<zb_ezsp::get_policy>(efr_raw->data(), efr_raw->len());
             notify((EId)id, p_policy->to_string());
-
-            auto p_curr = _cfg.policy_next(ConfigValueState::verify_in_progress);
-            if(p_curr){
-                if(EzspStatus::EZSP_SUCCESS == p_policy->status){
-                    if(p_curr->value() == p_policy->decisionId)
-                        p_curr->set_state(ConfigValueState::value_cofirmed);
-                    else //mark value as needed for update
-                        p_curr->set_state(ConfigValueState::need_update_value);
-
-                    logger::log(logger::LLOG::INFO, "ezsp", std::string(__func__) + " getPolicy Received " + p_policy->to_string() + " " + p_curr->to_string());
-                }
-                else{
-                    p_curr->set_state(ConfigValueState::update_failed);
-                    logger::log(logger::LLOG::ERROR, "ezsp", std::string(__func__) + " getPolicy Received " + p_policy->to_string() + " " + p_curr->to_string());
-                }
-
-                //get next from list
-                auto p_to_check = _cfg.policy_next(ConfigValueState::not_verified);
-                if(p_to_check){
-                    p_to_check->set_state(ConfigValueState::verify_in_progress);
-                    getPolicy(p_to_check->id());
-
-                    logger::log(logger::LLOG::INFO, "ezsp", std::string(__func__) + " getPolicy " + " Next for check " + p_to_check->to_string());
-                }
-                else{ //all finished start to update
-                    auto p_to_update = _cfg.policy_next(ConfigValueState::need_update_value);
-                    if(p_to_update){
-                        p_to_update->set_state(ConfigValueState::update_in_progress);
-                        setPolicy(p_to_update->id(), p_to_update->value());
-
-                        logger::log(logger::LLOG::INFO, "ezsp", std::string(__func__) + " getPolicy " + " Next for update " + p_to_update->to_string());
-                    }
-                    else
-                        add_event(std::make_shared<EzspEvent>(Ezsp_SM_Event::EVT_ALL_CONF_FINISHED));
-                }
-
-
-            }
         }
         break;
         default:
