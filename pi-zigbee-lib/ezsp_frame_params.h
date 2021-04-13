@@ -204,8 +204,8 @@ using value_get_resp = struct ezsp_ncp_value_get_resp {
  * Ezsp Policy Id
  */
 using set_policy = struct ezsp_set_policy {
-    EzspPolicyId policyId;      // Identifies which policy to modify.
-    EzspDecisionId decisionId;  // The new decision for the specified policy.
+    uint8_t policyId;       // Identifies which policy to modify.
+    uint8_t decisionId;     // The new decision for the specified policy.
 
     const std::string to_string() const {
         char buff[40];
@@ -215,8 +215,8 @@ using set_policy = struct ezsp_set_policy {
 };
 
 using get_policy = struct ezsp_get_policy {
-    EzspStatus status;          // EZSP_SUCCESS if the policy was read successfully, EZSP_ERROR_INVALID_ID if the NCP does not recognize policyId.
-    EzspDecisionId decisionId;  // The current decision for the specified policy.
+    EzspStatus status;      // EZSP_SUCCESS if the policy was read successfully, EZSP_ERROR_INVALID_ID if the NCP does not recognize policyId.
+    uint8_t decisionId;     // The current decision for the specified policy.
 
     const std::string to_string() const {
         char buff[40];

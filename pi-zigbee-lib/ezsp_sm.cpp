@@ -67,33 +67,54 @@ void Ezsp::worker(Ezsp* p_ezsp){
             {
                 p_ezsp->set_state(Ezsp_State::SM_Config_Check);
 
+                auto cfg_to_check = p_ezsp->_cfg.config_next(ConfigValueState::not_verified);
+                if(cfg_to_check){
+                    cfg_to_check->set_state(ConfigValueState::verify_in_progress);
+                    p_ezsp->getConfigurationValue(cfg_to_check->id());
+                }
+                else
+                    p_ezsp->add_event(std::make_shared<EzspEvent>(Ezsp_SM_Event::EVT_CONF_CHECKED));
 
-                /**
-                 * Get/Set some configuration values
-                 */
-
-                /*
-                p_ezsp->setConfigurationValue(EzspConfigId::EZSP_CONFIG_STACK_PROFILE, 2);
-                p_ezsp->setConfigurationValue(EzspConfigId::EZSP_CONFIG_SECURITY_LEVEL, 5);
-                p_ezsp->setConfigurationValue(EzspConfigId::EZSP_CONFIG_SUPPORTED_NETWORKS, 1);
-                p_ezsp->setConfigurationValue(EzspConfigId::EZSP_CONFIG_PACKET_BUFFER_COUNT, 64);
-
-
-                p_ezsp->getPolicy(EzspPolicyId::EZSP_TC_KEY_REQUEST_POLICY);
-                p_ezsp->getPolicy(EzspPolicyId::EZSP_APP_KEY_REQUEST_POLICY);
-                */
-
-            /*
-                p_ezsp->getConfigurationValue(EzspConfigId::EZSP_CONFIG_STACK_PROFILE);
-                p_ezsp->getConfigurationValue(EzspConfigId::EZSP_CONFIG_SECURITY_LEVEL);
-                p_ezsp->getConfigurationValue(EzspConfigId::EZSP_CONFIG_SUPPORTED_NETWORKS);
-                p_ezsp->getConfigurationValue(EzspConfigId::EZSP_CONFIG_PACKET_BUFFER_COUNT);
-            */
-                p_ezsp->add_event(std::make_shared<EzspEvent>(Ezsp_SM_Event::EVT_CONF_FINISHED));
             }
             break;
 
-            case Ezsp_SM_Event::EVT_CONF_FINISHED:
+            case Ezsp_SM_Event::EVT_CONF_CHECKED:
+            {
+                p_ezsp->set_state(Ezsp_State::SM_Policy_Check);
+
+                auto p_to_check = p_ezsp->_cfg.policy_next(ConfigValueState::not_verified);
+                if(p_to_check){
+                    p_to_check->set_state(ConfigValueState::verify_in_progress);
+                    p_ezsp->getPolicy(p_to_check->id());
+                }
+                else
+                    p_ezsp->add_event(std::make_shared<EzspEvent>(Ezsp_SM_Event::EVT_ALL_CONF_FINISHED));
+
+            }
+            break;
+
+            /**
+             * All configuration parameters and policy checked. Need to make decision will we run or not
+             */
+            case Ezsp_SM_Event::EVT_ALL_CONF_FINISHED:
+            {
+                auto cfg_failed = p_ezsp->_cfg.config_next(ConfigValueState::update_failed);
+                auto p_failed = p_ezsp->_cfg.policy_next(ConfigValueState::update_failed);
+
+                if(cfg_failed){
+                    logger::log(logger::LLOG::INFO, "ezsp", std::string(__func__) + "Cfg nop updated " + cfg_failed->to_string());
+                }
+
+                if(p_failed){
+                    logger::log(logger::LLOG::INFO, "ezsp", std::string(__func__) + "Policy nop updated " + p_failed->to_string());
+                }
+
+                p_ezsp->add_event(std::make_shared<EzspEvent>(Ezsp_SM_Event::EVT_START_NETWORK));
+            }
+            break;
+
+
+            case Ezsp_SM_Event::EVT_START_NETWORK:
             {
                 //Low level is UP
                 p_ezsp->set_state(Ezsp_State::SM_Init_Network);

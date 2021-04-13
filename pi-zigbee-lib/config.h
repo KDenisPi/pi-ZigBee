@@ -13,6 +13,8 @@
 #include <list>
 #include <memory>
 
+#include "logger.h"
+
 namespace zb_ezsp {
 
 enum ConfigType : uint8_t {
@@ -21,21 +23,38 @@ enum ConfigType : uint8_t {
 };
 
 enum ConfigValueState : uint8_t {
-    not_verufied    = 0,
-    veryfy_in_progress,
-    need_update,
+    not_verified    = 0,
+    verify_in_progress,
+    need_update_value,
     update_in_progress,
+    value_cofirmed,
     update_failed   = 0xFF
 };
 
 template<typename T>
 class ConfigValue {
 public:
-    ConfigValue(const uint8_t id, const T value, const ConfigType ctype=ConfigType::ConfigurationValue) : _type(ctype), _value(value), _state(ConfigValueState::not_verufied), _id(id) {}
+    ConfigValue(const uint8_t id, const T value, const ConfigType ctype=ConfigType::ConfigurationValue) : _type(ctype), _value(value), _state(ConfigValueState::not_verified), _id(id) {}
     virtual ~ConfigValue() {}
 
     const uint8_t state() const {
         return _state;
+    }
+
+    const T value() const {
+        return _value;
+    }
+
+    void set_state(ConfigValueState state){
+        _state = state;
+    }
+
+    const ConfigType type() const {
+        return _type;
+    }
+
+    const uint8_t id() const {
+        return _id;
     }
 
     const std::string to_string() const{
@@ -52,7 +71,30 @@ using ConfigV = std::shared_ptr<ConfigValue<uint16_t>>;
 using PolicyV = std::shared_ptr<ConfigValue<uint8_t>>;
 class Config {
 public:
-    Config() {}
+    /**
+     * Add value for checking here
+     */
+    Config() {
+
+        /**
+            EzspConfigId::EZSP_CONFIG_STACK_PROFILE, 2
+            EzspConfigId::EZSP_CONFIG_SECURITY_LEVEL, 5
+            EzspConfigId::EZSP_CONFIG_SUPPORTED_NETWORKS, 1
+            EzspConfigId::EZSP_CONFIG_PACKET_BUFFER_COUNT, 64
+        */
+        add(std::make_shared<ConfigValue<uint16_t>>(EzspConfigId::EZSP_CONFIG_STACK_PROFILE, 2));
+        add(std::make_shared<ConfigValue<uint16_t>>(EzspConfigId::EZSP_CONFIG_SECURITY_LEVEL, 5));
+        add(std::make_shared<ConfigValue<uint16_t>>(EzspConfigId::EZSP_CONFIG_SUPPORTED_NETWORKS, 1));
+        add(std::make_shared<ConfigValue<uint16_t>>(EzspConfigId::EZSP_CONFIG_PACKET_BUFFER_COUNT, 64));
+
+        /**
+            EzspPolicyId::EZSP_TC_KEY_REQUEST_POLICY, TRUE
+            EzspPolicyId::EZSP_APP_KEY_REQUEST_POLICY, TRUE
+         */
+        add(std::make_shared<ConfigValue<uint8_t>>(EzspPolicyId::EZSP_TC_KEY_REQUEST_POLICY, EZSP_ALLOW_TC_KEY_REQUESTS, ConfigType::PolicyValue));
+        add(std::make_shared<ConfigValue<uint8_t>>(EzspPolicyId::EZSP_APP_KEY_REQUEST_POLICY, EZSP_ALLOW_APP_KEY_REQUESTS, ConfigType::PolicyValue));
+    }
+
     ~Config() {}
 
     const std::string ver() const {
@@ -64,7 +106,17 @@ public:
     /**
      *
      */
-    const ConfigV config_next(const ConfigValueState state = ConfigValueState::not_verufied) const {
+    void add(const ConfigV cfg){
+        logger::log(logger::LLOG::DEBUG, "config", std::string(__func__) + " " + cfg->to_string());
+        _configs.push_back(cfg);
+    }
+
+    void add(const PolicyV policy){
+        logger::log(logger::LLOG::DEBUG, "config", std::string(__func__) + " " + policy->to_string());
+        _policy.push_back(policy);
+    }
+
+    const ConfigV config_next(const ConfigValueState state = ConfigValueState::not_verified) const {
         for(auto cfg : _configs){
             if(state == cfg->state())
                 return cfg;
@@ -76,7 +128,7 @@ public:
     /**
      *
      */
-    const PolicyV policy_next(const ConfigValueState state = ConfigValueState::not_verufied) const {
+    const PolicyV policy_next(const ConfigValueState state = ConfigValueState::not_verified) const {
         for(auto policy : _policy){
             if(state == policy->state())
                 return policy;
@@ -84,6 +136,8 @@ public:
 
         return PolicyV();
     }
+
+
 
     const std::string to_string() const {
         std::string result;

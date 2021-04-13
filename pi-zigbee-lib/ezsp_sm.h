@@ -21,7 +21,7 @@ enum Ezsp_State : uint8_t {
     SM_Initial          = 0,    // Not started yet
     SM_UART_Connected      ,    // Starting UART
     SM_Config_Check        ,    // Check necessary configuration
-    SM_Config_Update       ,    // Update configuration parameters
+    SM_Policy_Check        ,    // Check necessary policy parameters
     SM_Get_Device_Info     ,    // UART starter. Get device info
     SM_Init_Network        ,    // Initialise network information (Form network or Join network)
     SM_UP_and_Ready             // Network UP ready to work
@@ -30,7 +30,9 @@ enum Ezsp_State : uint8_t {
 enum Ezsp_SM_Event : uint16_t {
     EVT_Start           = 0,
     EVT_UART_UP         ,
-    EVT_CONF_FINISHED   ,
+    EVT_CONF_CHECKED   ,
+    EVT_ALL_CONF_FINISHED   ,
+    EVT_START_NETWORK   ,
     EVT_NET_STATUS      ,
     EVT_NEIGHBOR_CONN   ,
     EVT_ERROR           ,

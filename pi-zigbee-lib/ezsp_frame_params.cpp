@@ -290,7 +290,7 @@ size_t EFrame::put_param(const zb_ezsp::set_policy& param, uint8_t* buff, size_t
 
 size_t EFrame::get_param(zb_ezsp::get_policy& param, const uint8_t* buff, size_t pos){
     pos = Conv::get_byte<EzspStatus>(buff, pos, param.status);
-    pos = Conv::get_byte<EzspDecisionId>(buff, pos, param.decisionId);
+    pos = Conv::get(buff, pos, param.decisionId);
     return pos;
 }
 

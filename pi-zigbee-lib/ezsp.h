@@ -164,16 +164,16 @@ public:
     void getConfigurationValue(const uint8_t id);
     void setConfigurationValue(const uint8_t id, const uint16_t value);
 
-    void getPolicy(const EzspPolicyId policyId){
-        logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__));
+    void getPolicy(const uint8_t policyId){
+        logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__) + " Id: " + std::to_string(policyId));
 
         zb_ezsp::uint8t_value val;
         val.value = policyId;
         add2output<zb_ezsp::uint8t_value>(zb_ezsp::EId::ID_getPolicy, val);
     }
 
-    void setPolicy(const EzspPolicyId policyId, const EzspDecisionId decisionId){
-        logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__));
+    void setPolicy(const uint8_t policyId, const uint8_t decisionId){
+        logger::log(logger::LLOG::DEBUG, "ezsp", std::string(__func__) + " Id: " + std::to_string(policyId) + " DId: " +  std::to_string(decisionId));
 
         zb_ezsp::set_policy policy;
         policy.policyId = policyId;
